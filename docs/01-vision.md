@@ -6,7 +6,7 @@ Les organismes étudiants et les petites salles (théâtre étudiant, ciné-club
 | :--- | :--- | :--- |
 | **Organisateur** | Créer un événement, configurer le plan de la salle, suivre les ventes en direct, annuler une réservation en cas de problème | ```organisateur``` |
 | **Spectateur** | Voir les événements à venir, choisir ses sièges sur un plan clair, réserver rapidement sans craindre de perdre son siège au profit de quelqu'un d'autre | ```spectateur``` |
-| **Administrateur** | Peut tout gérer et à tous les droits | ```Admin``` |
+| **Administrateur** | Il voit tous les organisateurs inscrits sur la plateforme et tous les événements créés, peu importe qui les a créés. Il peut suspendre un compte (organisateur ou spectateur) en cas d'abus | ```Admin``` |
 ---
 ## Proposition
 **Seats** est une application web qui permet à un organisateur de vendre les places d'un événement sur un plan de salle interactif, et à un spectateur de réserver ses sièges en temps réel avec la certitude que sa réservation est définitive.
