@@ -1,6 +1,66 @@
 # Conception
 ## Conception - App de Réservation de Places de Cinéma
 
+## 1. Modèle de Données
+### Diagramme Entité-Association (Sprint 1)
+<img width="651" height="886" alt="Capture d’écran 2026-08-24 111048" src="https://github.com/user-attachments/assets/4e9e56ef-047c-4a9d-8c1b-be6590040a8d" />
+
+### Détails des Entités — Sprint 1
+### UTILISATEURS (Inscription/Connexion)
+id : Entier, clé primaire
+email : Chaîne, unique (index pour login)
+mot_de_passe : Hash bcrypt (jamais stocké en clair)
+nom, prenom : Chaînes obligatoires
+role : ENUM('spectateur', 'organisateur', 'admin')
+spectateur : Consulte événements, réserve sièges, annule ses réservations
+organisateur : Crée salles/événements, voit stats de vente, annule toute réservation
+admin : Accès complet
+created_at : Timestamp création
+
+### SALLES (Créées par organisateur)
+id : Entier, clé primaire
+organisateur_id : FK → UTILISATEURS (non nul, créateur)
+nom : Chaîne (ex: "Salle du Cégep", "Théâtre Principal")
+nombre_rangees : Entier (ex: 10 rangées)
+sieges_par_rangee : Entier (ex: 15 sièges par rangée)
+created_at : Timestamp
+Contrainte : UNIQUE(organisateur_id, nom) — un organisateur a une salle unique par nom
+
+### SIEGES (Générés à partir de SALLES)
+id : Entier, clé primaire
+salle_id : FK → SALLES (non nul)
+numero_rangee : Entier (1 à nombre_rangees)
+numero_colonne : Entier (1 à sieges_par_rangee)
+created_at : Timestamp
+Contrainte : UNIQUE(salle_id, numero_rangee, numero_colonne) — pas de siège dupliqué
+Pas de statut ici — le statut est dans RESERVATIONS pour chaque événement (un siège peut être libre pour l'événement A et réservé pour l'événement B)
+
+### EVENEMENTS (Créés par organisateur, associés à une salle)
+id : Entier, clé primaire
+organisateur_id : FK → UTILISATEURS (non nul, créateur)
+salle_id : FK → SALLES (non nul, immuable après création)
+titre : Chaîne (ex: "Concert des Anciens")
+description : Texte court
+date_heure : DateTime (ex: 2024-10-15 20:00:00, en UTC)
+created_at : Timestamp
+Pas de état "complet" — calculé dynamiquement depuis les réservations confirmées
+
+### RESERVATIONS (Associe spectateur + siège + événement)
+id : Entier, clé primaire
+spectateur_id : FK → UTILISATEURS (non nul)
+siege_id : FK → SIEGES (non nul)
+evenement_id : FK → EVENEMENTS (non nul)
+statut : ENUM('en_selection', 'confirmee', 'annulee')
+en_selection : Siège sélectionné, en attente de confirmation (délai limité)
+confirmee : Siège réservé définitivement
+annulee : Réservation annulée (siège libéré)
+date_selection : Timestamp (quand le siège a été cliqué)
+date_confirmation : Timestamp NULL (rempli seulement quand confirmee)
+delai_expiration : Timestamp (date jusqu'à laquelle en_selection reste valide)
+Contrainte critique : UNIQUE(siege_id, evenement_id) → un siège ne peut être réservé qu'une fois par événement
+Contrainte : Si statut = 'confirmee', date_confirmation est non nul
+
+
 ## 2. Routes Principales
 ### Sprint 1 — Routes Détaillées
  
