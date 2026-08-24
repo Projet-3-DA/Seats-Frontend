@@ -11,7 +11,8 @@ Les organismes étudiants et les petites salles (théâtre étudiant, ciné-club
 **Seats** est une application web qui permet à un organisateur de vendre les places d'un événement sur un plan de salle interactif, et à un spectateur de réserver ses sièges en temps réel avec la certitude que sa réservation est définitive.
 ## Dans la portée
 - Création d'un compte et connexion, avec un rôle organisateur ou spectateur attribué à l'inscription.
-- Un organisateur peut créer un événement (titre, description, date, lieu) et lui associer un plan de salle (rangées et sièges, avec au besoin des sections à tarifs différents).
+- Un organisateur peut créer une salle avec un nombre de rangées et de colonnes
+- Un organisateur peut créer un événement (titre, description, date, lieu) et lui associer une salle
 - Un spectateur peut parcourir la liste des événements à venir et consulter le plan de salle d'un événement.
 - Un spectateur peut sélectionner un ou plusieurs sièges libres; le siège passe alors dans un état « en cours de sélection » visible par tous les autres spectateurs regardant le même plan, avec un délai limité pour confirmer.
 - Confirmation de la réservation : le ou les sièges passent définitivement à l'état « réservé », associés au compte du spectateur.
