@@ -95,7 +95,21 @@ Contrainte : Si statut = 'confirmee', date_confirmation est non nul
 | POST | `/api/admin/projections` | Créer projection | Auth admin requise. Corps : `{ film_id, date_heure, salle, places_totales, prix_ticket }`. Immuable après création. |
 
 
-## 5. Registre de Décisions Techniques
+## 3. Maquettes
+### Maquettes 1 :  Plan de Salle Interactif
+web application/stitch/projects/9980555165584792108/screens/7b73fea5078042939b2cff1ed3931826<img width="1600" height="1436" alt="image" src="https://github.com/user-attachments/assets/27505a03-07cf-48e0-9e6b-d16b1f61dca7" />
+
+### Maquettes 2 :  Dashboard Organisateur
+web application/stitch/projects/9980555165584792108/screens/60e0874d4d374059afca118257d45beb<img width="1600" height="1398" alt="image" src="https://github.com/user-attachments/assets/61179acb-4d39-4654-a6fa-22039625e114" />
+
+### Maquettes 3 :  Confirmation de Réservation
+web application/stitch/projects/9980555165584792108/screens/7585926d30ad428db356a44b95769255<img width="1600" height="1397" alt="image" src="https://github.com/user-attachments/assets/a9d3dd5c-680a-4019-8a87-5c0d08c83df0" />
+
+### Maquettes 4 :  Dashboard Spectateur
+web application/stitch/projects/9980555165584792108/screens/c1e26c9b0df74c51993d7c5505e8e5b1<img width="1600" height="1349" alt="image" src="https://github.com/user-attachments/assets/6615eb28-466e-433e-a99a-988a09a2bf55" />
+
+
+## 4. Registre de Décisions Techniques
  
 ### Décision 1 : Authentification — JWT vs Session
  
