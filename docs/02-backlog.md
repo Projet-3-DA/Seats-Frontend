@@ -127,7 +127,7 @@ décrété à **3 points** : lecture simple, une seule entité, pas d'écriture.
 - Une réservation pour un événement passé est indiquée comme telle (ex. libellé « terminé »).
 
   Récits du sprint 2 (avec critères d'acceptation)
-#8 — Voir un siège passer « en sélection » en temps réel
+[#8](../../../issues/8) — Voir un siège passer « en sélection » en temps réel
 
 En tant que spectateur, je veux voir un siège passer à l'état « en sélection » en temps réel dès qu'un autre spectateur le choisit afin de ne pas perdre de temps à sélectionner un siège déjà pris par quelqu'un d'autre.
 
@@ -138,7 +138,7 @@ Un siège « en sélection » n'est pas cliquable par les autres spectateurs.
 Si le spectateur qui a sélectionné le siège ne confirme pas (annule ou quitte), le siège redevient visible comme libre pour tout le monde.
 La mise à jour utilise un mécanisme temps réel (ex. WebSocket), pas un rafraîchissement périodique par sondage agressif.
 
-#9 — Restreindre les actions selon mon rôle, vérifié côté serveur
+[#9](../../../issues/9) — Restreindre les actions selon mon rôle, vérifié côté serveur
 
 **En tant qu'**utilisateur du système (tout rôle), je veux que chaque action soit vérifiée selon mon rôle directement côté serveur afin de garantir qu'aucun utilisateur ne puisse contourner les restrictions en modifiant les requêtes envoyées au client.
 
@@ -149,7 +149,7 @@ Une requête réservée à l'administrateur est refusée pour un compte organisa
 Le refus renvoie un code d'erreur clair (403) sans révéler de détails sensibles sur le système.
 Les vérifications de rôle sont centralisées (middleware ou équivalent), pas dupliquées à la main dans chaque route.
 
-#10 — Modifier une salle existante tant qu'aucun événement ne l'utilise
+[#10](../../../issues/10) — Modifier une salle existante tant qu'aucun événement ne l'utilise
 
 **En tant qu'**organisateur, je veux modifier la disposition d'une salle que j'ai créée, tant qu'aucun événement ne l'utilise encore, afin de corriger une erreur de configuration avant sa première utilisation.
 
@@ -160,7 +160,7 @@ Une salle déjà associée à au moins un événement ne peut pas être modifié
 Les modifications sont immédiatement reflétées dans le plan de la salle.
 Une salle vidée de tous ses sièges via l'édition ne peut pas être enregistrée (même règle qu'à la création).
 
-#11 — Configurer des sections à tarifs différents dans une salle
+[#11](../../../issues/11) — Configurer des sections à tarifs différents dans une salle
 
 **En tant qu'**organisateur, je veux diviser une salle en sections à tarifs différents (ex. parterre, balcon) afin de pouvoir vendre des places à des prix distincts selon leur emplacement.
 
@@ -171,7 +171,7 @@ Chaque siège appartient à une seule section à la fois.
 Le plan de salle affiche visuellement les sections (ex. par couleur) pour l'organisateur et pour le spectateur.
 Une salle sans section définie utilise un tarif unique par défaut.
 
-#12 — Annuler une réservation à venir
+[#12](../../../issues/12) — Annuler une réservation à venir
 
 En tant que spectateur, je veux annuler une réservation à venir afin de libérer mes sièges si je ne peux plus assister à l'événement.
 
@@ -182,7 +182,7 @@ Une fois annulée, les sièges concernés redeviennent immédiatement disponible
 La réservation annulée est retirée de ma liste active de réservations (ou marquée comme annulée, selon le choix d'affichage retenu).
 Une tentative d'annuler une réservation qui ne m'appartient pas est refusée.
 
-#13 — Voir en direct l'état de vente d'un événement
+[#13](../../../issues/13) — Voir en direct l'état de vente d'un événement
 
 **En tant qu'**organisateur, je veux voir en direct l'état des ventes de mon événement afin de suivre combien de places sont vendues et lesquelles restent disponibles.
 
@@ -193,7 +193,7 @@ Les chiffres se mettent à jour sans que je doive recharger la page.
 Je ne peux voir que les statistiques de mes propres événements.
 Le total affiché correspond en tout temps à l'état réel du plan de salle.
 
-#14 — Annuler une réservation en tant qu'organisateur
+[#14](../../../issues/14) — Annuler une réservation en tant qu'organisateur
 
 **En tant qu'**organisateur, je veux pouvoir annuler la réservation d'un spectateur afin de résoudre un problème (erreur, abus, demande du spectateur) sans devoir intervenir directement en base de données.
 
@@ -204,7 +204,7 @@ Le siège annulé redevient disponible immédiatement.
 Le spectateur concerné voit sa réservation annulée dans son propre historique.
 Je ne peux pas annuler une réservation liée à l'événement d'un autre organisateur.
 
-#19 — Voir une vue globale des organisateurs et des événements de la plateforme
+[#19](../../../issues/19) — Voir une vue globale des organisateurs et des événements de la plateforme
 
 **En tant qu'**administrateur, je veux voir la liste de tous les organisateurs inscrits et de tous les événements créés sur la plateforme, peu importe qui les a créés, afin de superviser l'ensemble de l'activité de la plateforme.
 
@@ -217,7 +217,7 @@ Cliquer sur un événement ou un organisateur permet d'en voir le détail.
 
 Récits du sprint 3 (avec critères d'acceptation)
 
-#15 — Voir mon siège redevenir libre si je ne confirme pas dans le délai
+[#15](../../../issues/15) — Voir mon siège redevenir libre si je ne confirme pas dans le délai
 
 En tant que spectateur, je veux que mon siège sélectionné redevienne libre si je ne confirme pas ma réservation dans un délai raisonnable afin de ne pas bloquer un siège indéfiniment pour les autres si je change d'avis ou quitte la page.
 
@@ -228,7 +228,7 @@ Le spectateur voit un indicateur du temps restant avant l'expiration.
 Si le délai expire pendant la tentative de confirmation, celle-ci est refusée avec un message clair, et le spectateur doit resélectionner le siège.
 L'expiration du délai est vérifiée côté serveur, pas seulement dans l'interface du client.
 
-#16 — Empêcher deux confirmations simultanées sur le même siège
+[#16](../../../issues/16) — Empêcher deux confirmations simultanées sur le même siège
 
 En tant que spectateur, je veux avoir la certitude qu'un siège que je confirme ne peut pas être attribué à quelqu'un d'autre au même instant afin de éviter les doubles réservations que la plateforme est censée éliminer.
 
@@ -239,7 +239,7 @@ La garantie repose sur une contrainte au niveau de la base de données (ex. cont
 Un test simulant des requêtes concurrentes confirme qu'aucun siège ne peut se retrouver associé à deux réservations actives.
 Le spectateur dont la confirmation échoue voit l'état à jour du siège sans devoir recharger manuellement.
 
-#17 — Resynchroniser mon affichage après une coupure de connexion
+[#17](../../../issues/17) — Resynchroniser mon affichage après une coupure de connexion
 
 En tant que spectateur, je veux que mon affichage se resynchronise automatiquement si ma connexion internet est interrompue puis rétablie afin de ne pas prendre de décision (réserver, confirmer) sur un plan de salle obsolète.
 
@@ -250,7 +250,7 @@ L'affichage des sièges reflète l'état réel après resynchronisation, y compr
 Un indicateur visuel informe le spectateur que la connexion a été perdue puis rétablie.
 Aucune action de réservation n'est possible tant que la resynchronisation n'est pas confirmée.
 
-#18 — Accéder à l'application déployée sur un serveur public
+[#18](../../../issues/18) — Accéder à l'application déployée sur un serveur public
 
 **En tant qu'utilisateur (tout rôle confondu), je veux accéder à l'application via une adresse publique afin de pouvoir l'utiliser sans dépendre de l'environnement de développement d'un membre de l'équipe.
 
@@ -261,7 +261,7 @@ Le frontend et le backend communiquent correctement dans cet environnement dépl
 Une mise à jour poussée sur la branche principale est déployée automatiquement, ou via une procédure documentée et reproductible.
 Les données créées sur l'environnement déployé persistent d'une session à l'autre.
 
-#20 — Suspendre un compte (organisateur ou spectateur) en cas d'abus
+[#20](../../../issues/20) — Suspendre un compte (organisateur ou spectateur) en cas d'abus
 
 **En tant qu'**administrateur, je veux suspendre le compte d'un organisateur ou d'un spectateur afin de réagir à un abus signalé sans devoir supprimer le compte définitivement.
 
@@ -272,7 +272,7 @@ Un compte suspendu ne peut plus se connecter ; un message clair l'en informe à 
 Les événements et salles d'un organisateur suspendu suivent la règle décidée en équipe (visibles ou masqués aux spectateurs — à préciser dans 03-conception.md).
 Seul un administrateur peut suspendre ou réactiver un compte.
 
-#21 — Filtrer les événements par date ou lieu
+[#21](../../../issues/21) — Filtrer les événements par date ou lieu
 
 En tant que spectateur, je veux filtrer la liste des événements par date ou par lieu afin de trouver plus rapidement un événement qui m'intéresse quand la liste devient longue.
 
@@ -283,7 +283,7 @@ Je peux filtrer les événements par lieu (ou par salle).
 Les filtres peuvent être combinés.
 L'absence de résultat correspondant affiche un message clair plutôt qu'une liste vide sans explication.
 
-#22 — Voir des statistiques simples de vente par section
+[#22](../../../issues/22) — Voir des statistiques simples de vente par section
 
 **En tant qu'**organisateur, je veux voir des statistiques simples de vente ventilées par section tarifaire afin de comprendre quelles sections se vendent le mieux pour ajuster mes futurs événements.
 
