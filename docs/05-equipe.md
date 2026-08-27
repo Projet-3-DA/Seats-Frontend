@@ -62,6 +62,7 @@ Les règles :
 - Maximum 72 caractères
 - Le scope entre parenthèses correspond à tes labels de domaine (auth, ui, realtime, booking)
 - Jamais de fix stuff, wip, update seul — trop vague
+
 **Exemple de message**: feat(auth): Ajouter endpoint POST /register
 
 ### Règles de revue de code
