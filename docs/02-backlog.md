@@ -137,6 +137,7 @@ Dès qu'un spectateur clique sur un siège libre, tous les autres spectateurs co
 Un siège « en sélection » n'est pas cliquable par les autres spectateurs.
 Si le spectateur qui a sélectionné le siège ne confirme pas (annule ou quitte), le siège redevient visible comme libre pour tout le monde.
 La mise à jour utilise un mécanisme temps réel (ex. WebSocket), pas un rafraîchissement périodique par sondage agressif.
+
 #9 — Restreindre les actions selon mon rôle, vérifié côté serveur
 
 **En tant qu'**utilisateur du système (tout rôle), je veux que chaque action soit vérifiée selon mon rôle directement côté serveur afin de garantir qu'aucun utilisateur ne puisse contourner les restrictions en modifiant les requêtes envoyées au client.
@@ -147,6 +148,7 @@ Une requête tentant une action réservée à l'organisateur (ex. créer un év�
 Une requête réservée à l'administrateur est refusée pour un compte organisateur ou spectateur.
 Le refus renvoie un code d'erreur clair (403) sans révéler de détails sensibles sur le système.
 Les vérifications de rôle sont centralisées (middleware ou équivalent), pas dupliquées à la main dans chaque route.
+
 #10 — Modifier une salle existante tant qu'aucun événement ne l'utilise
 
 **En tant qu'**organisateur, je veux modifier la disposition d'une salle que j'ai créée, tant qu'aucun événement ne l'utilise encore, afin de corriger une erreur de configuration avant sa première utilisation.
@@ -157,6 +159,7 @@ Je peux modifier le nom et la disposition (rangées, sièges) d'une salle qui n'
 Une salle déjà associée à au moins un événement ne peut pas être modifiée ; un message explicite en indique la raison.
 Les modifications sont immédiatement reflétées dans le plan de la salle.
 Une salle vidée de tous ses sièges via l'édition ne peut pas être enregistrée (même règle qu'à la création).
+
 #11 — Configurer des sections à tarifs différents dans une salle
 
 **En tant qu'**organisateur, je veux diviser une salle en sections à tarifs différents (ex. parterre, balcon) afin de pouvoir vendre des places à des prix distincts selon leur emplacement.
@@ -167,6 +170,7 @@ Je peux assigner un groupe de sièges à une section nommée, avec un prix assoc
 Chaque siège appartient à une seule section à la fois.
 Le plan de salle affiche visuellement les sections (ex. par couleur) pour l'organisateur et pour le spectateur.
 Une salle sans section définie utilise un tarif unique par défaut.
+
 #12 — Annuler une réservation à venir
 
 En tant que spectateur, je veux annuler une réservation à venir afin de libérer mes sièges si je ne peux plus assister à l'événement.
@@ -177,6 +181,7 @@ Je peux annuler une réservation seulement si l'événement n'a pas encore eu li
 Une fois annulée, les sièges concernés redeviennent immédiatement disponibles pour les autres spectateurs.
 La réservation annulée est retirée de ma liste active de réservations (ou marquée comme annulée, selon le choix d'affichage retenu).
 Une tentative d'annuler une réservation qui ne m'appartient pas est refusée.
+
 #13 — Voir en direct l'état de vente d'un événement
 
 **En tant qu'**organisateur, je veux voir en direct l'état des ventes de mon événement afin de suivre combien de places sont vendues et lesquelles restent disponibles.
@@ -187,6 +192,7 @@ Le tableau de bord affiche le nombre de sièges vendus, en sélection, et libres
 Les chiffres se mettent à jour sans que je doive recharger la page.
 Je ne peux voir que les statistiques de mes propres événements.
 Le total affiché correspond en tout temps à l'état réel du plan de salle.
+
 #14 — Annuler une réservation en tant qu'organisateur
 
 **En tant qu'**organisateur, je veux pouvoir annuler la réservation d'un spectateur afin de résoudre un problème (erreur, abus, demande du spectateur) sans devoir intervenir directement en base de données.
@@ -208,6 +214,7 @@ La liste des organisateurs affiche au minimum leur nom et courriel, et le nombre
 La liste des événements affiche tous les événements, avec l'organisateur associé à chacun, sans filtre par mes propres créations.
 Un organisateur ou un spectateur ne peut pas accéder à cette vue.
 Cliquer sur un événement ou un organisateur permet d'en voir le détail.
+
 Récits du sprint 3 (avec critères d'acceptation)
 
 #15 — Voir mon siège redevenir libre si je ne confirme pas dans le délai
@@ -253,6 +260,7 @@ L'application est accessible via une URL publique fonctionnelle, sans configurat
 Le frontend et le backend communiquent correctement dans cet environnement déployé (pas seulement en local).
 Une mise à jour poussée sur la branche principale est déployée automatiquement, ou via une procédure documentée et reproductible.
 Les données créées sur l'environnement déployé persistent d'une session à l'autre.
+
 #20 — Suspendre un compte (organisateur ou spectateur) en cas d'abus
 
 **En tant qu'**administrateur, je veux suspendre le compte d'un organisateur ou d'un spectateur afin de réagir à un abus signalé sans devoir supprimer le compte définitivement.
@@ -274,6 +282,7 @@ Je peux filtrer les événements affichés par une plage de dates.
 Je peux filtrer les événements par lieu (ou par salle).
 Les filtres peuvent être combinés.
 L'absence de résultat correspondant affiche un message clair plutôt qu'une liste vide sans explication.
+
 #22 — Voir des statistiques simples de vente par section
 
 **En tant qu'**organisateur, je veux voir des statistiques simples de vente ventilées par section tarifaire afin de comprendre quelles sections se vendent le mieux pour ajuster mes futurs événements.
