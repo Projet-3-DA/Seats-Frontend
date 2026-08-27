@@ -197,6 +197,7 @@ Je peux annuler n'importe quelle réservation liée à un de mes événements, a
 Le siège annulé redevient disponible immédiatement.
 Le spectateur concerné voit sa réservation annulée dans son propre historique.
 Je ne peux pas annuler une réservation liée à l'événement d'un autre organisateur.
+
 #19 — Voir une vue globale des organisateurs et des événements de la plateforme
 
 **En tant qu'**administrateur, je veux voir la liste de tous les organisateurs inscrits et de tous les événements créés sur la plateforme, peu importe qui les a créés, afin de superviser l'ensemble de l'activité de la plateforme.
@@ -208,6 +209,7 @@ La liste des événements affiche tous les événements, avec l'organisateur ass
 Un organisateur ou un spectateur ne peut pas accéder à cette vue.
 Cliquer sur un événement ou un organisateur permet d'en voir le détail.
 Récits du sprint 3 (avec critères d'acceptation)
+
 #15 — Voir mon siège redevenir libre si je ne confirme pas dans le délai
 
 En tant que spectateur, je veux que mon siège sélectionné redevienne libre si je ne confirme pas ma réservation dans un délai raisonnable afin de ne pas bloquer un siège indéfiniment pour les autres si je change d'avis ou quitte la page.
@@ -218,6 +220,7 @@ Un siège passé en « sélection » redevient automatiquement « libre » si au
 Le spectateur voit un indicateur du temps restant avant l'expiration.
 Si le délai expire pendant la tentative de confirmation, celle-ci est refusée avec un message clair, et le spectateur doit resélectionner le siège.
 L'expiration du délai est vérifiée côté serveur, pas seulement dans l'interface du client.
+
 #16 — Empêcher deux confirmations simultanées sur le même siège
 
 En tant que spectateur, je veux avoir la certitude qu'un siège que je confirme ne peut pas être attribué à quelqu'un d'autre au même instant afin de éviter les doubles réservations que la plateforme est censée éliminer.
@@ -228,6 +231,7 @@ Si deux spectateurs tentent de confirmer le même siège au même moment, une se
 La garantie repose sur une contrainte au niveau de la base de données (ex. contrainte d'unicité ou verrou), pas seulement sur une vérification applicative contournable par une course de requêtes.
 Un test simulant des requêtes concurrentes confirme qu'aucun siège ne peut se retrouver associé à deux réservations actives.
 Le spectateur dont la confirmation échoue voit l'état à jour du siège sans devoir recharger manuellement.
+
 #17 — Resynchroniser mon affichage après une coupure de connexion
 
 En tant que spectateur, je veux que mon affichage se resynchronise automatiquement si ma connexion internet est interrompue puis rétablie afin de ne pas prendre de décision (réserver, confirmer) sur un plan de salle obsolète.
@@ -238,9 +242,10 @@ Après une coupure suivie d'une reconnexion, l'application détecte la reconnexi
 L'affichage des sièges reflète l'état réel après resynchronisation, y compris les changements survenus pendant la coupure.
 Un indicateur visuel informe le spectateur que la connexion a été perdue puis rétablie.
 Aucune action de réservation n'est possible tant que la resynchronisation n'est pas confirmée.
+
 #18 — Accéder à l'application déployée sur un serveur public
 
-**En tant qu'**utilisateur (tout rôle confondu), je veux accéder à l'application via une adresse publique afin de pouvoir l'utiliser sans dépendre de l'environnement de développement d'un membre de l'équipe.
+**En tant qu'utilisateur (tout rôle confondu), je veux accéder à l'application via une adresse publique afin de pouvoir l'utiliser sans dépendre de l'environnement de développement d'un membre de l'équipe.
 
 Critères d'acceptation
 
@@ -258,6 +263,7 @@ Je peux changer le statut d'un compte de « actif » à « suspendu », avec une
 Un compte suspendu ne peut plus se connecter ; un message clair l'en informe à la tentative de connexion.
 Les événements et salles d'un organisateur suspendu suivent la règle décidée en équipe (visibles ou masqués aux spectateurs — à préciser dans 03-conception.md).
 Seul un administrateur peut suspendre ou réactiver un compte.
+
 #21 — Filtrer les événements par date ou lieu
 
 En tant que spectateur, je veux filtrer la liste des événements par date ou par lieu afin de trouver plus rapidement un événement qui m'intéresse quand la liste devient longue.
