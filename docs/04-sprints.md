@@ -72,9 +72,9 @@ lister, etc.) — il n'y a donc pas de récit du sprint 1 qui puisse sauter
 sans casser l'objectif. Si nous prenons du retard, l'abandon se fait plutôt
 en **repoussant des récits entiers au sprint suivant**, dans cet ordre :
 
-1. #7 — Voir mes réservations : utile, mais l'objectif du sprint tient déjà
+1. [#7](../../../issues/7) — Voir mes réservations : utile, mais l'objectif du sprint tient déjà
    sans lui si la réservation elle-même (#6) fonctionne.
-2. #6 — Réserver un ou plusieurs sièges libres, *en dernier recours
+2.[#6](../../../issues/6) — Réserver un ou plusieurs sièges libres, *en dernier recours
    seulement* : sans lui, le sprint ne démontre plus rien d'utile au
    spectateur, mais il reste préférable de livrer un incrément partiel
    plutôt qu'un sprint vide.
