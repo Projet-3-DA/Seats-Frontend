@@ -101,4 +101,4 @@ Le journal est tenu dans [journal.md](journal.md) une entrée par bloc de cours
 | Oladé | ... |
 | Yanis | J'ai fait le [README](../README.md), [vision.md](01-vision.md), [equipe.md](05-equipe.md) et [risques.md](06-risques.md) |
 | Glodie | ... |
-| Delavie | ... |
+| Delavie | J'ai fait le [backlog.md](02-backlog.md) et [sprints.md](04-sprints.md) |
