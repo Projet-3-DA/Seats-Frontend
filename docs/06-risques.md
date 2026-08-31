@@ -13,3 +13,4 @@
 - Impact : Élevé - compromet directement l'exigence 6 du cours (« point de concurrence réel »), qui est explicitement vérifiée lors de la correction.
 - Signal d'alerte : un test automatisé simulant deux confirmations simultanées sur le même siège échoue (les deux réussissent, ou aucune ne réussit proprement), ou le bug est reproduit manuellement en ouvrant deux navigateurs.
 - Mesure d'atténuation : écrire le test automatisé de double confirmation simultanée avant le sprint 3 plutôt qu'à la toute fin, et l'intégrer à la chaîne CI dès qu'il existe. Le récit #15 fait l'objet d'une revue de code obligatoire par au moins deux membres de l'équipe, pas seulement l'auteur.
+

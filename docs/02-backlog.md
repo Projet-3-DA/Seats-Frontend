@@ -293,3 +293,4 @@ Pour un événement donné, je vois le nombre de sièges vendus et le revenu gé
 Les statistiques se basent sur les réservations confirmées uniquement, pas les sièges « en sélection ».
 Je ne vois les statistiques que pour mes propres événements.
 Une section sans aucune vente affiche clairement zéro plutôt que d'être omise.
+

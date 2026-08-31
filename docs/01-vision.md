@@ -40,3 +40,4 @@ Les organismes étudiants et les petites salles (théâtre étudiant, ciné-club
 | 7 | Tests automatisés à chaque poussée | GitHub Actions | Une chaîne CI exécute les tests (au minimum : logique de réservation, y compris le scénario de double clic simultané) à chaque poussée sur le dépôt. |
 | 8 | Déploiement sur un serveur | Serveur du département ou hébergeur externe (à préciser en cours de session) | L'application finale est accessible par une URL publique, pas seulement en local sur les portables de l'équipe. |
 ---
+

@@ -13,4 +13,3 @@ C'est une app web de réservation de places pour des projections de films. Un ut
 - [Equipe](./docs/05-equipe.md)
 - [Risques](./docs/06-risques.md)
 - [Journal](./docs/journal.md)
-

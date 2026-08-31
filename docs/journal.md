@@ -20,4 +20,3 @@
   - Configuration du projet GitHub Projects avec les colonnes : Backlog, En cours, En révision, Terminé.
   - Labels retenus : `feature`, `bug`, `chore`, `blocked`, `auth`, `ui`, `realtime`, `booking`, `devops`.
 
-  

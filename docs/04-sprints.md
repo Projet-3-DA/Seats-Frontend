@@ -84,3 +84,4 @@ négociables : sans eux, aucun autre récit du produit n'a de sens.
 
 Pour les sprints 2 et 3, l'ordre d'abandon suit MoSCoW en priorité : les
 `Should` (#21, #22) et le `Could` (#23) sautent avant tout récit `Must`.
+
