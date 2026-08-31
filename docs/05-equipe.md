@@ -88,7 +88,7 @@ Les règles de l'équipe à décider ensemble :
 - Minimum 1 approbation avant de merger (idéalement 2 sur les features critiques comme realtime et booking)
 - L'auteur de la PR ne merge jamais lui-même sans approbation
 - Un commentaire de review doit être résolu avant le merge — pas ignoré
-- Délai max pour reviewer : 24h pour ne pas b
+- Délai max pour reviewer : 24h pour ne pas bloquer l'avancement des autres
 
 # Journal
 
@@ -98,7 +98,7 @@ Le journal est tenu dans [journal.md](journal.md) une entrée par bloc de cours
 
 | Membre | Contributions à la soumission |
 |---|---|
-| Oladé | ... |
+| Oladé | J'ai rédigé les récits utilisateurs, créé et rempli les issues GitHub, ajouté les labels, organisé le tableau Kanban, et contribué aux autres livrables de l'équipe |
 | Yanis | J'ai fait le [README](../README.md), [vision.md](01-vision.md), [equipe.md](05-equipe.md) et [risques.md](06-risques.md) |
 | Glodie | J'ai fait le [conception.md](03-conception.md), le diagramme, ainsi que les maquettes
 | Delavie | J'ai fait le [backlog.md](02-backlog.md) et [sprints.md](04-sprints.md) |
