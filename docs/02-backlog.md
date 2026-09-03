@@ -55,12 +55,8 @@ Nous estimons en points de récit sur l'échelle 1, 2, 3, 5, 8. Notre récit de
 référence est *Voir la liste des événements à venir* ([#4](../../../issues/4)),
 décrété à **3 points** : lecture simple, une seule entité, pas d'écriture.
 
->À compléter en équipe** : décrivez ici un désaccord réel survenu en
-> planning poker (ex. un récit où les cartes divergeaient de plus d'un cran,
-> ce qui a été découvert en en discutant, et comment le récit a été découpé
-> ou réestimé en conséquence) — comme l'exemple du cours avec *Importer un
-> CSV bien formé*. Ce paragraphe doit raconter un désaccord vécu, pas
-> hypothétique.
+Lors du planning poker, Oladé a voté 5 en pensant seulement à la grille de sièges. Godie a voté 13 en incluant mentalement les sections tarifaires (#11). En discutant, on a réalisé que les deux récits se chevauchaient : #2 a été recadré comme « grille simple, sans tarifs », et les tarifs sont restés uniquement dans #11. Le vote a servi à détecter un chevauchement de portée, pas juste une différence d'évaluation de la difficulté.
+
 
 ## Récits du sprint 1 (avec critères d'acceptation)
 
