@@ -89,7 +89,12 @@ Nous estimons en points de récit sur l'échelle 1, 2, 3, 5, 8. Notre récit de
 référence est *Voir la liste des événements à venir* ([#4](../../../issues/4)),
 décrété à **3 points** : lecture simple, une seule entité, pas d'écriture.
 
-Lors du planning poker, Oladé a voté 5 en pensant seulement à la grille de sièges. Godie a voté 13 en incluant mentalement les sections tarifaires (#11). En discutant, on a réalisé que les deux récits se chevauchaient : #2 a été recadré comme « grille simple, sans tarifs », et les tarifs sont restés uniquement dans #11. Le vote a servi à détecter un chevauchement de portée, pas juste une différence d'évaluation de la difficulté.
+>À compléter en équipe** : décrivez ici un désaccord réel survenu en
+> planning poker (ex. un récit où les cartes divergeaient de plus d'un cran,
+> ce qui a été découvert en en discutant, et comment le récit a été découpé
+> ou réestimé en conséquence) — comme l'exemple du cours avec *Importer un
+> CSV bien formé*. Ce paragraphe doit raconter un désaccord vécu, pas
+> hypothétique.
 
 ## Récits du sprint 1 (avec critères d'acceptation)
 
@@ -154,7 +159,13 @@ Lors du planning poker, Oladé a voté 5 en pensant seulement à la grille de si
 *Dépend de : #3, #2*
 
 ### [#4](../../../issues/4) — Voir la liste des événements à venir
-*(inchangé — voir version précédente du backlog)*
+**En tant que** spectateur, **je veux** voir la liste des événements à venir **afin de** choisir celui auquel je veux assister.
+
+**Critères d'acceptation**
+- La liste affiche au minimum le titre, la date et le lieu de chaque événement.
+- Seuls les événements dont la date n'est pas passée sont affichés.
+- Cliquer sur un événement m'amène à son plan de salle.
+- La liste est vide (avec un message clair) si aucun événement n'est à venir.
 
 ### [#5](../../../issues/5) — Afficher le plan de salle avec l'état des sièges au chargement
 **En tant que** spectateur, **je veux** voir le plan de la salle d'un événement avec l'état de chaque siège au chargement de la page **afin de** savoir lesquels sont disponibles.
@@ -195,7 +206,12 @@ Lors du planning poker, Oladé a voté 5 en pensant seulement à la grille de si
 *Dépend de : #6*
 
 ### [#7](../../../issues/7) — Voir mes réservations
-*(inchangé — voir version précédente du backlog)*
+**En tant que** spectateur, **je veux** voir la liste de mes réservations **afin de** retrouver mes places pour mes événements à venir.
+
+**Critères d'acceptation**
+- La liste affiche, pour chaque réservation, l'événement, la date et les sièges réservés.
+- Seules mes propres réservations apparaissent.
+- Une réservation pour un événement passé est indiquée comme telle (ex. libellé « terminé »).
 
 ## Récits du sprint 2 (avec critères d'acceptation)
 
@@ -240,7 +256,13 @@ Lors du planning poker, Oladé a voté 5 en pensant seulement à la grille de si
 *Dépend de : #9*
 
 ### [#10](../../../issues/10) — Modifier une salle existante tant qu'aucun événement ne l'utilise
-*(inchangé — voir version précédente du backlog)*
+**En tant qu'**organisateur, **je veux** modifier la disposition d'une salle que j'ai créée, tant qu'aucun événement ne l'utilise encore, **afin de** corriger une erreur de configuration avant sa première utilisation.
+
+**Critères d'acceptation**
+- Je peux modifier le nom et la disposition (rangées, sièges) d'une salle qui n'est associée à aucun événement.
+- Une salle déjà associée à au moins un événement ne peut pas être modifiée ; un message explicite en indique la raison.
+- Les modifications sont immédiatement reflétées dans le plan de la salle.
+- Une salle vidée de tous ses sièges via l'édition ne peut pas être enregistrée (même règle qu'à la création).
 
 ### [#11](../../../issues/11) — Créer des sections nommées avec prix et assigner des sièges
 **En tant qu'**organisateur, **je veux** diviser une salle en sections nommées à tarifs différents **afin de** pouvoir vendre des places à des prix distincts selon leur emplacement.
@@ -259,7 +281,13 @@ Lors du planning poker, Oladé a voté 5 en pensant seulement à la grille de si
 *Dépend de : #11*
 
 ### [#12](../../../issues/12) — Annuler une réservation à venir
-*(inchangé — voir version précédente du backlog)*
+**En tant que** spectateur, **je veux** annuler une réservation à venir **afin de** libérer mes sièges si je ne peux plus assister à l'événement.
+
+**Critères d'acceptation**
+- Je peux annuler une réservation seulement si l'événement n'a pas encore eu lieu.
+- Une fois annulée, les sièges concernés redeviennent immédiatement disponibles pour les autres spectateurs.
+- La réservation annulée est retirée de ma liste active de réservations (ou marquée comme annulée, selon le choix d'affichage retenu).
+- Une tentative d'annuler une réservation qui ne m'appartient pas est refusée.
 
 ### [#13](../../../issues/13) — Afficher le tableau de bord des ventes (chargement initial)
 **En tant qu'**organisateur, **je veux** voir l'état des ventes de mon événement au chargement de la page **afin de** suivre combien de places sont vendues et disponibles.
@@ -278,7 +306,13 @@ Lors du planning poker, Oladé a voté 5 en pensant seulement à la grille de si
 *Dépend de : #13, #8*
 
 ### [#14](../../../issues/14) — Annuler une réservation en tant qu'organisateur
-*(inchangé — voir version précédente du backlog)*
+**En tant qu'**organisateur, **je veux** pouvoir annuler la réservation d'un spectateur **afin de** résoudre un problème (erreur, abus, demande du spectateur) sans devoir intervenir directement en base de données.
+
+**Critères d'acceptation**
+- Je peux annuler n'importe quelle réservation liée à un de mes événements, avec un motif optionnel.
+- Le siège annulé redevient disponible immédiatement.
+- Le spectateur concerné voit sa réservation annulée dans son propre historique.
+- Je ne peux pas annuler une réservation liée à l'événement d'un autre organisateur.
 
 ### [#19](../../../issues/19) — Liste globale des organisateurs (admin)
 **En tant qu'**administrateur, **je veux** voir la liste de tous les organisateurs inscrits **afin de** superviser l'ensemble de l'activité de la plateforme.
@@ -355,7 +389,13 @@ Lors du planning poker, Oladé a voté 5 en pensant seulement à la grille de si
 *Dépend de : #17*
 
 ### [#18](../../../issues/18) — Accéder à l'application déployée sur un serveur public
-*(inchangé — voir version précédente du backlog)*
+**En tant qu'**utilisateur (tout rôle confondu), **je veux** accéder à l'application via une adresse publique **afin de** pouvoir l'utiliser sans dépendre de l'environnement de développement d'un membre de l'équipe.
+
+**Critères d'acceptation**
+- L'application est accessible via une URL publique fonctionnelle, sans configuration locale requise.
+- Le frontend et le backend communiquent correctement dans cet environnement déployé (pas seulement en local).
+- Une mise à jour poussée sur la branche principale est déployée automatiquement, ou via une procédure documentée et reproductible.
+- Les données créées sur l'environnement déployé persistent d'une session à l'autre.
 
 ### [#20](../../../issues/20) — Suspendre/réactiver un compte (admin)
 **En tant qu'**administrateur, **je veux** suspendre le compte d'un organisateur ou d'un spectateur **afin de** réagir à un abus signalé sans supprimer le compte définitivement.
@@ -374,7 +414,19 @@ Lors du planning poker, Oladé a voté 5 en pensant seulement à la grille de si
 *Dépend de : #20*
 
 ### [#21](../../../issues/21) — Filtrer les événements par date ou lieu
-*(inchangé — voir version précédente du backlog)*
+**En tant que** spectateur, **je veux** filtrer la liste des événements par date ou par lieu **afin de** trouver plus rapidement un événement qui m'intéresse quand la liste devient longue.
+
+**Critères d'acceptation**
+- Je peux filtrer les événements affichés par une plage de dates.
+- Je peux filtrer les événements par lieu (ou par salle).
+- Les filtres peuvent être combinés.
+- L'absence de résultat correspondant affiche un message clair plutôt qu'une liste vide sans explication.
 
 ### [#22](../../../issues/22) — Voir des statistiques simples de vente par section
-*(inchangé — voir version précédente du backlog)*
+**En tant qu'**organisateur, **je veux** voir des statistiques simples de vente ventilées par section tarifaire **afin de** comprendre quelles sections se vendent le mieux pour ajuster mes futurs événements.
+
+**Critères d'acceptation**
+- Pour un événement donné, je vois le nombre de sièges vendus et le revenu généré par section.
+- Les statistiques se basent sur les réservations confirmées uniquement, pas les sièges « en sélection ».
+- Je ne vois les statistiques que pour mes propres événements.
+- Une section sans aucune vente affiche clairement zéro plutôt que d'être omise.
