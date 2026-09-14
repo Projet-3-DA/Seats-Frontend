@@ -96,19 +96,40 @@ Contrainte : Si statut = 'confirmee', date_confirmation est non nul
 
 
 ## 3. Maquettes
-### Maquettes 1 :  Plan de Salle Interactif
-web application/stitch/projects/9980555165584792108/screens/7b73fea5078042939b2cff1ed3931826<img width="1600" height="1436" alt="image" src="https://github.com/user-attachments/assets/27505a03-07cf-48e0-9e6b-d16b1f61dca7" />
+### Maquettes 1 :  Pages Inscription
+<img width="390" height="844" alt="mobile-register" src="https://github.com/user-attachments/assets/f6e78ff2-3633-44bc-bbc1-35ec288b3967" />
 
-### Maquettes 2 :  Dashboard Organisateur
-web application/stitch/projects/9980555165584792108/screens/60e0874d4d374059afca118257d45beb<img width="1600" height="1398" alt="image" src="https://github.com/user-attachments/assets/61179acb-4d39-4654-a6fa-22039625e114" />
+### Maquettes 2 :  Pages Connexion
+<img width="390" height="844" alt="mobile-login" src="https://github.com/user-attachments/assets/c05a8423-387f-4179-9a5d-7864ef75d40e" />
 
-### Maquettes 3 :  Confirmation de Réservation
-web application/stitch/projects/9980555165584792108/screens/7585926d30ad428db356a44b95769255<img width="1600" height="1397" alt="image" src="https://github.com/user-attachments/assets/a9d3dd5c-680a-4019-8a87-5c0d08c83df0" />
+### Maquettes 3 :  Listes des évenements
+<img width="390" height="1910" alt="mobile-events-list" src="https://github.com/user-attachments/assets/47d5ae88-61d1-4892-a9e6-42e37f59b8d7" />
 
-### Maquettes 4 :  Dashboard Spectateur
-web application/stitch/projects/9980555165584792108/screens/c1e26c9b0df74c51993d7c5505e8e5b1<img width="1600" height="1349" alt="image" src="https://github.com/user-attachments/assets/6615eb28-466e-433e-a99a-988a09a2bf55" />
+### Maquettes 4 :  Plan de Salle Interactif
+<img width="398" height="850" alt="mobile-seat-map" src="https://github.com/user-attachments/assets/db22a42a-d9a5-4c14-b5d5-22d81f280396" />
 
+### Maquettes 5 :  Confirmation de Réservation
+<img width="390" height="844" alt="mobile-booking-confirmation" src="https://github.com/user-attachments/assets/9fc69dce-f01c-4f6c-b72c-6fc6bea9e17c" />
 
+### Maquettes 6 :  Pages Mes Réservations
+<img width="390" height="844" alt="mobile-my-reservations" src="https://github.com/user-attachments/assets/a91c2912-1006-461e-8ea0-61df948813d2" />
+
+### Maquettes 7 :  Dashboard Organisateur
+<img width="390" height="987" alt="mobile-organizer-dashboard" src="https://github.com/user-attachments/assets/29c9f8dd-44af-4ceb-ad5f-d29ab20cf128" />
+
+### Maquettes 8 :  Création d'un Évènement
+<img width="390" height="955" alt="mobile-create-event" src="https://github.com/user-attachments/assets/9063cf17-d643-42ad-aa8b-46ae65c4933e" />
+
+### Maquettes 9 :  Créer une Salle
+<img width="390" height="844" alt="mobile-create-room" src="https://github.com/user-attachments/assets/c6760a59-f0bb-4dbf-8935-05ddca0eb1f3" />
+
+### Maquettes 10 :  Dashboard Admin
+<img width="390" height="844" alt="mobile-admin-dashboard" src="https://github.com/user-attachments/assets/5cbe8f39-415e-4d99-8e73-2b89ff457e9d" />
+
+### Maquettes 11 :  Dashboard Admin confirmation
+<img width="390" height="844" alt="mobile-admin-dashboard-confirm" src="https://github.com/user-attachments/assets/f35cfbdc-3034-4579-bca0-ba37aa12ec47" />
+
+ 
 ## 4. Registre de Décisions Techniques
  
 ### Décision 1 : Authentification — JWT vs Session
