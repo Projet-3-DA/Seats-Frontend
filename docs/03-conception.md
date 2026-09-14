@@ -97,37 +97,37 @@ Contrainte : Si statut = 'confirmee', date_confirmation est non nul
 
 ## 3. Maquettes
 ### Maquettes 1 :  Pages Inscription
-<img width="390" height="844" alt="mobile-register" src="https://github.com/user-attachments/assets/f6e78ff2-3633-44bc-bbc1-35ec288b3967" />
+<img width="390" height="844" alt="mobile-register" src="maquettes/mobile-register.png" />
 
 ### Maquettes 2 :  Pages Connexion
-<img width="390" height="844" alt="mobile-login" src="https://github.com/user-attachments/assets/c05a8423-387f-4179-9a5d-7864ef75d40e" />
+<img width="390" height="844" alt="mobile-login" src="maquettes/mobile-login.png" />
 
 ### Maquettes 3 :  Listes des évenements
-<img width="390" height="1910" alt="mobile-events-list" src="https://github.com/user-attachments/assets/47d5ae88-61d1-4892-a9e6-42e37f59b8d7" />
+<img width="390" height="1910" alt="mobile-events-list" src="maquettes/mobile-events-list.png" />
 
 ### Maquettes 4 :  Plan de Salle Interactif
-<img width="398" height="850" alt="mobile-seat-map" src="https://github.com/user-attachments/assets/db22a42a-d9a5-4c14-b5d5-22d81f280396" />
+<img width="398" height="850" alt="mobile-seat-map" src="maquettes/mobile-seat-map.png" />
 
 ### Maquettes 5 :  Confirmation de Réservation
-<img width="390" height="844" alt="mobile-booking-confirmation" src="https://github.com/user-attachments/assets/9fc69dce-f01c-4f6c-b72c-6fc6bea9e17c" />
+<img width="390" height="844" alt="mobile-booking-confirmation" src="maquettes/mobile-booking-confirmation.png" />
 
 ### Maquettes 6 :  Pages Mes Réservations
-<img width="390" height="844" alt="mobile-my-reservations" src="https://github.com/user-attachments/assets/a91c2912-1006-461e-8ea0-61df948813d2" />
+<img width="390" height="844" alt="mobile-my-reservations" src="maquettes/mobile-my-reservations.png" />
 
 ### Maquettes 7 :  Dashboard Organisateur
-<img width="390" height="987" alt="mobile-organizer-dashboard" src="https://github.com/user-attachments/assets/29c9f8dd-44af-4ceb-ad5f-d29ab20cf128" />
+<img width="390" height="987" alt="mobile-organizer-dashboard" src="maquettes/mobile-organizer-dashboard.png" />
 
 ### Maquettes 8 :  Création d'un Évènement
-<img width="390" height="955" alt="mobile-create-event" src="https://github.com/user-attachments/assets/9063cf17-d643-42ad-aa8b-46ae65c4933e" />
+<img width="390" height="955" alt="mobile-create-event" src="maquettes/mobile-create-event.png" />
 
 ### Maquettes 9 :  Créer une Salle
-<img width="390" height="844" alt="mobile-create-room" src="https://github.com/user-attachments/assets/c6760a59-f0bb-4dbf-8935-05ddca0eb1f3" />
+<img width="390" height="844" alt="mobile-create-room" src="maquettes/mobile-create-room.png" />
 
 ### Maquettes 10 :  Dashboard Admin
-<img width="390" height="844" alt="mobile-admin-dashboard" src="https://github.com/user-attachments/assets/5cbe8f39-415e-4d99-8e73-2b89ff457e9d" />
+<img width="390" height="844" alt="mobile-admin-dashboard" src="maquettes/mobile-admin-dashboard.png" />
 
 ### Maquettes 11 :  Dashboard Admin confirmation
-<img width="390" height="844" alt="mobile-admin-dashboard-confirm" src="https://github.com/user-attachments/assets/f35cfbdc-3034-4579-bca0-ba37aa12ec47" />
+<img width="390" height="844" alt="mobile-admin-dashboard-confirm" src="maquettes/mobile-admin-dashboard-confirm.png" />
 
  
 ## 4. Registre de Décisions Techniques
