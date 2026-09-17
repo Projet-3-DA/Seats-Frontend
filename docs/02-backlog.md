@@ -213,6 +213,17 @@ décrété à **3 points** : lecture simple, une seule entité, pas d'écriture.
 - Seules mes propres réservations apparaissent.
 - Une réservation pour un événement passé est indiquée comme telle (ex. libellé « terminé »).
 
+  ### #42 — Naviguer entre les pages via une barre de navigation commune
+**En tant qu'**utilisateur (tout rôle), je veux une barre de navigation commune à toutes les pages afin de me déplacer facilement dans l'application sans devoir connaître ou taper les URLs.
+
+**Critères d'acceptation**
+- Une barre de navigation persistante est visible sur toutes les pages de l'application.
+- Les liens affichés correspondent aux pages déjà livrées (ex. liste des événements, mes réservations, mes salles) et s'ajoutent au fur et à mesure que de nouvelles pages sont livrées dans les sprints suivants.
+- Cliquer sur un lien m'amène à la page correspondante sans recharger complètement l'application.
+- Un utilisateur non connecté ne voit que les liens accessibles sans compte (ex. liste des événements).
+
+Dépend de : #1, #3, #4, #6, #7
+
 ## Récits du sprint 2 (avec critères d'acceptation)
 
 ### [#8](../../../issues/8) — Diffuser en temps réel la sélection d'un siège (WebSocket)
