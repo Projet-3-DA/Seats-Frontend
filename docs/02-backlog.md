@@ -70,7 +70,7 @@ numéro réel attribué par GitHub à la création.
 | [#36](../../../issues/36) | Liste globale des événements + détail au clic | Administration | 2 | 2 |
 | [#20](../../../issues/20) | Suspendre/réactiver un compte (admin) | Administration | 3 | 3 |
 | [#41](../../../issues/41) | Bloquer la connexion d'un compte suspendu + règle de visibilité | Administration | 2 | 3 |
-
+| [#42](../../../issues/42) | Naviguer entre les pages via une barre de navigation commune | Infrastructure | 2 | 1 |
 ## Les récits `should` et `could`
 
 | # | Récit | Épique | MoSCoW | Points | Sprint |
