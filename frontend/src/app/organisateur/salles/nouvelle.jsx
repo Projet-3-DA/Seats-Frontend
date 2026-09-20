@@ -2,6 +2,7 @@ import { useRouter } from 'expo-router';
 import { useMemo, useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, TextInput, useWindowDimensions, View } from 'react-native';
 
+import { API_URL } from '@/constants/api';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { MaxContentWidth } from '@/constants/theme';
@@ -11,6 +12,9 @@ import { useTheme } from '@/hooks/use-theme';
 const MAX_APERCU = 26;
 // ponytail: seuil arbitraire desktop/mobile, à raffiner si un vrai design system de breakpoints arrive.
 const DESKTOP_BREAKPOINT = 700;
+// ponytail: pas d'auth branchée côté frontend (récit #1 pas fait) donc pas d'ID d'organisateur réel.
+// À remplacer par l'utilisateur connecté une fois le login en place.
+const DEMO_ORGANISATEUR_ID = 1;
 
 function toCount(value) {
   const n = parseInt(value, 10);
@@ -30,6 +34,8 @@ export default function NouvelleSalleScreen() {
   const [nom, setNom] = useState('Studio Multimédia Cégep');
   const [rangees, setRangees] = useState('5');
   const [siegesParRangee, setSiegesParRangee] = useState('10');
+  const [saving, setSaving] = useState(false);
+  const [apiError, setApiError] = useState('');
 
   const nbRangees = toCount(rangees);
   const nbSieges = toCount(siegesParRangee);
@@ -48,10 +54,31 @@ export default function NouvelleSalleScreen() {
     [nbSieges],
   );
 
-  function handleEnregistrer() {
-    if (!isValid) return;
-    // Sera remplacé par un appel à l'API (`POST /api/salles`, récit #2).
-    router.back();
+  async function handleEnregistrer() {
+    if (!isValid || saving) return;
+    setSaving(true);
+    setApiError('');
+    try {
+      const res = await fetch(`${API_URL}/salles`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          organisateurId: DEMO_ORGANISATEUR_ID,
+          nom: nom.trim(),
+          nombreRangees: nbRangees,
+          siegesParRangee: nbSieges,
+        }),
+      });
+      const json = await res.json();
+      if (!res.ok || !json.success) {
+        throw new Error(json.error || 'Échec de la création de la salle.');
+      }
+      router.back();
+    } catch (err) {
+      setApiError(err.message || 'Échec de la création de la salle.');
+    } finally {
+      setSaving(false);
+    }
   }
 
   return (
@@ -109,18 +136,24 @@ export default function NouvelleSalleScreen() {
                   Le nom de la salle est requis.
                 </ThemedText>
               )}
+              {apiError.length > 0 && (
+                <ThemedText type="small" style={styles.error}>
+                  {apiError}
+                </ThemedText>
+              )}
 
               <Pressable
                 onPress={handleEnregistrer}
-                disabled={!isValid}
-                style={[styles.button, { backgroundColor: theme.primary, opacity: isValid ? 1 : 0.5 }]}
+                disabled={!isValid || saving}
+                style={[styles.button, { backgroundColor: theme.primary, opacity: isValid && !saving ? 1 : 0.5 }]}
               >
                 <ThemedText type="smallBold" style={styles.buttonTextPrimary}>
-                  Enregistrer la salle
+                  {saving ? 'Enregistrement…' : 'Enregistrer la salle'}
                 </ThemedText>
               </Pressable>
               <Pressable
                 onPress={() => router.back()}
+                disabled={saving}
                 style={[styles.button, styles.buttonSecondary, { borderColor: theme.border }]}
               >
                 <ThemedText type="smallBold">Annuler</ThemedText>
@@ -186,7 +219,7 @@ export default function NouvelleSalleScreen() {
 }
 
 const styles = StyleSheet.create({
-  seatsView: {paddingBottom: 8},
+  seatsView: { paddingBottom: 8 },
   scroll: { flexGrow: 1 },
   page: { flex: 1, alignItems: 'center', padding: 24 },
   wrapper: { width: '100%', gap: 16 },
