@@ -26,6 +26,16 @@ function isLienHttp(value) {
   }
 }
 
+// Sans fichier ni lien, on prend une image aléatoire de picsum.photos. Avec /seed/<graine>, la même
+// graine redonne toujours la même image : sans graine, l'adresse en renverrait une autre à chaque affichage.
+function nouvelleGraine() {
+  return `${Date.now().toString(36)}${Math.random().toString(36).slice(2, 8)}`;
+}
+
+function urlImageAleatoire(graine) {
+  return `https://picsum.photos/seed/${graine}/600/900`;
+}
+
 // ponytail: pas de sélecteur de date natif installé, on saisit la date et l'heure en texte
 // (JJ/MM/AAAA et HH:MM). À remplacer par un vrai date picker si l'équipe en choisit un.
 function parseDateHeure(dateTexte, heureTexte) {
@@ -39,6 +49,12 @@ function parseDateHeure(dateTexte, heureTexte) {
   // new Date() "déborde" (31/02 devient 03/03) : on vérifie que la date n'a pas bougé.
   const inchangee = date.getFullYear() === annee && date.getMonth() === mois - 1 && date.getDate() === jour;
   return inchangee ? date : null;
+}
+
+// Accepte "25", "25,5" ou "25.50" : 6 chiffres avant la virgule et 2 après au plus (Decimal(8,2) en base).
+function parseTarif(texte) {
+  const t = texte.trim().replace(',', '.');
+  return /^\d{1,6}(\.\d{1,2})?$/.test(t) ? Number(t) : null;
 }
 
 function capaciteSalle(salle) {
@@ -69,6 +85,8 @@ export default function NouvelEvenementScreen() {
   const [heure, setHeure] = useState('');
   const [fichier, setFichier] = useState(null);
   const [lien, setLien] = useState('');
+  const [graine, setGraine] = useState(null);
+  const [tarifTexte, setTarifTexte] = useState('');
   const [salleId, setSalleId] = useState(null);
   const [menuOuvert, setMenuOuvert] = useState(false);
   const [tentative, setTentative] = useState(false);
@@ -78,6 +96,10 @@ export default function NouvelEvenementScreen() {
   const [salles, setSalles] = useState([]);
   const [sallesLoading, setSallesLoading] = useState(true);
   const [sallesError, setSallesError] = useState('');
+
+  useEffect(() => {
+    setGraine(nouvelleGraine());
+  }, []);
 
   useEffect(() => {
     let cancelled = false;
@@ -104,6 +126,8 @@ export default function NouvelEvenementScreen() {
   const salle = salles.find((s) => s.id === salleId);
   const dateHeure = parseDateHeure(date, heure);
   const dateVide = date.trim().length === 0 || heure.trim().length === 0;
+  const tarif = parseTarif(tarifTexte);
+  const tarifVide = tarifTexte.trim().length === 0;
   const erreurs = {
     titre: titre.trim().length === 0 ? 'Le titre est requis.' : '',
     date: dateVide
@@ -114,10 +138,18 @@ export default function NouvelEvenementScreen() {
           ? 'Cette date est déjà passée.'
           : '',
     salle: salleId === null ? "Choisissez une salle pour l'événement." : '',
+    tarif: tarifVide ? 'Le tarif est requis (0 si gratuit).' : tarif === null ? 'Montant invalide (ex. 25 ou 25,50).' : '',
     affiche: lien.trim().length > 0 && !isLienHttp(lien.trim()) ? 'Le lien doit commencer par http:// ou https://.' : '',
   };
-  const isValid = !erreurs.titre && !erreurs.date && !erreurs.salle && !erreurs.affiche;
-  const apercuAffiche = fichier ? fichier.uri : isLienHttp(lien.trim()) ? lien.trim() : null;
+  const isValid = !erreurs.titre && !erreurs.date && !erreurs.salle && !erreurs.tarif && !erreurs.affiche;
+  const lienValide = isLienHttp(lien.trim());
+  const apercuAffiche = fichier
+    ? fichier.uri
+    : lienValide
+      ? lien.trim()
+      : lien.trim().length === 0 && graine
+        ? urlImageAleatoire(graine)
+        : null;
 
   async function handleChoisirFichier() {
     try {
@@ -156,7 +188,9 @@ export default function NouvelEvenementScreen() {
     setSaving(true);
     setApiError('');
     try {
-      const afficheUrl = fichier ? await televerserAffiche() : lien.trim();
+      const afficheUrl = fichier
+        ? await televerserAffiche()
+        : lien.trim() || urlImageAleatoire(graine ?? nouvelleGraine());
       const res = await fetch(`${API_URL}/evenements`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -166,6 +200,7 @@ export default function NouvelEvenementScreen() {
           titre: titre.trim(),
           description: description.trim(),
           dateHeure: dateHeure.toISOString(),
+          tarif,
           afficheUrl,
         }),
       });
@@ -251,9 +286,9 @@ export default function NouvelEvenementScreen() {
                       style={inputStyle}
                     />
                   )}
-                  {!apercuAffiche && (
+                  {!fichier && lien.trim().length === 0 && (
                     <ThemedText type="small" themeColor="textSecondary">
-                      Sans image, l'affiche par défaut sera utilisée.
+                      Sans fichier ni lien, une image aléatoire sera utilisée.
                     </ThemedText>
                   )}
                 </View>
@@ -335,6 +370,20 @@ export default function NouvelEvenementScreen() {
                   )}
                 </View>
               )}
+            </Champ>
+
+            <Champ label="Tarif unique de la place ($ CAD)" erreur={tentative || !tarifVide ? erreurs.tarif : ''}>
+              <View style={[styles.iconInput, { borderColor: theme.border }]}>
+                <Feather name="dollar-sign" size={16} color={theme.textSecondary} />
+                <TextInput
+                  value={tarifTexte}
+                  onChangeText={setTarifTexte}
+                  placeholder="25,00"
+                  placeholderTextColor={theme.textSecondary}
+                  keyboardType="decimal-pad"
+                  style={[styles.iconInputText, { color: theme.text }]}
+                />
+              </View>
             </Champ>
 
             {apiError.length > 0 && (
