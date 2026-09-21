@@ -21,6 +21,10 @@ function toCount(value) {
   return Number.isNaN(n) || n < 0 ? 0 : n;
 }
 
+function onlyDigits(value) {
+  return value.replace(/[^0-9]/g, '');
+}
+
 function rowLabel(index) {
   return index < 26 ? String.fromCharCode(65 + index) : String(index + 1);
 }
@@ -110,7 +114,7 @@ export default function NouvelleSalleScreen() {
                   <ThemedText type="smallBold">Rangées</ThemedText>
                   <TextInput
                     value={rangees}
-                    onChangeText={setRangees}
+                    onChangeText={(v) => setRangees(onlyDigits(v))}
                     keyboardType="number-pad"
                     style={[styles.input, { borderColor: theme.border, color: theme.text }]}
                   />
@@ -119,7 +123,7 @@ export default function NouvelleSalleScreen() {
                   <ThemedText type="smallBold">Sièges / Rangée</ThemedText>
                   <TextInput
                     value={siegesParRangee}
-                    onChangeText={setSiegesParRangee}
+                    onChangeText={(v) => setSiegesParRangee(onlyDigits(v))}
                     keyboardType="number-pad"
                     style={[styles.input, { borderColor: theme.border, color: theme.text }]}
                   />
