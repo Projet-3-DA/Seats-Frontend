@@ -6,6 +6,8 @@ import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { useTheme } from '@/hooks/use-theme';
 
+const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[a-zA-Z]{2,}$/;
+
 export default function RegisterScreen() {
   const theme = useTheme();
   const router = useRouter();
@@ -15,8 +17,21 @@ export default function RegisterScreen() {
   const [lastName, setLastName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [errors, setErrors] = useState({});
 
   function handleSubmit() {
+    const nextErrors = {};
+    if (!EMAIL_REGEX.test(email)) {
+      nextErrors.email = 'Adresse email invalide (ex: nom@domaine.com)';
+    }
+    if (password.length < 8) {
+      nextErrors.password = 'Le mot de passe doit contenir au moins 8 caractères';
+    }
+    setErrors(nextErrors);
+    if (Object.keys(nextErrors).length > 0) {
+      return;
+    }
+
     // TODO: brancher sur l'API d'inscription (récit #1)
     router.push('/(tabs)/events');
   }
@@ -67,21 +82,37 @@ export default function RegisterScreen() {
             </ThemedText>
             <Input
               value={email}
-              onChangeText={setEmail}
+              onChangeText={(text) => {
+                setEmail(text);
+                setErrors((prev) => ({ ...prev, email: undefined }));
+              }}
               placeholder="votre@email.com"
               keyboardType="email-address"
               autoCapitalize="none"
             />
+            {errors.email && (
+              <ThemedText type="small" themeColor="error">
+                {errors.email}
+              </ThemedText>
+            )}
 
             <ThemedText type="small" style={styles.label}>
               Mot de passe
             </ThemedText>
             <Input
               value={password}
-              onChangeText={setPassword}
+              onChangeText={(text) => {
+                setPassword(text);
+                setErrors((prev) => ({ ...prev, password: undefined }));
+              }}
               placeholder="Minimum 8 caractères"
               secureTextEntry
             />
+            {errors.password && (
+              <ThemedText type="small" themeColor="error">
+                {errors.password}
+              </ThemedText>
+            )}
 
             <Pressable style={[styles.submit, { backgroundColor: theme.primary }]} onPress={handleSubmit}>
               <ThemedText type="smallBold" themeColor="primaryText">
