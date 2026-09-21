@@ -38,13 +38,12 @@
 - **Avancé** :
   - Terminé (fusionné dans `main`) :
     - #4 — Voir la liste des événements à venir, par Yanis (PR #43, frontend).
-    - #2 — Créer une salle, par Yanis : création avec génération des sièges (PR #1, backend) ; la page de création de salle est déjà dans `main` côté frontend.
+    - #2 — Créer une salle, par Yanis : création avec génération des sièges (PR #1, backend) ; la page de création de salle est déjà dans `main` côté frontend, avec son correctif de saisie (lettres refusées dans les champs de rangées et de colonnes, PR #47).
     - #3 et #29 — Créer un événement et lui attribuer une salle existante, par Junior (PR #44 frontend, PR #2 backend) : formulaire avec affiche (fichier ou lien), le fichier étant envoyé vers Supabase Storage.
   - En révision (branches poussées, en attente de fusion) :
     - #3 et #29 (suite), par Junior — tarif de la place et image aléatoire par défaut quand aucune affiche n'est fournie (`feature/3-creer-evenement-attribuer-salle`, backend et frontend).
     - #5 — Afficher le plan de salle avec l'état des sièges, par Delavie (`feature/5-plan-salle`, backend et frontend).
     - #1 — Créer un compte, par Glodie : page d'inscription avec validation de l'email et du mot de passe (`feature/1-créer-un-compte`, frontend seulement pour l'instant).
-    - #2 (correctif), par Yanis — Empêcher la saisie de lettres dans les champs de rangées et de colonnes (`feature/2-page-creation-de-salles`).
 - **Blocage** :
   - Le schéma initial ne prévoyait ni affiche ni tarif pour un événement (le tarif figure pourtant dans la maquette du formulaire de création).
   - Tant que les migrations Prisma n'étaient pas appliquées à la base Supabase partagée, la création d'un événement échouait (colonne inexistante).
