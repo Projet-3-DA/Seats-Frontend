@@ -39,3 +39,32 @@ jobs:
       # Vérifie que l'app se construit toujours (SSR web), sans lancer le serveur ni le backend.
       - name: Construire le bundle web
         run: npx expo export -p web
+
+  # Construit l'image Docker et la publie sur ghcr.io. Ne tourne que si "test" a réussi, et seulement
+  # sur un push direct sur main (pas sur les PR) — même schéma que le backend.
+  image:
+    needs: test
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write # publier dans ghcr.io
+    steps:
+      - uses: actions/checkout@v4
+
+      # GITHUB_TOKEN est fourni par GitHub à chaque exécution : pas de secret à créer. Le nom du
+      # propriétaire doit être en minuscules pour ghcr.io.
+      - name: Se connecter au registre
+        run: echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u "${{ github.actor }}" --password-stdin
+
+      # Deux tags : `latest`, qui bouge à chaque push, et `sha-xxxxxxx`, figé.
+      - name: Construire et publier l'image
+        run: |
+          OWNER=${GITHUB_REPOSITORY_OWNER,,}
+          SHA=sha-${GITHUB_SHA::7}
+
+          docker build -f frontend/Dockerfile \
+            -t ghcr.io/$OWNER/seats-frontend:latest \
+            -t ghcr.io/$OWNER/seats-frontend:$SHA \
+            frontend
+          docker push --all-tags ghcr.io/$OWNER/seats-frontend
