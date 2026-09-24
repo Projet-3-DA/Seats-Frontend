@@ -15,9 +15,15 @@ export function Affiche({ uri, style }) {
   return (
     <View style={[styles.affiche, { backgroundColor: theme.backgroundSelected, borderColor: theme.border }, style]}>
       {afficherImage ? (
-        <Image source={{ uri }} style={styles.image} resizeMode="cover" onError={() => setUriEnErreur(uri)} />
+        <Image
+          testID="affiche-image"
+          source={{ uri }}
+          style={styles.image}
+          resizeMode="cover"
+          onError={() => setUriEnErreur(uri)}
+        />
       ) : (
-        <Feather name="film" size={28} color={theme.textSecondary} />
+        <Feather testID="affiche-icone-defaut" name="film" size={28} color={theme.textSecondary} />
       )}
     </View>
   );

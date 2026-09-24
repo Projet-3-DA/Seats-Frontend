@@ -1,0 +1,41 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  test:
+    name: Tests
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: frontend
+    env:
+      CI: true
+      EXPO_NO_TELEMETRY: '1'
+    steps:
+      - name: Récupérer le code
+        uses: actions/checkout@v4
+
+      - name: Installer Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Installer les dépendances
+        run: npm ci
+
+      - name: Lancer le lint
+        run: npm run lint
+
+      - name: Lancer les tests
+        run: npm test -- --ci
+
+      # Vérifie que l'app se construit toujours (SSR web), sans lancer le serveur ni le backend.
+      - name: Construire le bundle web
+        run: npx expo export -p web
