@@ -1,3 +1,4 @@
+import { Ionicons } from '@expo/vector-icons';
 import { Link, useRouter } from 'expo-router';
 import { useState } from 'react';
 import { Image, Pressable, ScrollView, StyleSheet, TextInput, View } from 'react-native';
@@ -20,6 +21,7 @@ export default function RegisterScreen() {
   const [password, setPassword] = useState('');
   const [errors, setErrors] = useState({});
   const [submitting, setSubmitting] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
 
   async function handleSubmit() {
     const nextErrors = {};
@@ -89,6 +91,7 @@ export default function RegisterScreen() {
                     setErrors((prev) => ({ ...prev, firstName: undefined }));
                   }}
                   placeholder="Alexandre"
+                  onSubmitEditing={handleSubmit}
                 />
                 {errors.firstName && (
                   <ThemedText type="small" themeColor="error">
@@ -107,6 +110,7 @@ export default function RegisterScreen() {
                     setErrors((prev) => ({ ...prev, lastName: undefined }));
                   }}
                   placeholder="Martin"
+                  onSubmitEditing={handleSubmit}
                 />
                 {errors.lastName && (
                   <ThemedText type="small" themeColor="error">
@@ -128,6 +132,7 @@ export default function RegisterScreen() {
               placeholder="votre@email.com"
               keyboardType="email-address"
               autoCapitalize="none"
+              onSubmitEditing={handleSubmit}
             />
             {errors.email && (
               <ThemedText type="small" themeColor="error">
@@ -138,15 +143,26 @@ export default function RegisterScreen() {
             <ThemedText type="small" style={styles.label}>
               Mot de passe
             </ThemedText>
-            <Input
-              value={password}
-              onChangeText={(text) => {
-                setPassword(text);
-                setErrors((prev) => ({ ...prev, password: undefined }));
-              }}
-              placeholder="Minimum 8 caractères"
-              secureTextEntry
-            />
+            <View style={styles.passwordField}>
+              <Input
+                style={styles.passwordInput}
+                value={password}
+                onChangeText={(text) => {
+                  setPassword(text);
+                  setErrors((prev) => ({ ...prev, password: undefined }));
+                }}
+                placeholder="Minimum 8 caractères"
+                secureTextEntry={!showPassword}
+                onSubmitEditing={handleSubmit}
+              />
+              <Pressable
+                style={styles.passwordToggle}
+                onPress={() => setShowPassword((prev) => !prev)}
+                hitSlop={8}
+              >
+                <Ionicons name={showPassword ? 'eye-off' : 'eye'} size={20} color={theme.textSecondary} />
+              </Pressable>
+            </View>
             {errors.password && (
               <ThemedText type="small" themeColor="error">
                 {errors.password}
@@ -198,13 +214,13 @@ function RoleTab({ label, active, onPress }) {
   );
 }
 
-function Input(props) {
+function Input({ style, ...props }) {
   const theme = useTheme();
 
   return (
     <TextInput
       placeholderTextColor={theme.textSecondary}
-      style={[styles.input, { backgroundColor: theme.backgroundElement, color: theme.text }]}
+      style={[styles.input, { backgroundColor: theme.backgroundElement, color: theme.text }, style]}
       {...props}
     />
   );
@@ -276,6 +292,16 @@ const styles = StyleSheet.create({
     paddingHorizontal: 14,
     paddingVertical: 12,
     fontSize: 16,
+  },
+  passwordField: {
+    justifyContent: 'center',
+  },
+  passwordInput: {
+    paddingRight: 44,
+  },
+  passwordToggle: {
+    position: 'absolute',
+    right: 14,
   },
   submit: {
     borderRadius: 12,
