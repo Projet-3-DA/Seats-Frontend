@@ -73,6 +73,9 @@ export default function NouvelEvenementScreen() {
   const [sallesError, setSallesError] = useState('');
 
   useEffect(() => {
+    // Tirée côté client seulement : un tirage pendant le rendu serveur donnerait une graine
+    // différente de celle du client, et l'aperçu changerait d'image à l'hydratation.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setGraine(nouvelleGraine());
   }, []);
 
