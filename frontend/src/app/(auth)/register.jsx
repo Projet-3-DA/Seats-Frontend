@@ -5,6 +5,7 @@ import { Image, Pressable, ScrollView, StyleSheet, TextInput, View } from 'react
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { useTheme } from '@/hooks/use-theme';
+import { registerUser } from '@/services/auth';
 
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[a-zA-Z]{2,}$/;
 
@@ -18,9 +19,16 @@ export default function RegisterScreen() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [errors, setErrors] = useState({});
+  const [submitting, setSubmitting] = useState(false);
 
-  function handleSubmit() {
+  async function handleSubmit() {
     const nextErrors = {};
+    if (!firstName.trim()) {
+      nextErrors.firstName = 'Le prénom est requis';
+    }
+    if (!lastName.trim()) {
+      nextErrors.lastName = 'Le nom est requis';
+    }
     if (!EMAIL_REGEX.test(email)) {
       nextErrors.email = 'Adresse email invalide (ex: nom@domaine.com)';
     }
@@ -32,8 +40,15 @@ export default function RegisterScreen() {
       return;
     }
 
-    // TODO: brancher sur l'API d'inscription (récit #1)
-    router.push('/(tabs)/events');
+    setSubmitting(true);
+    try {
+      await registerUser({ email, password, nom: lastName.trim(), prenom: firstName.trim(), role });
+      router.push('/(tabs)/events');
+    } catch (error) {
+      setErrors({ form: error.message });
+    } finally {
+      setSubmitting(false);
+    }
   }
 
   return (
@@ -67,13 +82,37 @@ export default function RegisterScreen() {
                 <ThemedText type="small" style={styles.label}>
                   Prénom
                 </ThemedText>
-                <Input value={firstName} onChangeText={setFirstName} placeholder="Alexandre" />
+                <Input
+                  value={firstName}
+                  onChangeText={(text) => {
+                    setFirstName(text);
+                    setErrors((prev) => ({ ...prev, firstName: undefined }));
+                  }}
+                  placeholder="Alexandre"
+                />
+                {errors.firstName && (
+                  <ThemedText type="small" themeColor="error">
+                    {errors.firstName}
+                  </ThemedText>
+                )}
               </View>
               <View style={styles.field}>
                 <ThemedText type="small" style={styles.label}>
                   Nom
                 </ThemedText>
-                <Input value={lastName} onChangeText={setLastName} placeholder="Martin" />
+                <Input
+                  value={lastName}
+                  onChangeText={(text) => {
+                    setLastName(text);
+                    setErrors((prev) => ({ ...prev, lastName: undefined }));
+                  }}
+                  placeholder="Martin"
+                />
+                {errors.lastName && (
+                  <ThemedText type="small" themeColor="error">
+                    {errors.lastName}
+                  </ThemedText>
+                )}
               </View>
             </View>
 
@@ -114,9 +153,19 @@ export default function RegisterScreen() {
               </ThemedText>
             )}
 
-            <Pressable style={[styles.submit, { backgroundColor: theme.primary }]} onPress={handleSubmit}>
+            {errors.form && (
+              <ThemedText type="small" themeColor="error">
+                {errors.form}
+              </ThemedText>
+            )}
+
+            <Pressable
+              style={[styles.submit, { backgroundColor: theme.primary, opacity: submitting ? 0.6 : 1 }]}
+              onPress={handleSubmit}
+              disabled={submitting}
+            >
               <ThemedText type="smallBold" themeColor="primaryText">
-                Créer mon compte
+                {submitting ? 'Création en cours…' : 'Créer mon compte'}
               </ThemedText>
             </Pressable>
           </View>
