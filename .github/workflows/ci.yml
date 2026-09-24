@@ -33,14 +33,8 @@ jobs:
       - name: Lancer le lint
         run: npm run lint
 
-      - name: Lancer les tests (logique pure, node:test)
-        run: npm test
-
-      # Seuls affiche.test.jsx et events/index.test.jsx restent sur Jest : le rendu de composants
-      # React Native (JSX, mocks natifs) a besoin de jest-expo + Testing Library, que node:test ne
-      # fournit pas. Tout le reste (backend inclus) est passé à node:test.
-      - name: Lancer les tests (composants React Native, Jest)
-        run: npm run test:composants -- --ci
+      - name: Lancer les tests
+        run: npm test -- --ci
 
       # Vérifie que l'app se construit toujours (SSR web), sans lancer le serveur ni le backend.
       - name: Construire le bundle web
