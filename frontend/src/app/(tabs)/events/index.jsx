@@ -6,14 +6,7 @@ import { ActivityIndicator, FlatList, Pressable, StyleSheet, TextInput, View } f
 import { ThemedText } from '@/components/themed-text';
 import { API_URL } from '@/constants/api';
 import { useTheme } from '@/hooks/use-theme';
-
-function formatDateHeure(iso) {
-  const d = new Date(iso);
-  const date = d.toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' });
-  const heures = String(d.getHours()).padStart(2, '0');
-  const minutes = String(d.getMinutes()).padStart(2, '0');
-  return `${date} à ${heures}h${minutes}`;
-}
+import { formatDateHeure } from '@/utils/dates';
 
 function EventCard({ item, theme }) {
   return (

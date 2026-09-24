@@ -8,6 +8,9 @@ export function useColorScheme() {
   const [hasHydrated, setHasHydrated] = useState(false);
 
   useEffect(() => {
+    // Drapeau d'hydratation volontaire : le rendu serveur doit renvoyer 'light' à l'identique de
+    // celui du client avant hydratation, sinon React signale un décalage SSR/client.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setHasHydrated(true);
   }, []);
 

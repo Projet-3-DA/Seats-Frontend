@@ -14,8 +14,10 @@ export const Colors = {
     backgroundElement: '#F0F0F3',
     backgroundSelected: '#E0E1E6',
     textSecondary: '#60646C',
+    primary: '#6C63FF',
+    primaryText: '#ffffff',
+    error: '#D92D20',
     border: '#E2E4E8',
-    primary: '#6366F1',
   },
   dark: {
     text: '#ffffff',
@@ -23,11 +25,12 @@ export const Colors = {
     backgroundElement: '#212225',
     backgroundSelected: '#2E3135',
     textSecondary: '#B0B4BA',
+    primary: '#6C63FF',
+    primaryText: '#ffffff',
+    error: '#F97066',
     border: '#33353A',
-    primary: '#6366F1',
   },
 };
-
 export const Fonts = Platform.select({
   ios: {
     /** iOS `UIFontDescriptorSystemDesignDefault` */
