@@ -15,6 +15,9 @@ export default function EventSeatMapScreen() {
   const [chargement, setChargement] = useState(true);
 
   useEffect(() => {
+    // Remet le chargement à true à chaque changement d'id (pas seulement au montage), pour que le
+    // spinner réapparaisse en cas de navigation directe d'un événement à un autre.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setChargement(true);
     fetch(`${API_URL}/evenements/${id}/plan`)
       .then((res) => {

@@ -30,6 +30,9 @@ jobs:
       - name: Installer les dépendances
         run: npm ci
 
+      - name: Lancer le lint
+        run: npm run lint
+
       - name: Lancer les tests
         run: npm test -- --ci
 
