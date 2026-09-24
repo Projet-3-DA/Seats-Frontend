@@ -6,6 +6,7 @@ import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { Spacing } from '@/constants/theme';
 import { API_URL } from '@/constants/api';
+import { groupSiegesParRangee } from '@/utils/salle';
 
 export default function EventSeatMapScreen() {
   const { id } = useLocalSearchParams();
@@ -41,11 +42,7 @@ export default function EventSeatMapScreen() {
     );
   }
 
-  const rangees = {};
-  plan.sieges.forEach((s) => {
-    (rangees[s.rangee] ??= []).push(s);
-  });
-  const numerosRangees = Object.keys(rangees).sort((a, b) => a - b);
+  const { rangees, numerosRangees } = groupSiegesParRangee(plan.sieges);
 
   return (
     <ThemedView style={styles.container}>
@@ -54,18 +51,13 @@ export default function EventSeatMapScreen() {
       <View style={styles.grille}>
         {numerosRangees.map((rangee) => (
           <View key={rangee} style={styles.rangee}>
-            {rangees[rangee]
-              .sort((a, b) => a.colonne - b.colonne)
-              .map((s) => (
-                <View
-                  key={s.id}
-                  style={[styles.siege, s.etat === 'reserve' ? styles.occupe : styles.dispo]}
-                >
-                  <ThemedText type="small" style={styles.siegeTexte}>
-                    {s.colonne}
-                  </ThemedText>
-                </View>
-              ))}
+            {rangees[rangee].map((s) => (
+              <View key={s.id} style={[styles.siege, s.etat === 'reserve' ? styles.occupe : styles.dispo]}>
+                <ThemedText type="small" style={styles.siegeTexte}>
+                  {s.colonne}
+                </ThemedText>
+              </View>
+            ))}
           </View>
         ))}
       </View>
