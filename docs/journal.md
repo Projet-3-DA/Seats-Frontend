@@ -30,3 +30,26 @@
   - Développement de deux clients : une application mobile (React Native) et une application web (React).
   - On commence par le mobile.
   - La séparation front-end/back-end dans le Kanban est désapprouvée — chaque équipier prend une tâche entière (front + back) plutôt que de se spécialiser par couche technique.
+
+# Journal de sprint 1
+
+## Lundi 21 septembre
+- **Présences** : Junior, Delavie, Glodie, Yanis.
+- **Avancé** :
+  - Terminé (fusionné dans `main`) :
+    - #4 — Voir la liste des événements à venir, par Yanis (PR #43, frontend).
+    - #2 — Créer une salle, par Yanis : création avec génération des sièges (PR #1, backend) ; la page de création de salle est déjà dans `main` côté frontend, avec son correctif de saisie (lettres refusées dans les champs de rangées et de colonnes, PR #47).
+    - #3 et #29 — Créer un événement et lui attribuer une salle existante, par Junior (PR #44 frontend, PR #2 backend) : formulaire avec affiche (fichier ou lien), le fichier étant envoyé vers Supabase Storage.
+  - En révision (branches poussées, en attente de fusion) :
+    - #3 et #29 (suite), par Junior — tarif de la place et image aléatoire par défaut quand aucune affiche n'est fournie (`feature/3-creer-evenement-attribuer-salle`, backend et frontend).
+    - #5 — Afficher le plan de salle avec l'état des sièges, par Delavie (`feature/5-plan-salle`, backend et frontend).
+    - #1 — Créer un compte, par Glodie : page d'inscription avec validation de l'email et du mot de passe (`feature/1-créer-un-compte`, frontend seulement pour l'instant).
+- **Blocage** :
+  - Le schéma initial ne prévoyait ni affiche ni tarif pour un événement (le tarif figure pourtant dans la maquette du formulaire de création).
+  - Tant que les migrations Prisma n'étaient pas appliquées à la base Supabase partagée, la création d'un événement échouait (colonne inexistante).
+- **Décisions** :
+  - Modifications de la base de données (migrations Prisma) :
+    - `Evenement.afficheUrl` (texte, facultatif) : la base ne garde que l'adresse de l'affiche ; un fichier choisi est envoyé sur Supabase Storage (bucket public `affiches`), un lien est enregistré tel quel.
+    - `Evenement.tarif` (`Decimal(8,2)`, tarif unique de la place en $ CAD) : obligatoire à la création (0 si gratuit) ; les événements existants gardent un tarif vide.
+    - La fonctionnalité brouillon (statut, salle et date facultatives) a été envisagée puis abandonnée : seul le tarif est conservé.
+  - Une seule application Expo (React Native, avec le web via react-native-web) qui tourne sur toutes les plateformes (web, iOS et Android), au lieu de deux clients séparés (React Native puis React web). Cette décision remplace celle du bloc 4.
