@@ -3,6 +3,7 @@ name: CI
 on:
   push:
     branches: [main]
+    tags: ['latest']
   pull_request:
     branches: [main]
 
@@ -41,10 +42,11 @@ jobs:
         run: npx expo export -p web
 
   # Construit l'image Docker et la publie sur ghcr.io. Ne tourne que si "test" a réussi, et seulement
-  # sur un push direct sur main (pas sur les PR) — même schéma que le backend.
+  # quand on pousse le tag "latest" — pas à chaque push sur main. Ce tag est mobile : pour publier une
+  # nouvelle image, `git tag -f latest && git push origin latest --force` — même schéma que le backend.
   image:
     needs: test
-    if: github.ref == 'refs/heads/main'
+    if: github.ref == 'refs/tags/latest'
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -57,7 +59,7 @@ jobs:
       - name: Se connecter au registre
         run: echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u "${{ github.actor }}" --password-stdin
 
-      # Deux tags : `latest`, qui bouge à chaque push, et `sha-xxxxxxx`, figé.
+      # Deux tags Docker : `latest` (celui qu'on vient de pousser) et `sha-xxxxxxx`, figé sur ce commit.
       - name: Construire et publier l'image
         run: |
           OWNER=${GITHUB_REPOSITORY_OWNER,,}
