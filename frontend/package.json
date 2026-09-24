@@ -33,8 +33,9 @@
     "build:web": "expo export -p web",
     "serve:web": "node server.js",
     "lint": "expo lint",
-    "test": "jest",
-    "test:watch": "jest --watchAll"
+    "test": "node --test",
+    "test:watch": "node --test --watch",
+    "test:composants": "jest"
   },
   "private": true,
   "devDependencies": {
@@ -49,6 +50,9 @@
   "jest": {
     "preset": "jest-expo",
     "testTimeout": 15000,
+    "testMatch": [
+      "<rootDir>/**/*.test.jsx"
+    ],
     "transformIgnorePatterns": [
       "node_modules/(?!((jest-)?react-native|@react-native(-community)?)|expo(nent)?|@expo(nent)?/.*|@expo-google-fonts/.*|react-navigation|@react-navigation/.*|@sentry/react-native|native-base|react-native-svg)"
     ],
