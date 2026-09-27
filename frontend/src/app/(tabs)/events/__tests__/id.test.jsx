@@ -15,7 +15,6 @@ const plan = {
   salle: { id: 19, nom: 'Salle A' },
   sieges: [
     { id: 101, rangee: 1, colonne: 1, etat: 'libre' },
-    { id: 102, rangee: 1, colonne: 2, etat: 'en_selection' },
     { id: 103, rangee: 1, colonne: 3, etat: 'reserve' },
   ],
 };
@@ -45,7 +44,7 @@ describe('EventSeatMapScreen', () => {
     jest.clearAllMocks();
   });
 
-  it('affiche le plan de salle avec les trois états de siège', async () => {
+  it('affiche le plan de salle avec les sièges libres et réservés', async () => {
     useAuth.mockReturnValue({ token: 'jeton', user: { id: 5, role: 'spectateur' } });
     global.fetch = jest.fn().mockResolvedValue(reponse({ success: true, data: plan }));
 
@@ -53,7 +52,6 @@ describe('EventSeatMapScreen', () => {
     await attendreQue(() => screen.queryByText('Salle A') !== null);
 
     expect(screen.getByTestId('siege-101')).toBeTruthy();
-    expect(screen.getByTestId('siege-102')).toBeTruthy();
     expect(screen.getByTestId('siege-103')).toBeTruthy();
   });
 
@@ -68,14 +66,13 @@ describe('EventSeatMapScreen', () => {
     expect(screen.getByText('Connectez-vous en tant que spectateur pour réserver des sièges.')).toBeTruthy();
   });
 
-  it('ignore un clic sur un siège occupé ou en sélection', async () => {
+  it('ignore un clic sur un siège occupé', async () => {
     useAuth.mockReturnValue({ token: 'jeton', user: { id: 5, role: 'spectateur' } });
     global.fetch = jest.fn().mockResolvedValue(reponse({ success: true, data: plan }));
 
     await render(<EventSeatMapScreen />);
     await attendreQue(() => screen.queryByText('Salle A') !== null);
 
-    await fireEvent.press(screen.getByTestId('siege-102'));
     await fireEvent.press(screen.getByTestId('siege-103'));
 
     expect(screen.queryByText('Réserver (1)')).toBeNull();
@@ -92,14 +89,10 @@ describe('EventSeatMapScreen', () => {
     await fireEvent.press(screen.getByTestId('siege-101'));
     await attendreQue(() => screen.queryByText('Réserver (1)') !== null);
 
-    const planApresReservation = {
-      ...plan,
-      sieges: [{ ...plan.sieges[0], etat: 'en_selection' }, plan.sieges[1], plan.sieges[2]],
-    };
     global.fetch = jest
       .fn()
       .mockResolvedValueOnce(reponse({ success: true, data: [{ id: 1, siegeId: 101, statut: 'en_selection' }] }))
-      .mockResolvedValueOnce(reponse({ success: true, data: planApresReservation }));
+      .mockResolvedValueOnce(reponse({ success: true, data: plan }));
     await fireEvent.press(screen.getByText('Réserver (1)'));
 
     await attendreQue(() => screen.queryByText(/Sièges réservés/) !== null);
@@ -126,7 +119,7 @@ describe('EventSeatMapScreen', () => {
 
     const planApresConflit = {
       ...plan,
-      sieges: [{ ...plan.sieges[0], etat: 'en_selection' }, plan.sieges[1], plan.sieges[2]],
+      sieges: [{ ...plan.sieges[0], etat: 'reserve' }, plan.sieges[1]],
     };
     global.fetch = jest
       .fn()
@@ -146,7 +139,7 @@ describe('EventSeatMapScreen', () => {
     useAuth.mockReturnValue({ token: 'jeton', user: { id: 5, role: 'spectateur' } });
     const planDeuxLibres = {
       ...plan,
-      sieges: [plan.sieges[0], { id: 104, rangee: 1, colonne: 4, etat: 'libre' }, plan.sieges[2]],
+      sieges: [plan.sieges[0], { id: 104, rangee: 1, colonne: 4, etat: 'libre' }, plan.sieges[1]],
     };
     global.fetch = jest.fn().mockResolvedValue(reponse({ success: true, data: planDeuxLibres }));
 

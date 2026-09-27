@@ -89,7 +89,7 @@ export default function EventSeatMapScreen() {
       }
       setSelection(new Set());
       setSucces(true);
-      await chargerPlan(); // reflète les sièges qui viennent de passer en "en_selection"
+      await chargerPlan();
     } catch (err) {
       setErreurReservation(err.message || 'Échec de la réservation.');
       // Un ou plusieurs sièges visés ont été pris entretemps : on remet le plan à jour et on retire de
@@ -121,7 +121,6 @@ export default function EventSeatMapScreen() {
 
   function styleSiege(siege) {
     if (siege.etat === 'reserve') return styles.occupe;
-    if (siege.etat === 'en_selection') return styles.enSelection;
     if (selection.has(siege.id)) return styles.selectionne;
     return styles.dispo;
   }
@@ -154,10 +153,6 @@ export default function EventSeatMapScreen() {
         <View style={styles.legendeItem}>
           <View style={[styles.pastille, styles.dispo]} />
           <ThemedText type="small" themeColor="textSecondary">Dispo.</ThemedText>
-        </View>
-        <View style={styles.legendeItem}>
-          <View style={[styles.pastille, styles.enSelection]} />
-          <ThemedText type="small" themeColor="textSecondary">En sélection</ThemedText>
         </View>
         <View style={styles.legendeItem}>
           <View style={[styles.pastille, styles.occupe]} />
@@ -212,7 +207,6 @@ const styles = StyleSheet.create({
   siegeTexte: { color: '#ffffff' },
   dispo: { backgroundColor: '#22c55e' },
   occupe: { backgroundColor: '#ef4444' },
-  enSelection: { backgroundColor: '#f59e0b' },
   selectionne: { backgroundColor: '#2563eb' },
   legende: { flexDirection: 'row', gap: Spacing.four, marginTop: Spacing.two },
   legendeItem: { flexDirection: 'row', alignItems: 'center', gap: Spacing.one },
