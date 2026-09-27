@@ -53,6 +53,32 @@ describe('EventsListScreen', () => {
     expect(screen.getByText('Théâtre A')).toBeTruthy();
   });
 
+  it("affiche le tarif et l'affiche de chaque événement, y compris un événement gratuit sans affiche", async () => {
+    global.fetch = jest.fn().mockResolvedValue(
+      reponse({
+        success: true,
+        data: [
+          {
+            id: 1,
+            titre: 'Festival de Jazz',
+            dateHeure: '2026-10-28T20:00:00',
+            tarif: '25.00',
+            afficheUrl: 'https://exemple.com/affiche.jpg',
+          },
+          { id: 2, titre: 'Portes ouvertes', dateHeure: '2026-11-01T21:00:00', tarif: null, afficheUrl: null },
+        ],
+      }),
+    );
+
+    await render(<EventsListScreen />);
+    await attendreQue(() => screen.queryByText('Festival de Jazz') !== null);
+
+    expect(screen.getByText('25,00 $')).toBeTruthy();
+    expect(screen.getByText('Gratuit')).toBeTruthy();
+    expect(screen.getAllByTestId('affiche-image')).toHaveLength(1);
+    expect(screen.getAllByTestId('affiche-icone-defaut')).toHaveLength(1);
+  });
+
   it('affiche un message quand la liste est vide', async () => {
     global.fetch = jest.fn().mockResolvedValue(reponse({ success: true, data: [] }));
 
