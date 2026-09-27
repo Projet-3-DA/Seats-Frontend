@@ -24,6 +24,8 @@ export default function EventSeatMapScreen() {
 
   const peutReserver = user?.role === 'spectateur';
 
+  // Renvoie le plan fraîchement chargé (ou null en cas d'erreur), pour que l'appelant puisse purger la
+  // sélection des sièges qui viennent de changer d'état sans dépendre du re-render de `plan`.
   function chargerPlan() {
     setChargement(true);
     return fetch(`${API_URL}/evenements/${id}/plan`)
@@ -31,9 +33,24 @@ export default function EventSeatMapScreen() {
         if (!res.ok) throw new Error('Erreur réseau');
         return res.json();
       })
-      .then((json) => setPlan(json.data))
-      .catch((err) => setErreur(err.message))
+      .then((json) => {
+        setPlan(json.data);
+        return json.data;
+      })
+      .catch((err) => {
+        setErreur(err.message);
+        return null;
+      })
       .finally(() => setChargement(false));
+  }
+
+  // Un siège sélectionné peut être pris par quelqu'un d'autre avant qu'on ait confirmé : il n'est alors
+  // plus cliquable (donc plus moyen de le désélectionner à la main), on le retire donc nous-mêmes dès
+  // que le plan est rafraîchi.
+  function purgerSelectionIndisponible(planFrais) {
+    if (!planFrais) return;
+    const siegesLibres = new Set(planFrais.sieges.filter((s) => s.etat === 'libre').map((s) => s.id));
+    setSelection((precedente) => new Set([...precedente].filter((id) => siegesLibres.has(id))));
   }
 
   useEffect(() => {
@@ -75,7 +92,10 @@ export default function EventSeatMapScreen() {
       await chargerPlan(); // reflète les sièges qui viennent de passer en "en_selection"
     } catch (err) {
       setErreurReservation(err.message || 'Échec de la réservation.');
-      await chargerPlan(); // un siège visé peut avoir été pris entretemps : on remet le plan à jour
+      // Un ou plusieurs sièges visés ont été pris entretemps : on remet le plan à jour et on retire de
+      // la sélection ceux qui ne sont plus libres (les autres restent sélectionnés pour une nouvelle
+      // tentative immédiate).
+      purgerSelectionIndisponible(await chargerPlan());
     } finally {
       setEnvoiEnCours(false);
     }

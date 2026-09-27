@@ -136,5 +136,40 @@ describe('EventSeatMapScreen', () => {
     await fireEvent.press(screen.getByText('Réserver (1)'));
 
     await attendreQue(() => screen.queryByText('Ce siège vient d\'être pris.') !== null);
+
+    // Le siège pris entretemps n'est plus dans la sélection : impossible de rester bloqué dessus.
+    expect(screen.queryByText('Réserver (1)')).toBeNull();
+    expect(screen.getByText('Réserver')).toBeTruthy();
+  });
+
+  it('retire de la sélection uniquement les sièges pris entretemps, garde les autres sélectionnés', async () => {
+    useAuth.mockReturnValue({ token: 'jeton', user: { id: 5, role: 'spectateur' } });
+    const planDeuxLibres = {
+      ...plan,
+      sieges: [plan.sieges[0], { id: 104, rangee: 1, colonne: 4, etat: 'libre' }, plan.sieges[2]],
+    };
+    global.fetch = jest.fn().mockResolvedValue(reponse({ success: true, data: planDeuxLibres }));
+
+    await render(<EventSeatMapScreen />);
+    await attendreQue(() => screen.queryByText('Salle A') !== null);
+
+    await fireEvent.press(screen.getByTestId('siege-101'));
+    await fireEvent.press(screen.getByTestId('siege-104'));
+    await attendreQue(() => screen.queryByText('Réserver (2)') !== null);
+
+    // Le siège 101 vient d'être pris par quelqu'un d'autre ; le 104 est toujours libre.
+    const planApresConflit = {
+      ...planDeuxLibres,
+      sieges: [{ ...planDeuxLibres.sieges[0], etat: 'reserve' }, planDeuxLibres.sieges[1], planDeuxLibres.sieges[2]],
+    };
+    global.fetch = jest
+      .fn()
+      .mockResolvedValueOnce(reponse({ success: false, error: 'Ce siège vient d\'être pris.' }, false))
+      .mockResolvedValueOnce(reponse({ success: true, data: planApresConflit }));
+
+    await fireEvent.press(screen.getByText('Réserver (2)'));
+
+    await attendreQue(() => screen.queryByText('Réserver (1)') !== null);
+    expect(screen.getByTestId('siege-101').props.accessibilityState?.disabled).toBe(true);
   });
 });
