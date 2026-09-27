@@ -3,6 +3,7 @@ import { Link } from 'expo-router';
 import { useEffect, useMemo, useState } from 'react';
 import { ActivityIndicator, FlatList, Pressable, StyleSheet, TextInput, View } from 'react-native';
 
+import { Affiche } from '@/components/affiche';
 import { ThemedText } from '@/components/themed-text';
 import { API_URL } from '@/constants/api';
 import { useTheme } from '@/hooks/use-theme';
@@ -11,30 +12,33 @@ import { formatDateHeure } from '@/utils/dates';
 function EventCard({ item, theme }) {
   return (
     <View style={[styles.card, { backgroundColor: theme.backgroundElement, borderColor: theme.border }]}>
-      <ThemedText type="smallBold" style={styles.cardTitle}>
-        {item.titre}
-      </ThemedText>
-      <View style={styles.metaRow}>
-        <Feather name="calendar" size={14} color={theme.textSecondary} />
-        <ThemedText type="small" themeColor="textSecondary">
-          {formatDateHeure(item.dateHeure)}
+      <Affiche uri={item.afficheUrl} style={styles.affiche} />
+      <View style={styles.cardContenu}>
+        <ThemedText type="smallBold" style={styles.cardTitle}>
+          {item.titre}
         </ThemedText>
-      </View>
-      {item.salle?.nom && (
         <View style={styles.metaRow}>
-          <Feather name="map-pin" size={14} color={theme.textSecondary} />
+          <Feather name="calendar" size={14} color={theme.textSecondary} />
           <ThemedText type="small" themeColor="textSecondary">
-            {item.salle.nom}
+            {formatDateHeure(item.dateHeure)}
           </ThemedText>
         </View>
-      )}
-      <Link href={`/(tabs)/events/${item.id}`} asChild>
-        <Pressable style={StyleSheet.flatten([styles.button, { backgroundColor: theme.primary }])}>
-          <ThemedText type="smallBold" style={styles.buttonText}>
-            Réserver mes places
-          </ThemedText>
-        </Pressable>
-      </Link>
+        {item.salle?.nom && (
+          <View style={styles.metaRow}>
+            <Feather name="map-pin" size={14} color={theme.textSecondary} />
+            <ThemedText type="small" themeColor="textSecondary">
+              {item.salle.nom}
+            </ThemedText>
+          </View>
+        )}
+        <Link href={`/(tabs)/events/${item.id}`} asChild>
+          <Pressable style={StyleSheet.flatten([styles.button, { backgroundColor: theme.primary }])}>
+            <ThemedText type="smallBold" style={styles.buttonText}>
+              Réserver mes places
+            </ThemedText>
+          </Pressable>
+        </Link>
+      </View>
     </View>
   );
 }
@@ -123,7 +127,9 @@ const styles = StyleSheet.create({
   spinner: { marginTop: 8 },
   error: { color: '#DC2626' },
   empty: { textAlign: 'center', marginTop: 24 },
-  card: { borderWidth: 1, borderRadius: 12, padding: 16, gap: 8 },
+  card: { flexDirection: 'row', borderWidth: 1, borderRadius: 12, padding: 16, gap: 12 },
+  affiche: { width: 80, height: 120 },
+  cardContenu: { flex: 1, gap: 8 },
   metaRow: { flexDirection: 'row', alignItems: 'center', gap: 6 },
   cardTitle: { fontSize: 18 },
   button: { borderRadius: 8, paddingVertical: 12, alignItems: 'center', marginTop: 4 },

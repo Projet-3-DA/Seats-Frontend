@@ -74,6 +74,34 @@ describe('EventsListScreen', () => {
     await attendreQue(() => screen.queryByText('Failed to fetch') !== null);
   });
 
+  it('affiche l\'image de l\'événement quand afficheUrl est fourni', async () => {
+    global.fetch = jest.fn().mockResolvedValue(
+      reponse({
+        success: true,
+        data: [{ id: 1, titre: 'Festival de Jazz', dateHeure: '2026-10-28T20:00:00', afficheUrl: 'https://exemple.com/a.png' }],
+      }),
+    );
+
+    await render(<EventsListScreen />);
+    await attendreQue(() => screen.queryByText('Festival de Jazz') !== null);
+
+    expect(screen.getByTestId('affiche-image').props.source).toEqual({ uri: 'https://exemple.com/a.png' });
+  });
+
+  it('affiche l\'icône par défaut quand un événement n\'a pas d\'afficheUrl', async () => {
+    global.fetch = jest.fn().mockResolvedValue(
+      reponse({
+        success: true,
+        data: [{ id: 1, titre: 'Festival de Jazz', dateHeure: '2026-10-28T20:00:00', afficheUrl: null }],
+      }),
+    );
+
+    await render(<EventsListScreen />);
+    await attendreQue(() => screen.queryByText('Festival de Jazz') !== null);
+
+    expect(screen.getByTestId('affiche-icone-defaut')).toBeTruthy();
+  });
+
   it('filtre la liste selon le texte recherché', async () => {
     global.fetch = jest.fn().mockResolvedValue(
       reponse({
