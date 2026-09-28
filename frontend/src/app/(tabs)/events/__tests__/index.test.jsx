@@ -79,6 +79,21 @@ describe('EventsListScreen', () => {
     expect(screen.getAllByTestId('affiche-icone-defaut')).toHaveLength(1);
   });
 
+  it("affiche « Gratuit » pour un événement créé avec un tarif de 0 (et non « 0,00 $ »)", async () => {
+    global.fetch = jest.fn().mockResolvedValue(
+      reponse({
+        success: true,
+        data: [{ id: 1, titre: 'Portes ouvertes', dateHeure: '2026-11-01T21:00:00', tarif: '0.00', afficheUrl: null }],
+      }),
+    );
+
+    await render(<EventsListScreen />);
+    await attendreQue(() => screen.queryByText('Portes ouvertes') !== null);
+
+    expect(screen.getByText('Gratuit')).toBeTruthy();
+    expect(screen.queryByText('0,00 $')).toBeNull();
+  });
+
   it('affiche un message quand la liste est vide', async () => {
     global.fetch = jest.fn().mockResolvedValue(reponse({ success: true, data: [] }));
 

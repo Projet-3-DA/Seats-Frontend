@@ -24,7 +24,11 @@ describe('formatTarif', () => {
     expect(normaliserEspaces(formatTarif(9.5))).toBe('9,50 $');
   });
 
-  it('un tarif à zéro reste un prix affiché, pas "Gratuit" (seul null l\'est)', () => {
-    expect(normaliserEspaces(formatTarif('0.00'))).toBe('0,00 $');
+  it.each([['0.00'], ['0'], [0]])("affiche 'Gratuit' pour un tarif à zéro (%p)", (tarif) => {
+    expect(formatTarif(tarif)).toBe('Gratuit');
+  });
+
+  it('affiche un tarif de quelques cents comme un prix, pas comme gratuit', () => {
+    expect(normaliserEspaces(formatTarif('0.50'))).toBe('0,50 $');
   });
 });
