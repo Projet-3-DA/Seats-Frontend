@@ -22,9 +22,9 @@ services:
       retries: 10
 
   backend:
-    image: ghcr.io/projet-3-da/seats-backend:sha-58c7d18
+    image: ghcr.io/projet-3-da/seats-backend:latest
     build:
-      context: ./Seats-Backend/backend
+      context: ../Seats-Backend/backend
     ports:
       - "3000:3000"
     environment:
@@ -40,9 +40,9 @@ services:
         condition: service_healthy
 
   frontend:
-    image: ghcr.io/projet-3-da/seats-frontend:sha-cb54a4c
+    image: ghcr.io/projet-3-da/seats-frontend:latest
     build:
-      context: ./Seats-Frontend/frontend
+      context: ./frontend
     ports:
       - "5173:3000"
     environment:
