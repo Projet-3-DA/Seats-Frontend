@@ -6,6 +6,7 @@ import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { API_URL } from '@/constants/api';
 import { useTheme } from '@/hooks/use-theme';
+import { useAuth } from '@/lib/auth-context';
 
 const COULEUR_TERMINE = '#16A34A';
 
@@ -112,12 +113,24 @@ function TicketCard({ groupe, theme }) {
           <ThemedText type="small">{formaterSieges(groupe.sieges)}</ThemedText>
         </View>
 
-        {estPasseOuAnnule && (
+        {estPasseOuAnnule ? (
           <Link href={`/(tabs)/events/${groupe.evenement.id}`} asChild>
             <Pressable style={[styles.bouton, { borderColor: theme.border }]}>
               <ThemedText type="small">Réserver à nouveau</ThemedText>
             </Pressable>
           </Link>
+        ) : (
+          <View style={styles.boutonsRow}>
+            {/* Annulation et téléchargement du billet : à implémenter dans un autre récit (#12) */}
+            <Pressable style={[styles.bouton, { borderColor: theme.error }]}>
+              <ThemedText type="small" style={{ color: theme.error }}>
+                Annuler
+              </ThemedText>
+            </Pressable>
+            <Pressable style={[styles.bouton, { borderColor: theme.border }]}>
+              <ThemedText type="small">Billet PDF</ThemedText>
+            </Pressable>
+          </View>
         )}
       </View>
     </View>
@@ -126,6 +139,7 @@ function TicketCard({ groupe, theme }) {
 
 export default function MyReservationsScreen() {
   const theme = useTheme();
+  const { token } = useAuth();
   const [reservations, setReservations] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -133,8 +147,14 @@ export default function MyReservationsScreen() {
   useEffect(() => {
     let cancelled = false;
     async function load() {
+      if (!token) {
+        setLoading(false);
+        return;
+      }
       try {
-        const res = await fetch(`${API_URL}/reservations`);
+        const res = await fetch(`${API_URL}/reservations`, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
         const json = await res.json();
         if (!res.ok || !json.success) throw new Error(json.error || 'Échec du chargement des réservations.');
         if (!cancelled) setReservations(json.data);
@@ -148,7 +168,7 @@ export default function MyReservationsScreen() {
     return () => {
       cancelled = true;
     };
-  }, []);
+  }, [token]);
 
   const tickets = useMemo(() => grouperReservations(reservations), [reservations]);
 
@@ -202,5 +222,6 @@ const styles = StyleSheet.create({
   separateur: { height: 1 },
   footerRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 12 },
   siegesBloc: { gap: 2, flex: 1 },
+  boutonsRow: { flexDirection: 'row', gap: 8 },
   bouton: { borderWidth: 1, borderRadius: 8, paddingHorizontal: 12, paddingVertical: 8 },
 });
