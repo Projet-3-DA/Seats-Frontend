@@ -7,14 +7,12 @@ import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { MaxContentWidth } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
+import { useAuth } from '@/lib/auth-context';
 
-// ponytail: cap la grille de prévisualisation pour éviter de rendre des milliers de sièges.
+
 const MAX_APERCU = 26;
-// ponytail: seuil arbitraire desktop/mobile, à raffiner si un vrai design system de breakpoints arrive.
+
 const DESKTOP_BREAKPOINT = 700;
-// ponytail: pas d'auth branchée côté frontend (récit #1 pas fait) donc pas d'ID d'organisateur réel.
-// À remplacer par l'utilisateur connecté une fois le login en place.
-const DEMO_ORGANISATEUR_ID = 1;
 
 function toCount(value) {
   const n = parseInt(value, 10);
@@ -32,6 +30,7 @@ function rowLabel(index) {
 export default function NouvelleSalleScreen() {
   const theme = useTheme();
   const router = useRouter();
+  const { user } = useAuth();
   const { width } = useWindowDimensions();
   const isDesktop = width >= DESKTOP_BREAKPOINT;
 
@@ -67,7 +66,7 @@ export default function NouvelleSalleScreen() {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          organisateurId: DEMO_ORGANISATEUR_ID,
+          organisateurId: user.id,
           nom: nom.trim(),
           nombreRangees: nbRangees,
           siegesParRangee: nbSieges,
