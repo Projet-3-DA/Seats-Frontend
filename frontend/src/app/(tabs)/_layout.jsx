@@ -36,10 +36,18 @@ export default function TabsLayout() {
         }}
       />
       <Tabs.Screen
+        name="salles"
+        options={{
+          title: 'Salles',
+          tabBarIcon: icone('layout'),
+          href: user?.role === 'organisateur' ? undefined : null,
+        }}
+      />
+      <Tabs.Screen
         name="organisateur"
         options={{
           title: 'Organiser',
-          tabBarIcon: icone('grid'),
+          tabBarIcon: icone('clipboard'),
           href: user?.role === 'organisateur' ? undefined : null,
         }}
       />
