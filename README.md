@@ -15,8 +15,12 @@ Créés automatiquement au démarrage (mot de passe : `Demo1234!`).
 | Rôle | Courriel |
 |---|---|
 | Spectateur | `spectateur@seats.demo` |
+| Second spectateur | `spectateur2@seats.demo` |
 | Organisateur | `organisateur@seats.demo` |
 | Administrateur | `admin@seats.demo` |
+
+### Données de démonstration
+Au démarrage, la base contient aussi 2 salles (« Grande salle » 50 sièges, « Petit studio » 18 sièges), 5 événements à venir (avec ou sans affiche, dont un gratuit) et 9 sièges déjà réservés, pour pouvoir naviguer sans rien créer. Ces données sont recréées seulement si elles n'existent pas : un redémarrage ne les duplique pas.
 
 ### Lancer les tests
 ```bash
@@ -25,6 +29,7 @@ cd frontend && npm install && npm test
 Les tests du backend (dépôt Seats-Backend) se lancent avec `npm test` dans son dossier `backend/`.
 
 ### Éléments simulés dans cette version alpha
+- Les **salles, événements et réservations ci-dessus** sont des données de démonstration.
 - Sans affiche fournie, un événement reçoit une **image aléatoire de démonstration** (picsum.photos).
 - Le **téléversement d'un fichier** d'affiche demande un stockage Supabase non configuré dans Docker : utiliser un lien d'image.
 - Une réservation place le siège « en sélection » pendant 15 minutes ; la **confirmation** n'existe pas encore.
