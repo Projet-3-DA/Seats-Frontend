@@ -1,0 +1,48 @@
+# Démarre toute l'application Seats avec une seule commande : `docker compose up --build`
+#   frontend  http://localhost:3000   (application web)
+#   backend   http://localhost:3001   (API, exposée pour le navigateur)
+#   db        Postgres, données conservées dans le volume `seats_db_data` (survivent à un redémarrage)
+#
+# Le backend est construit directement depuis son dépôt GitHub : un seul clone (celui-ci) suffit.
+# Pour tester une version locale du backend : BACKEND_CONTEXT=../Seats-Backend/backend docker compose up --build
+
+services:
+  db:
+    image: postgres:17
+    environment:
+      POSTGRES_USER: seats
+      POSTGRES_PASSWORD: seats
+      POSTGRES_DB: seats
+    volumes:
+      - seats_db_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U seats -d seats']
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  backend:
+    build:
+      context: ${BACKEND_CONTEXT:-https://github.com/Projet-3-DA/Seats-Backend.git#main:backend}
+    environment:
+      DATABASE_URL: postgresql://seats:seats@db:5432/seats
+      DIRECT_URL: postgresql://seats:seats@db:5432/seats
+      JWT_SECRET: seats-demo-jwt-secret
+    ports:
+      - '3001:3000'
+    depends_on:
+      db:
+        condition: service_healthy
+
+  frontend:
+    build:
+      context: ./frontend
+      args:
+        EXPO_PUBLIC_API_URL: http://localhost:3001/api
+    ports:
+      - '3000:3000'
+    depends_on:
+      - backend
+
+volumes:
+  seats_db_data:
