@@ -1,0 +1,55 @@
+# Seats en une commande : docker compose up
+#
+# Ce fichier lance la db, le backend et le frontend Seats à partir des images GHCR.
+# Le frontend communique avec le backend via le réseau Docker privé (http://backend:3000).
+#
+# La base de données est un Postgres local (volume `seats_db_data`, survit aux redémarrages).
+# DATABASE_URL/DIRECT_URL pointent dessus et priment sur ce que ./.env pourrait définir.
+
+services:
+  db:
+    image: postgres:17
+    environment:
+      POSTGRES_USER: seats
+      POSTGRES_PASSWORD: seats
+      POSTGRES_DB: seats
+    volumes:
+      - seats_db_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U seats -d seats']
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  backend:
+    image: ghcr.io/projet-3-da/seats-backend:latest
+    build:
+      context: ../Seats-Backend/backend
+    ports:
+      - "3000:3000"
+    environment:
+      DATABASE_URL: postgresql://seats:seats@db:5432/seats
+      DIRECT_URL: postgresql://seats:seats@db:5432/seats
+    env_file:
+      - path: ./.env
+        required: false
+      # - path: ./Seats-Backend/backend/.env
+      #   required: false
+    depends_on:
+      db:
+        condition: service_healthy
+
+  frontend:
+    image: ghcr.io/projet-3-da/seats-frontend:latest
+    build:
+      context: ./frontend
+    ports:
+      - "5173:3000"
+    environment:
+      API_URL: http://backend:3000
+    depends_on:
+      - backend
+
+volumes:
+  seats_db_data:
+
