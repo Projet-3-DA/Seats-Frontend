@@ -32,7 +32,6 @@ Les tests du backend (dépôt Seats-Backend) se lancent avec `npm test` dans son
 - Les **salles, événements et réservations ci-dessus** sont des données de démonstration.
 - Sans affiche fournie, un événement reçoit une **image aléatoire de démonstration** (picsum.photos).
 - Le **téléversement d'un fichier** d'affiche demande un stockage Supabase non configuré dans Docker : utiliser un lien d'image.
-- Une réservation place le siège « en sélection » pendant 15 minutes ; la **confirmation** n'existe pas encore.
 
 ## Équipe
 - Oughlis Yanis
