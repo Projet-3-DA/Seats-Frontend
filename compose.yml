@@ -25,6 +25,7 @@ services:
     image: ghcr.io/projet-3-da/seats-backend:latest
     build:
       context: ../Seats-Backend/backend
+    command: sh -c "npx prisma migrate deploy && node src/server.js"
     ports:
       - "3000:3000"
     environment:
