@@ -18,6 +18,7 @@ export default function EventSeatMapScreen() {
   const [erreur, setErreur] = useState(null);
   const [chargement, setChargement] = useState(true);
   const [selection, setSelection] = useState(new Set());
+  const [enConfirmation, setEnConfirmation] = useState(false);
   const [envoiEnCours, setEnvoiEnCours] = useState(false);
   const [erreurReservation, setErreurReservation] = useState('');
   const [succes, setSucces] = useState(false);
@@ -72,7 +73,15 @@ export default function EventSeatMapScreen() {
     });
   }
 
-  async function handleReserver() {
+  // « Réserver » n'enregistre rien : il ouvre le récapitulatif. C'est « Confirmer » qui écrit la réservation.
+  function demanderConfirmation() {
+    if (selection.size === 0) return;
+    setErreurReservation('');
+    setSucces(false);
+    setEnConfirmation(true);
+  }
+
+  async function handleConfirmer() {
     if (selection.size === 0 || envoiEnCours) return;
     setEnvoiEnCours(true);
     setErreurReservation('');
@@ -98,6 +107,7 @@ export default function EventSeatMapScreen() {
       purgerSelectionIndisponible(await chargerPlan());
     } finally {
       setEnvoiEnCours(false);
+      setEnConfirmation(false);
     }
   }
 
@@ -118,6 +128,9 @@ export default function EventSeatMapScreen() {
   }
 
   const { rangees, numerosRangees } = groupSiegesParRangee(plan.sieges);
+  const siegesChoisis = plan.sieges
+    .filter((s) => selection.has(s.id))
+    .sort((a, b) => a.rangee - b.rangee || a.colonne - b.colonne);
 
   function styleSiege(siege) {
     if (siege.etat === 'reserve') return styles.occupe;
@@ -137,7 +150,7 @@ export default function EventSeatMapScreen() {
                 key={s.id}
                 testID={`siege-${s.id}`}
                 onPress={() => basculerSelection(s)}
-                disabled={!peutReserver || s.etat !== 'libre'}
+                disabled={!peutReserver || s.etat !== 'libre' || enConfirmation}
                 style={[styles.siege, styleSiege(s)]}
               >
                 <ThemedText type="small" style={styles.siegeTexte}>
@@ -174,23 +187,47 @@ export default function EventSeatMapScreen() {
 
       {succes && selection.size === 0 && !erreurReservation && (
         <ThemedText type="small" style={styles.succesTexte}>
-          Sièges réservés ! Vous avez 15 minutes pour confirmer.
+          Réservation confirmée !
         </ThemedText>
       )}
 
-      {peutReserver && (
+      {peutReserver && enConfirmation && (
+        <View
+          style={[styles.recapitulatif, { backgroundColor: theme.backgroundElement, borderColor: theme.border }]}
+        >
+          <ThemedText type="smallBold">Confirmer votre réservation</ThemedText>
+          {siegesChoisis.map((s) => (
+            <ThemedText key={s.id} type="small" themeColor="textSecondary">
+              Rangée {s.rangee}, siège {s.colonne}
+            </ThemedText>
+          ))}
+          <Pressable
+            onPress={handleConfirmer}
+            disabled={envoiEnCours}
+            style={[styles.bouton, { backgroundColor: theme.primary, opacity: envoiEnCours ? 0.5 : 1 }]}
+          >
+            <ThemedText type="smallBold" style={styles.boutonTexte}>
+              {envoiEnCours ? 'Confirmation…' : 'Confirmer'}
+            </ThemedText>
+          </Pressable>
+          <Pressable
+            onPress={() => setEnConfirmation(false)}
+            disabled={envoiEnCours}
+            style={[styles.bouton, styles.boutonSecondaire, { borderColor: theme.border }]}
+          >
+            <ThemedText type="smallBold">Modifier ma sélection</ThemedText>
+          </Pressable>
+        </View>
+      )}
+
+      {peutReserver && !enConfirmation && (
         <Pressable
-          onPress={handleReserver}
-          disabled={selection.size === 0 || envoiEnCours}
-          style={[
-            styles.bouton,
-            { backgroundColor: theme.primary, opacity: selection.size === 0 || envoiEnCours ? 0.5 : 1 },
-          ]}
+          onPress={demanderConfirmation}
+          disabled={selection.size === 0}
+          style={[styles.bouton, { backgroundColor: theme.primary, opacity: selection.size === 0 ? 0.5 : 1 }]}
         >
           <ThemedText type="smallBold" style={styles.boutonTexte}>
-            {envoiEnCours
-              ? 'Réservation…'
-              : `Réserver ${selection.size > 0 ? `(${selection.size})` : ''}`.trim()}
+            {`Réserver ${selection.size > 0 ? `(${selection.size})` : ''}`.trim()}
           </ThemedText>
         </Pressable>
       )}
@@ -212,6 +249,8 @@ const styles = StyleSheet.create({
   legendeItem: { flexDirection: 'row', alignItems: 'center', gap: Spacing.one },
   pastille: { width: 12, height: 12, borderRadius: 3 },
   bouton: { borderRadius: 8, paddingVertical: 14, alignItems: 'center' },
+  boutonSecondaire: { borderWidth: 1 },
+  recapitulatif: { borderWidth: 1, borderRadius: 12, padding: Spacing.three, gap: Spacing.two },
   boutonTexte: { color: '#ffffff' },
   erreurTexte: { color: '#DC2626' },
   succesTexte: { color: '#16a34a' },
