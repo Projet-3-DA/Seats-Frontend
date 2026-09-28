@@ -10,13 +10,11 @@ import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { MaxContentWidth } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
+import { useAuth } from '@/lib/auth-context';
 import { parseDateHeure } from '@/utils/dates';
 import { isLienHttp } from '@/utils/liens';
 import { capaciteSalle } from '@/utils/salle';
 
-// ponytail: pas d'auth branchée côté frontend (récit #1 pas fait) donc pas d'ID d'organisateur réel.
-// À remplacer par l'utilisateur connecté une fois le login en place.
-const DEMO_ORGANISATEUR_ID = 1;
 // Même limite que le backend (express.raw, 5 Mo) : on refuse avant d'envoyer.
 const MAX_AFFICHE_OCTETS = 5 * 1024 * 1024;
 
@@ -52,6 +50,7 @@ function Champ({ label, erreur, children }) {
 
 export default function NouvelEvenementScreen() {
   const theme = useTheme();
+  const { token, user } = useAuth();
   const router = useRouter();
 
   const [titre, setTitre] = useState('');
@@ -80,15 +79,18 @@ export default function NouvelEvenementScreen() {
   }, []);
 
   useEffect(() => {
+    // Au premier rendu, AuthProvider relit encore le token depuis le storage (async) : il vaut null
+    // un court instant. Attendre qu'il soit disponible évite un aller-retour 401 parasite.
+    if (!token) return undefined;
+
     let cancelled = false;
     async function load() {
       try {
-        const res = await fetch(`${API_URL}/salles`);
+        // GET /salles exige l'authentification et ne renvoie que les salles de l'utilisateur connecté.
+        const res = await fetch(`${API_URL}/salles`, { headers: { Authorization: `Bearer ${token}` } });
         const json = await res.json();
         if (!res.ok || !json.success) throw new Error(json.error || 'Échec du chargement des salles.');
-        // ponytail: le backend renvoie toutes les salles, on garde celles de l'organisateur ici.
-        // À faire côté serveur (req.user.id) une fois l'auth en place.
-        if (!cancelled) setSalles(json.data.filter((s) => s.organisateurId === DEMO_ORGANISATEUR_ID));
+        if (!cancelled) setSalles(json.data);
       } catch (err) {
         if (!cancelled) setSallesError(err.message || 'Échec du chargement des salles.');
       } finally {
@@ -99,7 +101,7 @@ export default function NouvelEvenementScreen() {
     return () => {
       cancelled = true;
     };
-  }, []);
+  }, [token]);
 
   const salle = salles.find((s) => s.id === salleId);
   const dateHeure = parseDateHeure(date, heure);
@@ -173,7 +175,7 @@ export default function NouvelEvenementScreen() {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          organisateurId: DEMO_ORGANISATEUR_ID,
+          organisateurId: user?.id,
           salleId,
           titre: titre.trim(),
           description: description.trim(),
