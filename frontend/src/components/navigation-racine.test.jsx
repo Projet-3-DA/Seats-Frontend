@@ -3,14 +3,20 @@ jest.mock('@/lib/auth-context', () => ({ useAuth: jest.fn() }));
 // vérifie seulement quand NOTRE code ouvre ou ferme la garde des écrans d'authentification.
 jest.mock('expo-router', () => {
   const { Text } = require('react-native');
-  const Stack = ({ children }) => children;
-  Stack.Protected = ({ guard, children }) => (
-    <>
-      <Text testID="garde-auth">{guard ? 'ouverte' : 'fermee'}</Text>
-      {children}
-    </>
-  );
-  Stack.Screen = () => null;
+  function Stack({ children }) {
+    return children;
+  }
+  Stack.Protected = function Protected({ guard, children }) {
+    return (
+      <>
+        <Text testID="garde-auth">{guard ? 'ouverte' : 'fermee'}</Text>
+        {children}
+      </>
+    );
+  };
+  Stack.Screen = function Screen() {
+    return null;
+  };
   return { Stack };
 });
 
