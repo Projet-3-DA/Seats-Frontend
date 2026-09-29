@@ -1,6 +1,6 @@
 import { Feather } from '@expo/vector-icons';
-import { Link } from 'expo-router';
-import { useEffect, useState } from 'react';
+import { Link, useFocusEffect } from 'expo-router';
+import { useCallback, useState } from 'react';
 import { ActivityIndicator, FlatList, Pressable, StyleSheet, View } from 'react-native';
 
 import { ThemedText } from '@/components/themed-text';
@@ -32,32 +32,35 @@ export default function MesSallesScreen() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
 
-  useEffect(() => {
-    // Au premier rendu, AuthProvider relit encore le token depuis le storage (async) : il vaut null
-    // un court instant. Attendre qu'il soit disponible évite un aller-retour 401 parasite.
-    if (!token) return;
+  // À chaque retour sur l'onglet (par exemple après la création d'une salle), la liste est rechargée.
+  useFocusEffect(
+    useCallback(() => {
+      // Au premier rendu, AuthProvider relit encore le token depuis le storage (async) : il vaut null
+      // un court instant. Attendre qu'il soit disponible évite un aller-retour 401 parasite.
+      if (!token) return undefined;
 
-    let cancelled = false;
-    async function load() {
-      setError('');
-      try {
-        const res = await fetch(`${API_URL}/salles`, {
-          headers: { Authorization: `Bearer ${token}` },
-        });
-        const json = await res.json();
-        if (!res.ok || !json.success) throw new Error(json.error || 'Échec du chargement des salles.');
-        if (!cancelled) setSalles(json.data);
-      } catch (err) {
-        if (!cancelled) setError(err.message || 'Échec du chargement des salles.');
-      } finally {
-        if (!cancelled) setLoading(false);
+      let cancelled = false;
+      async function load() {
+        setError('');
+        try {
+          const res = await fetch(`${API_URL}/salles`, {
+            headers: { Authorization: `Bearer ${token}` },
+          });
+          const json = await res.json();
+          if (!res.ok || !json.success) throw new Error(json.error || 'Échec du chargement des salles.');
+          if (!cancelled) setSalles(json.data);
+        } catch (err) {
+          if (!cancelled) setError(err.message || 'Échec du chargement des salles.');
+        } finally {
+          if (!cancelled) setLoading(false);
+        }
       }
-    }
-    load();
-    return () => {
-      cancelled = true;
-    };
-  }, [token]);
+      load();
+      return () => {
+        cancelled = true;
+      };
+    }, [token]),
+  );
 
   return (
     <FlatList
@@ -74,7 +77,10 @@ export default function MesSallesScreen() {
               <ThemedText themeColor="textSecondary">Les salles que vous avez créées.</ThemedText>
             </View>
             <Link href="/organisateur/salles/nouvelle" asChild>
-              <Pressable style={StyleSheet.flatten([styles.addButton, { backgroundColor: theme.primary }])}>
+              <Pressable
+                accessibilityLabel="Créer une salle"
+                style={StyleSheet.flatten([styles.addButton, { backgroundColor: theme.primary }])}
+              >
                 <Feather name="plus" size={20} color="#ffffff" />
               </Pressable>
             </Link>
