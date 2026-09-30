@@ -115,7 +115,7 @@ function TicketCard({ groupe, theme }) {
 
         {estPasseOuAnnule ? (
           <Link href={`/(tabs)/events/${groupe.evenement.id}`} asChild>
-            <Pressable style={[styles.bouton, { borderColor: theme.border }]}>
+            <Pressable style={{ ...styles.bouton, borderColor: theme.border }}>
               <ThemedText type="small">Réserver à nouveau</ThemedText>
             </Pressable>
           </Link>
