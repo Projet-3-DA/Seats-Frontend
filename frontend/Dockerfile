@@ -8,6 +8,10 @@ COPY package.json package-lock.json ./
 RUN npm ci
 
 COPY . .
+# Expo fige EXPO_PUBLIC_* dans le bundle au moment du build : l'adresse de l'API vue par le navigateur
+# doit donc être fournie ici (docker-compose la définit).
+ARG EXPO_PUBLIC_API_URL
+ENV EXPO_PUBLIC_API_URL=$EXPO_PUBLIC_API_URL
 # CI=1 empêche `expo export` de tenter des prompts interactifs.
 RUN CI=1 npm run build:web
 

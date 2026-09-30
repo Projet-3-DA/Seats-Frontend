@@ -94,8 +94,9 @@ describe('EventSeatMapScreen', () => {
       .mockResolvedValueOnce(reponse({ success: true, data: [{ id: 1, siegeId: 101, statut: 'en_selection' }] }))
       .mockResolvedValueOnce(reponse({ success: true, data: plan }));
     await fireEvent.press(screen.getByText('Réserver (1)'));
+    await fireEvent.press(screen.getByText('Confirmer'));
 
-    await attendreQue(() => screen.queryByText(/Sièges réservés/) !== null);
+    await attendreQue(() => screen.queryByText('Réservation confirmée !') !== null);
 
     expect(global.fetch).toHaveBeenCalledWith(
       expect.stringContaining('/reservations'),
@@ -127,6 +128,7 @@ describe('EventSeatMapScreen', () => {
       .mockResolvedValueOnce(reponse({ success: true, data: planApresConflit }));
 
     await fireEvent.press(screen.getByText('Réserver (1)'));
+    await fireEvent.press(screen.getByText('Confirmer'));
 
     await attendreQue(() => screen.queryByText('Ce siège vient d\'être pris.') !== null);
 
@@ -161,8 +163,41 @@ describe('EventSeatMapScreen', () => {
       .mockResolvedValueOnce(reponse({ success: true, data: planApresConflit }));
 
     await fireEvent.press(screen.getByText('Réserver (2)'));
+    await fireEvent.press(screen.getByText('Confirmer'));
 
     await attendreQue(() => screen.queryByText('Réserver (1)') !== null);
     expect(screen.getByTestId('siege-101').props.accessibilityState?.disabled).toBe(true);
+  });
+
+  it("n'enregistre rien avant « Confirmer » : « Réserver » n'ouvre que le récapitulatif", async () => {
+    useAuth.mockReturnValue({ token: 'jeton', user: { id: 5, role: 'spectateur' } });
+    global.fetch = jest.fn().mockResolvedValue(reponse({ success: true, data: plan }));
+
+    await render(<EventSeatMapScreen />);
+    await attendreQue(() => screen.queryByText('Salle A') !== null);
+
+    await fireEvent.press(screen.getByTestId('siege-101'));
+    await fireEvent.press(screen.getByText('Réserver (1)'));
+
+    expect(screen.getByText('Confirmer votre réservation')).toBeTruthy();
+    expect(screen.getByText('Rangée 1, siège 1')).toBeTruthy();
+    expect(global.fetch).toHaveBeenCalledTimes(1); // seulement le chargement du plan, aucun POST
+    expect(global.fetch.mock.calls.some(([, options]) => options?.method === 'POST')).toBe(false);
+  });
+
+  it('« Modifier ma sélection » revient à la sélection sans rien envoyer et garde les sièges choisis', async () => {
+    useAuth.mockReturnValue({ token: 'jeton', user: { id: 5, role: 'spectateur' } });
+    global.fetch = jest.fn().mockResolvedValue(reponse({ success: true, data: plan }));
+
+    await render(<EventSeatMapScreen />);
+    await attendreQue(() => screen.queryByText('Salle A') !== null);
+
+    await fireEvent.press(screen.getByTestId('siege-101'));
+    await fireEvent.press(screen.getByText('Réserver (1)'));
+    await fireEvent.press(screen.getByText('Modifier ma sélection'));
+
+    expect(screen.queryByText('Confirmer votre réservation')).toBeNull();
+    expect(screen.getByText('Réserver (1)')).toBeTruthy();
+    expect(global.fetch).toHaveBeenCalledTimes(1);
   });
 });
