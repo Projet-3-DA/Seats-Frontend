@@ -2,6 +2,7 @@ import { Link } from 'expo-router';
 import { useEffect, useMemo, useState } from 'react';
 import { ActivityIndicator, FlatList, Pressable, StyleSheet, View } from 'react-native';
 
+import { Affiche } from '@/components/affiche';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { API_URL } from '@/constants/api';
@@ -80,7 +81,7 @@ function TicketCard({ groupe, theme }) {
   return (
     <View style={[styles.card, { backgroundColor: theme.backgroundElement, borderColor: theme.border }]}>
       <View style={styles.cardHeader}>
-        <View style={[styles.vignette, { backgroundColor: theme.backgroundSelected }]} />
+        <Affiche uri={groupe.evenement.afficheUrl} style={styles.vignette} />
         <View style={styles.cardHeaderText}>
           <ThemedText type="smallBold" style={styles.titre}>
             {groupe.evenement.titre}
