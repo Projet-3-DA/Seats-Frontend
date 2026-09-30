@@ -55,7 +55,7 @@
   - Une seule application Expo (React Native, avec le web via react-native-web) qui tourne sur toutes les plateformes (web, iOS et Android), au lieu de deux clients séparés (React Native puis React web). Cette décision remplace celle du bloc 4.
 
 ## Lundi 28 septembre
-- **Présences** : Delavie, Junior, Yanis.
+- **Présences** : Glodie, Junior, Yanis.
 - **Avancé** :
   - Déploiement de toute l'application avec Docker (Junior, backend PR #15 et frontend PR #61) : `docker compose up` démarre la base de données, le backend et le frontend en une seule commande depuis un clone neuf, avec migrations Prisma et comptes de démonstration (un par rôle) créés automatiquement au démarrage.
   - Yanis a corrigé plusieurs problèmes rencontrés en testant ce déploiement (`docker-compose.yml`, construction de l'image), redirigé l'utilisateur vers la page de connexion après la création d'un compte (bug trouvé en testant le parcours complet), et fusionné dans `main` l'ensemble des PR prêtes de la journée (#15, #16, #56, #61, #62, #63, #64, #65).
