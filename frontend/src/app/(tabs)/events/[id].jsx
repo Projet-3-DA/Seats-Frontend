@@ -183,9 +183,15 @@ export default function EventSeatMapScreen() {
         </ThemedText>
       )}
 
-      {!peutReserver && !estTermine && (
+      {!user && !estTermine && (
         <ThemedText type="small" themeColor="textSecondary">
           Connectez-vous en tant que spectateur pour réserver des sièges.
+        </ThemedText>
+      )}
+
+      {user && !peutReserver && (
+        <ThemedText type="small" themeColor="textSecondary">
+          Plan en consultation seulement : la réservation est réservée aux spectateurs.
         </ThemedText>
       )}
 

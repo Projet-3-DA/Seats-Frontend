@@ -8,10 +8,11 @@ import { ThemedText } from '@/components/themed-text';
 import { API_URL } from '@/constants/api';
 import { MaxContentWidth } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
+import { useAuth } from '@/lib/auth-context';
 import { formatDateHeure } from '@/utils/dates';
 import { formatTarif } from '@/utils/tarif';
 
-function EventCard({ item, theme }) {
+function EventCard({ item, theme, peutReserver }) {
   return (
     <View style={[styles.card, { backgroundColor: theme.backgroundElement, borderColor: theme.border }]}>
       <Affiche uri={item.afficheUrl} style={styles.affiche} />
@@ -39,13 +40,15 @@ function EventCard({ item, theme }) {
             {formatTarif(item.tarif)}
           </ThemedText>
         </View>
-        <Link href={`/(tabs)/events/${item.id}`} asChild>
-          <Pressable style={StyleSheet.flatten([styles.button, { backgroundColor: theme.primary }])}>
-            <ThemedText type="smallBold" style={styles.buttonText}>
-              Réserver mes places
-            </ThemedText>
-          </Pressable>
-        </Link>
+        {peutReserver && (
+          <Link href={`/(tabs)/events/${item.id}`} asChild>
+            <Pressable style={StyleSheet.flatten([styles.button, { backgroundColor: theme.primary }])}>
+              <ThemedText type="smallBold" style={styles.buttonText}>
+                Réserver mes places
+              </ThemedText>
+            </Pressable>
+          </Link>
+        )}
       </View>
     </View>
   );
@@ -53,6 +56,10 @@ function EventCard({ item, theme }) {
 
 export default function EventsListScreen() {
   const theme = useTheme();
+  const { user } = useAuth();
+  // Seul un spectateur peut réserver (le serveur le vérifie aussi). Un visiteur non connecté garde le
+  // bouton : c'est son chemin vers la connexion. Organisateur et administrateur consultent seulement (#87).
+  const peutReserver = !user || user.role === 'spectateur';
   const [evenements, setEvenements] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -96,7 +103,7 @@ export default function EventsListScreen() {
     <FlatList
       data={evenementsFiltres}
       keyExtractor={(item) => String(item.id)}
-      renderItem={({ item }) => <EventCard item={item} theme={theme} />}
+      renderItem={({ item }) => <EventCard item={item} theme={theme} peutReserver={peutReserver} />}
       contentContainerStyle={styles.list}
       style={{ backgroundColor: theme.background }}
       ListHeaderComponent={

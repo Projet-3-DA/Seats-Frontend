@@ -63,6 +63,20 @@ describe('EventSeatMapScreen', () => {
     await attendreQue(() => screen.queryByText('Salle A') !== null);
 
     expect(screen.queryByText('Réserver')).toBeNull();
+    expect(
+      screen.getByText('Plan en consultation seulement : la réservation est réservée aux spectateurs.'),
+    ).toBeTruthy();
+    expect(screen.queryByText('Connectez-vous en tant que spectateur pour réserver des sièges.')).toBeNull();
+  });
+
+  it('invite un visiteur non connecté à se connecter pour réserver (#87)', async () => {
+    useAuth.mockReturnValue({ token: null, user: null });
+    global.fetch = jest.fn().mockResolvedValue(reponse({ success: true, data: plan }));
+
+    await render(<EventSeatMapScreen />);
+    await attendreQue(() => screen.queryByText('Salle A') !== null);
+
+    expect(screen.queryByText('Réserver')).toBeNull();
     expect(screen.getByText('Connectez-vous en tant que spectateur pour réserver des sièges.')).toBeTruthy();
   });
 
