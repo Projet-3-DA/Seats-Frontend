@@ -70,3 +70,12 @@
 - **Décisions** :
   - Passage des deux dépôts (Seats-Backend et Seats-Frontend) en visibilité publique, pour que `docker compose` puisse construire l'image du backend depuis son URL GitHub sans authentification — exigé par la grille d'évaluation (un correcteur qui n'a que Docker installé).
   - Pas de tag `alpha-v1` pour le point de contrôle du jour : seule une application fonctionnelle via Docker était exigée, le tag reste pour la remise finale du sprint.
+
+## Mercredi 30 septembre
+- **Présences** : Delavie, Glodie, Junior, Yanis.
+- **Avancé** :
+  - #30 — Empêcher la sélection d'un siège déjà réservé, par Delavie (backend PR #17, mergée) : le plan de salle compte désormais les réservations « en_selection » non expirées comme sièges indisponibles, pas seulement celles confirmées.
+  - #7 — Voir mes réservations, par Glodie (backend PR #18, frontend PR #70) : écran des billets, regroupés par événement et par statut (à venir, terminé, annulé), avec l'affiche de l'événement.
+  - #26 — Refuser une réservation si un siège a été pris entretemps, par Glodie (backend PR #19, frontend PR #71).
+- **Décisions** :
+  - Clarification du périmètre entre #26 et #30, qui concernent tous deux un conflit sur un siège mais à des moments différents : #26 agit **au moment de la confirmation** (le siège visé vient d'être pris juste avant que la réservation ne soit enregistrée, la contrainte unique en base le détecte) ; #30 agit **pendant la sélection**, en empêchant de choisir un siège déjà pris par quelqu'un d'autre avant même de tenter de réserver.
