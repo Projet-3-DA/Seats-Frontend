@@ -66,6 +66,20 @@ describe('EventSeatMapScreen', () => {
     expect(screen.getByText('Connectez-vous en tant que spectateur pour réserver des sièges.')).toBeTruthy();
   });
 
+  it('signale un événement terminé et ne permet pas de réserver (#82)', async () => {
+    useAuth.mockReturnValue({ token: 'jeton', user: { id: 5, role: 'spectateur' } });
+    const planPasse = { ...plan, dateHeure: new Date(Date.now() - 86_400_000).toISOString() };
+    global.fetch = jest.fn().mockResolvedValue(reponse({ success: true, data: planPasse }));
+
+    await render(<EventSeatMapScreen />);
+    await attendreQue(() => screen.queryByText('Salle A') !== null);
+
+    expect(screen.getByText("Événement terminé : il n'est plus possible de réserver.")).toBeTruthy();
+    expect(screen.queryByText('Réserver')).toBeNull();
+    await fireEvent.press(screen.getByTestId('siege-101'));
+    expect(screen.queryByText('Réserver (1)')).toBeNull();
+  });
+
   it('ignore un clic sur un siège occupé', async () => {
     useAuth.mockReturnValue({ token: 'jeton', user: { id: 5, role: 'spectateur' } });
     global.fetch = jest.fn().mockResolvedValue(reponse({ success: true, data: plan }));

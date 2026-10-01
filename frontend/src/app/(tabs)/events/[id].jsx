@@ -127,6 +127,10 @@ export default function EventSeatMapScreen() {
     );
   }
 
+  // Un événement passé n'apparaît plus dans la liste, mais reste joignable par un lien direct (#82).
+  const estTermine = Boolean(plan.dateHeure) && new Date(plan.dateHeure) <= new Date();
+  const reservationOuverte = peutReserver && !estTermine;
+
   const { rangees, numerosRangees } = groupSiegesParRangee(plan.sieges);
   const siegesChoisis = plan.sieges
     .filter((s) => selection.has(s.id))
@@ -150,7 +154,7 @@ export default function EventSeatMapScreen() {
                 key={s.id}
                 testID={`siege-${s.id}`}
                 onPress={() => basculerSelection(s)}
-                disabled={!peutReserver || s.etat !== 'libre' || enConfirmation}
+                disabled={!reservationOuverte || s.etat !== 'libre' || enConfirmation}
                 style={[styles.siege, styleSiege(s)]}
               >
                 <ThemedText type="small" style={styles.siegeTexte}>
@@ -173,7 +177,13 @@ export default function EventSeatMapScreen() {
         </View>
       </View>
 
-      {!peutReserver && (
+      {estTermine && (
+        <ThemedText type="smallBold" style={styles.erreurTexte}>
+          Événement terminé : il n'est plus possible de réserver.
+        </ThemedText>
+      )}
+
+      {!peutReserver && !estTermine && (
         <ThemedText type="small" themeColor="textSecondary">
           Connectez-vous en tant que spectateur pour réserver des sièges.
         </ThemedText>
@@ -191,7 +201,7 @@ export default function EventSeatMapScreen() {
         </ThemedText>
       )}
 
-      {peutReserver && enConfirmation && (
+      {reservationOuverte && enConfirmation && (
         <View
           style={[styles.recapitulatif, { backgroundColor: theme.backgroundElement, borderColor: theme.border }]}
         >
@@ -220,7 +230,7 @@ export default function EventSeatMapScreen() {
         </View>
       )}
 
-      {peutReserver && !enConfirmation && (
+      {reservationOuverte && !enConfirmation && (
         <Pressable
           onPress={demanderConfirmation}
           disabled={selection.size === 0}
