@@ -6,7 +6,7 @@ import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { Spacing } from '@/constants/theme';
 import { API_URL } from '@/constants/api';
-import { groupSiegesParRangee } from '@/utils/salle';
+import { groupSiegesParRangee, lettreRangee } from '@/utils/salle';
 import { useAuth } from '@/lib/auth-context';
 import { useTheme } from '@/hooks/use-theme';
 
@@ -149,6 +149,9 @@ export default function EventSeatMapScreen() {
       <View style={styles.grille}>
         {numerosRangees.map((rangee) => (
           <View key={rangee} style={styles.rangee}>
+            <ThemedText type="small" themeColor="textSecondary" style={styles.lettreRangee}>
+              {lettreRangee(rangee)}
+            </ThemedText>
             {rangees[rangee].map((s) => (
               <Pressable
                 key={s.id}
@@ -162,6 +165,9 @@ export default function EventSeatMapScreen() {
                 </ThemedText>
               </Pressable>
             ))}
+            <ThemedText type="small" themeColor="textSecondary" style={styles.lettreRangee}>
+              {lettreRangee(rangee)}
+            </ThemedText>
           </View>
         ))}
       </View>
@@ -183,9 +189,15 @@ export default function EventSeatMapScreen() {
         </ThemedText>
       )}
 
-      {!peutReserver && !estTermine && (
+      {!user && !estTermine && (
         <ThemedText type="small" themeColor="textSecondary">
           Connectez-vous en tant que spectateur pour réserver des sièges.
+        </ThemedText>
+      )}
+
+      {user && !peutReserver && (
+        <ThemedText type="small" themeColor="textSecondary">
+          Plan en consultation seulement : la réservation est réservée aux spectateurs.
         </ThemedText>
       )}
 
@@ -208,7 +220,7 @@ export default function EventSeatMapScreen() {
           <ThemedText type="smallBold">Confirmer votre réservation</ThemedText>
           {siegesChoisis.map((s) => (
             <ThemedText key={s.id} type="small" themeColor="textSecondary">
-              Rangée {s.rangee}, siège {s.colonne}
+              Rangée {lettreRangee(s.rangee)}, siège {s.colonne}
             </ThemedText>
           ))}
           <Pressable
@@ -249,7 +261,8 @@ const styles = StyleSheet.create({
   container: { flex: 1, padding: Spacing.four, gap: Spacing.four },
   center: { flex: 1, alignItems: 'center', justifyContent: 'center' },
   grille: { gap: Spacing.two },
-  rangee: { flexDirection: 'row', gap: Spacing.two },
+  rangee: { flexDirection: 'row', alignItems: 'center', gap: Spacing.two },
+  lettreRangee: { width: 16, textAlign: 'center' },
   siege: { width: 32, height: 32, borderRadius: 6, alignItems: 'center', justifyContent: 'center' },
   siegeTexte: { color: '#ffffff' },
   dispo: { backgroundColor: '#22c55e' },

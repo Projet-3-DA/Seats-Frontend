@@ -63,6 +63,20 @@ describe('EventSeatMapScreen', () => {
     await attendreQue(() => screen.queryByText('Salle A') !== null);
 
     expect(screen.queryByText('Réserver')).toBeNull();
+    expect(
+      screen.getByText('Plan en consultation seulement : la réservation est réservée aux spectateurs.'),
+    ).toBeTruthy();
+    expect(screen.queryByText('Connectez-vous en tant que spectateur pour réserver des sièges.')).toBeNull();
+  });
+
+  it('invite un visiteur non connecté à se connecter pour réserver (#87)', async () => {
+    useAuth.mockReturnValue({ token: null, user: null });
+    global.fetch = jest.fn().mockResolvedValue(reponse({ success: true, data: plan }));
+
+    await render(<EventSeatMapScreen />);
+    await attendreQue(() => screen.queryByText('Salle A') !== null);
+
+    expect(screen.queryByText('Réserver')).toBeNull();
     expect(screen.getByText('Connectez-vous en tant que spectateur pour réserver des sièges.')).toBeTruthy();
   });
 
@@ -183,6 +197,18 @@ describe('EventSeatMapScreen', () => {
     expect(screen.getByTestId('siege-101').props.accessibilityState?.disabled).toBe(true);
   });
 
+  it("affiche la lettre de chaque rangée de part et d'autre du plan", async () => {
+    useAuth.mockReturnValue({ token: null, user: null });
+    const planDeuxRangees = { ...plan, sieges: [...plan.sieges, { id: 201, rangee: 2, colonne: 1, etat: 'libre' }] };
+    global.fetch = jest.fn().mockResolvedValue(reponse({ success: true, data: planDeuxRangees }));
+
+    await render(<EventSeatMapScreen />);
+    await attendreQue(() => screen.queryByText('Salle A') !== null);
+
+    expect(screen.getAllByText('A')).toHaveLength(2);
+    expect(screen.getAllByText('B')).toHaveLength(2);
+  });
+
   it("n'enregistre rien avant « Confirmer » : « Réserver » n'ouvre que le récapitulatif", async () => {
     useAuth.mockReturnValue({ token: 'jeton', user: { id: 5, role: 'spectateur' } });
     global.fetch = jest.fn().mockResolvedValue(reponse({ success: true, data: plan }));
@@ -194,7 +220,7 @@ describe('EventSeatMapScreen', () => {
     await fireEvent.press(screen.getByText('Réserver (1)'));
 
     expect(screen.getByText('Confirmer votre réservation')).toBeTruthy();
-    expect(screen.getByText('Rangée 1, siège 1')).toBeTruthy();
+    expect(screen.getByText('Rangée A, siège 1')).toBeTruthy();
     expect(global.fetch).toHaveBeenCalledTimes(1); // seulement le chargement du plan, aucun POST
     expect(global.fetch.mock.calls.some(([, options]) => options?.method === 'POST')).toBe(false);
   });

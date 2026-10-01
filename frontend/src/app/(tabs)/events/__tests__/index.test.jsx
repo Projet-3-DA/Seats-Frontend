@@ -14,6 +14,8 @@ jest.mock('expo-router', () => {
   };
 });
 
+jest.mock('@/lib/auth-context', () => ({ useAuth: jest.fn() }));
+
 async function simulerRetourSurEcran() {
   await act(async () => {
     mockDernierEffetFocus();
@@ -22,6 +24,7 @@ async function simulerRetourSurEcran() {
 
 import { render, screen, fireEvent, act } from '@testing-library/react-native';
 
+import { useAuth } from '@/lib/auth-context';
 import EventsListScreen from '../index';
 
 function reponse(json, ok = true) {
@@ -49,8 +52,30 @@ async function attendreQue(predicat, { limiteMs = 5000, intervalleMs = 25 } = {}
 
 describe('EventsListScreen', () => {
   const fetchOriginal = global.fetch;
+  beforeEach(() => {
+    useAuth.mockReturnValue({ user: { id: 5, role: 'spectateur' } });
+  });
   afterEach(() => {
     global.fetch = fetchOriginal;
+  });
+
+  describe('bouton « Réserver mes places » selon le rôle (#87)', () => {
+    const evenement = { id: 1, titre: 'Festival de Jazz', dateHeure: '2026-10-28T20:00:00' };
+
+    it.each([
+      ['un spectateur', { id: 5, role: 'spectateur' }, true],
+      ['un visiteur non connecté', null, true],
+      ['un organisateur', { id: 7, role: 'organisateur' }, false],
+      ['un administrateur', { id: 9, role: 'administrateur' }, false],
+    ])('%s : bouton affiché = %s', async (_, user, attendu) => {
+      useAuth.mockReturnValue({ user });
+      global.fetch = jest.fn().mockResolvedValue(reponse({ success: true, data: [evenement] }));
+
+      await render(<EventsListScreen />);
+      await attendreQue(() => screen.queryByText('Festival de Jazz') !== null);
+
+      expect(screen.queryByText('Réserver mes places') !== null).toBe(attendu);
+    });
   });
 
   it('affiche les événements renvoyés par l\'API', async () => {
