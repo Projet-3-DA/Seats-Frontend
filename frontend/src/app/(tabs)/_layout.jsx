@@ -43,7 +43,14 @@ export default function TabsLayout() {
           href: user?.role === 'organisateur' ? undefined : null,
         }}
       />
-      <Tabs.Screen name="profil" options={{ title: 'Profil', tabBarIcon: icone('user') }} />
+      <Tabs.Screen
+        name="profil"
+        options={{
+          title: user ? 'Profil' : 'Se connecter',
+          tabBarIcon: icone(user ? 'user' : 'log-in'),
+          href: user ? undefined : '/(auth)/login',
+        }}
+      />
     </Tabs>
   );
 }
