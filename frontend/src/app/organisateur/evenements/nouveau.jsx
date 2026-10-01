@@ -50,7 +50,7 @@ function Champ({ label, erreur, children }) {
 
 export default function NouvelEvenementScreen() {
   const theme = useTheme();
-  const { token, user } = useAuth();
+  const { token } = useAuth();
   const router = useRouter();
 
   const [titre, setTitre] = useState('');
@@ -153,7 +153,7 @@ export default function NouvelEvenementScreen() {
     if (blob.size > MAX_AFFICHE_OCTETS) throw new Error("L'image dépasse 5 Mo.");
     const res = await fetch(`${API_URL}/evenements/affiche`, {
       method: 'POST',
-      headers: { 'Content-Type': fichier.mimeType || blob.type || 'image/jpeg' },
+      headers: { 'Content-Type': fichier.mimeType || blob.type || 'image/jpeg', Authorization: `Bearer ${token}` },
       body: blob,
     });
     const json = await res.json();
@@ -173,9 +173,9 @@ export default function NouvelEvenementScreen() {
         : lien.trim() || urlImageAleatoire(graine ?? nouvelleGraine());
       const res = await fetch(`${API_URL}/evenements`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        // L'organisateur est déduit du token par le backend.
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
         body: JSON.stringify({
-          organisateurId: user?.id,
           salleId,
           titre: titre.trim(),
           description: description.trim(),

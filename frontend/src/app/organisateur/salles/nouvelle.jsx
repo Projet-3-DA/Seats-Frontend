@@ -30,7 +30,7 @@ function rowLabel(index) {
 export default function NouvelleSalleScreen() {
   const theme = useTheme();
   const router = useRouter();
-  const { user } = useAuth();
+  const { token } = useAuth();
   const { width } = useWindowDimensions();
   const isDesktop = width >= DESKTOP_BREAKPOINT;
 
@@ -64,9 +64,9 @@ export default function NouvelleSalleScreen() {
     try {
       const res = await fetch(`${API_URL}/salles`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        // L'organisateur est déduit du token par le backend.
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
         body: JSON.stringify({
-          organisateurId: user.id,
           nom: nom.trim(),
           nombreRangees: nbRangees,
           siegesParRangee: nbSieges,

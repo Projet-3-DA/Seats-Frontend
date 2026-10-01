@@ -90,6 +90,10 @@ describe('NouvelEvenementScreen', () => {
     await attendreQue(() => mockBack.mock.calls.length > 0);
 
     const [, options] = global.fetch.mock.calls.find(([, o]) => o?.method === 'POST');
-    expect(JSON.parse(options.body)).toMatchObject({ organisateurId: 7, salleId: 3, titre: 'Mon spectacle', tarif: 25 });
+    // L'organisateur est déduit du token par le backend : il n'est plus envoyé dans le corps.
+    expect(options.headers).toMatchObject({ Authorization: 'Bearer jeton-orga' });
+    const corps = JSON.parse(options.body);
+    expect(corps).toMatchObject({ salleId: 3, titre: 'Mon spectacle', tarif: 25 });
+    expect(corps).not.toHaveProperty('organisateurId');
   });
 });
