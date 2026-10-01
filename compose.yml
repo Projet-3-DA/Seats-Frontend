@@ -1,6 +1,7 @@
 # Seats en une commande : docker compose up
 #
-# Ce fichier lance la db, le backend et le frontend Seats à partir des images GHCR.
+# Ce fichier lance la db, le backend et le frontend Seats. Avec --build, le frontend est construit
+# depuis ./frontend et le backend directement depuis le dépôt GitHub Seats-Backend.
 # Le frontend communique avec le backend via le réseau Docker privé (http://backend:3000).
 #
 # La base de données est un Postgres local (volume `seats_db_data`, survit aux redémarrages).
@@ -23,9 +24,11 @@ services:
 
   backend:
     image: ghcr.io/projet-3-da/seats-backend:latest
+    # Construit depuis le dépôt Seats-Backend sur GitHub (dossier backend/ de main) : un clone de ce
+    # seul dépôt suffit. La commande par défaut de l'image (docker-entrypoint.sh) applique les
+    # migrations et crée les comptes de démonstration avant de démarrer l'API.
     build:
-      context: ../Seats-Backend/backend
-    command: sh -c "npx prisma migrate deploy && node src/server.js"
+      context: https://github.com/Projet-3-DA/Seats-Backend.git#main:backend
     ports:
       - "3000:3000"
     environment:
