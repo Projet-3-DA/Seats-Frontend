@@ -53,6 +53,7 @@ export default function LoginScreen() {
           keyboardType="email-address"
           value={email}
           onChangeText={setEmail}
+          onSubmitEditing={handleLogin}
         />
 
         <ThemedText type="smallBold">Mot de passe</ThemedText>
@@ -63,6 +64,7 @@ export default function LoginScreen() {
           secureTextEntry
           value={password}
           onChangeText={setPassword}
+          onSubmitEditing={handleLogin}
         />
 
         {erreur && (
