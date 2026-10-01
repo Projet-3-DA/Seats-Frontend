@@ -83,11 +83,11 @@
 ## Jeudi 1er octobre
 - **Présences** : Delavie, Glodie, Junior, Yanis.
 - **Avancé** :
-  - Yanis a testé toutes les PR entrantes avant leur fusion et a rempli `04-sprints.md` (responsables des récits et bilan du sprint).
-  - Glodie a corrigé des bugs de connexion et de réservation, et mis à jour `03-conception.md`.
+  - Yanis a testé et revu les PR entrantes avant leur fusion (frontend #66, #67, #72 à #76, #78 à #81, #83 ; backend #21, #22), corrigé les fins de ligne du script de démarrage du backend pour qu'il démarre sous Docker depuis un clone Windows (backend PR #20, `.gitattributes`), et rempli `04-sprints.md` (responsables des récits et bilan du sprint).
+  - Glodie a corrigé des bugs de connexion et de réservation : l'onglet affiche « Se connecter » au lieu du profil quand on est déconnecté (PR #73), le formulaire de connexion se soumet avec la touche Entrée (PR #76), et le bouton « Réserver à nouveau » est caché pour un événement terminé (PR #81). Elle a aussi mis à jour `03-conception.md`.
   - #82 — Masquer les événements passés et refuser leur réservation, par Junior (backend PR #22, frontend PR #83) : la liste ne montre plus que les événements à venir, le serveur refuse la réservation d'un événement passé, et la page d'un événement terminé l'indique.
-  - Junior a aussi corrigé le rafraîchissement de la liste des événements après une création (PR #74), simplifié le démarrage Docker (PR #75), ramené dans `main` les correctifs de la barre d'onglets (PR #80) et rédigé le compte rendu de la rétrospective (PR #79).
-  - Delavie a rempli le README, `06-risques.md` et `05-equipe.md`, et a protégé les routes réservées aux organisateurs dans le backend.
+  - Junior a aussi corrigé le rafraîchissement de la liste des événements après une création (PR #74), simplifié le démarrage Docker à un seul dépôt (PR #75), ramené dans `main` les correctifs de la barre d'onglets (PR #80) et rédigé le compte rendu de la rétrospective (PR #79).
+  - Delavie a protégé les routes réservées aux organisateurs (backend PR #21, frontend PR #77), rédigé le README du backend (PR #21), et rempli `05-equipe.md` et `06-risques.md` (PR #78).
   - Rétrospective du sprint 1 tenue en fin de bloc (`docs/retrospectives/sprint-1.md`).
 - **Décisions** :
   - Un seul dépôt à cloner, le frontend : `compose.yml` construit l'image du backend directement depuis l'URL GitHub de Seats-Backend, plutôt que d'exiger deux dépôts clonés côte à côte. La commande qui remplaçait `docker-entrypoint.sh` est retirée, pour que les comptes de démonstration soient bien créés.
