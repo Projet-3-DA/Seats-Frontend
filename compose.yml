@@ -23,7 +23,7 @@ services:
       retries: 10
 
   backend:
-    image: ghcr.io/projet-3-da/seats-backend:latest
+    image: ghcr.io/projet-3-da/seats-backend:alpha-v1
     # Construit depuis le dépôt Seats-Backend sur GitHub (dossier backend/ de main) : un clone de ce
     # seul dépôt suffit. La commande par défaut de l'image (docker-entrypoint.sh) applique les
     # migrations et crée les comptes de démonstration avant de démarrer l'API.
@@ -44,7 +44,7 @@ services:
         condition: service_healthy
 
   frontend:
-    image: ghcr.io/projet-3-da/seats-frontend:latest
+    image: ghcr.io/projet-3-da/seats-frontend:alpha-v1
     build:
       context: ./frontend
     ports:
