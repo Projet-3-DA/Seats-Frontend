@@ -5,6 +5,7 @@
 - **Récits** : #1 (3), #28 (2), #2 (3), #24 (3), #25 (2), #3 (3), #29 (2),
   #4 (3), #5 (3), #30 (2), #6 (3), #26 (3), #27 (2), #7 (3), #42 (2) —
   **39 points**.
+- **Responsable de la mêlée** : Delavie.
 - **Incrément démontrable** : à partir d'un clone neuf, l'application
   démarre ; on crée un compte organisateur, on se connecte, on crée une
   salle de 40 sièges, on la retrouve dans sa liste, on crée un événement
@@ -13,6 +14,19 @@
   « mes réservations ». Une réservation refusée si le siège vient d'être
   pris entretemps est démontrée. La navigation entre toutes ces pages se
   fait via la barre de navigation commune. Chaîne CI verte.
+
+### Bilan (à la remise du 1er octobre)
+
+1. **Points engagés** : 39.
+2. **Points livrés** : 39 — un récit à moitié fait vaut zéro point, et les
+   15 récits engagés ont du code fusionné dans `main` respectant la
+   définition de « terminé » (voir [05-equipe.md](05-equipe.md)).
+3. **Vélocité réelle** : 39 points.
+4. **Récits abandonnés** : aucun.
+5. **Pourquoi** : les 15 récits engagés avaient du code fusionné dans
+   `main`, respectant la définition de « terminé », avant la remise du
+   1er octobre ; l'ordre d'abandon ci-dessous n'a donc pas eu à être
+   appliqué.
 
 ## Sprint 2 — Beta (~3 semaines)
 
