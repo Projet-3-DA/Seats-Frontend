@@ -8,6 +8,8 @@
 ### Diagramme Entité-Association mis à jour
 <img width="897" height="672" alt="Diagramme entité-association à jour avec le schéma Prisma actuel" src="diagramme-entite-association.png" />
 
+Mis à jour suite à l'ajout des colonnes `tarif` et `affiche_url` sur la table `Evenement`.
+
 ### Détails des Entités — Sprint 1
 ### UTILISATEURS (Inscription/Connexion)
 id : Entier, clé primaire
