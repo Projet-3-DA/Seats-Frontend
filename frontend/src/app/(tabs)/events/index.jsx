@@ -1,6 +1,6 @@
 import { Feather } from '@expo/vector-icons';
-import { Link } from 'expo-router';
-import { useEffect, useMemo, useState } from 'react';
+import { Link, useFocusEffect } from 'expo-router';
+import { useCallback, useMemo, useState } from 'react';
 import { ActivityIndicator, FlatList, Pressable, StyleSheet, TextInput, View } from 'react-native';
 
 import { Affiche } from '@/components/affiche';
@@ -58,25 +58,33 @@ export default function EventsListScreen() {
   const [error, setError] = useState('');
   const [recherche, setRecherche] = useState('');
 
-  useEffect(() => {
-    let cancelled = false;
-    async function load() {
-      try {
-        const res = await fetch(`${API_URL}/evenements`);
-        const json = await res.json();
-        if (!res.ok || !json.success) throw new Error(json.error || 'Échec du chargement des événements.');
-        if (!cancelled) setEvenements(json.data);
-      } catch (err) {
-        if (!cancelled) setError(err.message || 'Échec du chargement des événements.');
-      } finally {
-        if (!cancelled) setLoading(false);
+  // Les écrans d'onglets restent montés : un useEffect ne chargerait la liste qu'une fois, et un
+  // événement créé entre-temps n'apparaîtrait qu'après un rafraîchissement. On recharge donc à
+  // chaque fois que l'écran reprend le focus.
+  useFocusEffect(
+    useCallback(() => {
+      let cancelled = false;
+      async function load() {
+        try {
+          const res = await fetch(`${API_URL}/evenements`);
+          const json = await res.json();
+          if (!res.ok || !json.success) throw new Error(json.error || 'Échec du chargement des événements.');
+          if (!cancelled) {
+            setEvenements(json.data);
+            setError('');
+          }
+        } catch (err) {
+          if (!cancelled) setError(err.message || 'Échec du chargement des événements.');
+        } finally {
+          if (!cancelled) setLoading(false);
+        }
       }
-    }
-    load();
-    return () => {
-      cancelled = true;
-    };
-  }, []);
+      load();
+      return () => {
+        cancelled = true;
+      };
+    }, []),
+  );
 
   const evenementsFiltres = useMemo(() => {
     const q = recherche.trim().toLowerCase();

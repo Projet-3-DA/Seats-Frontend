@@ -1,6 +1,24 @@
 // Link n'a besoin, pour cet écran, que d'afficher ses enfants : la navigation elle-même n'est pas
 // testée ici (asChild/href sont ignorés par ce mock).
-jest.mock('expo-router', () => ({ Link: ({ children }) => children }));
+// useFocusEffect s'exécute au montage, comme si l'écran avait le focus ; `simulerRetourSurEcran`
+// rejoue le dernier effet pour simuler le retour sur l'onglet.
+let mockDernierEffetFocus;
+jest.mock('expo-router', () => {
+  const { useEffect } = require('react');
+  return {
+    Link: ({ children }) => children,
+    useFocusEffect: (effet) => {
+      mockDernierEffetFocus = effet;
+      useEffect(effet, [effet]);
+    },
+  };
+});
+
+async function simulerRetourSurEcran() {
+  await act(async () => {
+    mockDernierEffetFocus();
+  });
+}
 
 import { render, screen, fireEvent, act } from '@testing-library/react-native';
 
@@ -92,6 +110,24 @@ describe('EventsListScreen', () => {
 
     expect(screen.getByText('Gratuit')).toBeTruthy();
     expect(screen.queryByText('0,00 $')).toBeNull();
+  });
+
+  it("recharge la liste au retour sur l'écran, pour afficher un événement créé entre-temps", async () => {
+    const jazz = { id: 1, titre: 'Festival de Jazz', dateHeure: '2026-10-28T20:00:00' };
+    const nouveau = { id: 2, titre: 'Nouvel événement', dateHeure: '2026-11-05T19:00:00' };
+    global.fetch = jest
+      .fn()
+      .mockResolvedValueOnce(reponse({ success: true, data: [jazz] }))
+      .mockResolvedValueOnce(reponse({ success: true, data: [jazz, nouveau] }));
+
+    await render(<EventsListScreen />);
+    await attendreQue(() => screen.queryByText('Festival de Jazz') !== null);
+    expect(screen.queryByText('Nouvel événement')).toBeNull();
+
+    await simulerRetourSurEcran();
+    await attendreQue(() => screen.queryByText('Nouvel événement') !== null);
+
+    expect(global.fetch).toHaveBeenCalledTimes(2);
   });
 
   it('affiche un message quand la liste est vide', async () => {
