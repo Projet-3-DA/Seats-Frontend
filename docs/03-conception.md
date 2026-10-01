@@ -8,7 +8,7 @@
 ### Diagramme Entité-Association mis à jour
 <img width="897" height="672" alt="Diagramme entité-association à jour avec le schéma Prisma actuel" src="diagramme-entite-association.png" />
 
-Mis à jour suite à l'ajout des colonnes `tarif` et `affiche_url` sur la table `Evenement`.
+Mis à jour suite à l'ajout des colonnes `tarif` et `affiche_url` sur la table `Evenement`. Ces colonnes auraient dû être présentes dès la conception initiale du diagramme, puisque chaque événement a une affiche et un tarif — elles avaient été oubliées.
 
 ### Détails des Entités — Sprint 1
 ### UTILISATEURS (Inscription/Connexion)
