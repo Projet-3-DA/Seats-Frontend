@@ -76,7 +76,8 @@ function statutAffiche(groupe, theme) {
 function TicketCard({ groupe, theme }) {
   const { label, couleur } = statutAffiche(groupe, theme);
   const prix = formaterPrix(groupe.evenement.tarif, groupe.sieges.length);
-  const estPasseOuAnnule = groupe.statut !== 'confirmee' || new Date(groupe.evenement.dateHeure) < new Date();
+  const estPasse = new Date(groupe.evenement.dateHeure) < new Date();
+  const peutReserverANouveau = groupe.statut === 'annulee' && !estPasse;
 
   return (
     <View style={[styles.card, { backgroundColor: theme.backgroundElement, borderColor: theme.border }]}>
@@ -114,13 +115,14 @@ function TicketCard({ groupe, theme }) {
           <ThemedText type="small">{formaterSieges(groupe.sieges)}</ThemedText>
         </View>
 
-        {estPasseOuAnnule ? (
+        {peutReserverANouveau && (
           <Link href={`/(tabs)/events/${groupe.evenement.id}`} asChild>
             <Pressable style={{ ...styles.bouton, borderColor: theme.border }}>
               <ThemedText type="small">Réserver à nouveau</ThemedText>
             </Pressable>
           </Link>
-        ) : (
+        )}
+        {groupe.statut === 'confirmee' && !estPasse && (
           <View style={styles.boutonsRow}>
             {/* Annulation et téléchargement du billet : à implémenter dans un autre récit (#12) */}
             <Pressable style={[styles.bouton, { borderColor: theme.error }]}>
