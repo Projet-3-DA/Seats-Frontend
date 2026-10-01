@@ -45,7 +45,7 @@ export default function RegisterScreen() {
     setSubmitting(true);
     try {
       await registerUser({ email, password, nom: lastName.trim(), prenom: firstName.trim(), role });
-      router.push('/(tabs)/events');
+      router.push('/(auth)/login');
     } catch (error) {
       setErrors({ form: error.message });
     } finally {

@@ -50,8 +50,8 @@ function Champ({ label, erreur, children }) {
 
 export default function NouvelEvenementScreen() {
   const theme = useTheme();
+  const { token } = useAuth();
   const router = useRouter();
-  const { user, token } = useAuth();
 
   const [titre, setTitre] = useState('');
   const [description, setDescription] = useState('');
@@ -79,15 +79,18 @@ export default function NouvelEvenementScreen() {
   }, []);
 
   useEffect(() => {
+    // Au premier rendu, AuthProvider relit encore le token depuis le storage (async) : il vaut null
+    // un court instant. Attendre qu'il soit disponible évite un aller-retour 401 parasite.
+    if (!token) return undefined;
+
     let cancelled = false;
     async function load() {
       try {
-        const res = await fetch(`${API_URL}/salles`);
+        // GET /salles exige l'authentification et ne renvoie que les salles de l'utilisateur connecté.
+        const res = await fetch(`${API_URL}/salles`, { headers: { Authorization: `Bearer ${token}` } });
         const json = await res.json();
         if (!res.ok || !json.success) throw new Error(json.error || 'Échec du chargement des salles.');
-        // ponytail: le backend renvoie toutes les salles, on garde celles de l'organisateur ici.
-        // À faire côté serveur (req.user.id) : GET /salles n'est pas encore filtré par organisateur.
-        if (!cancelled) setSalles(json.data.filter((s) => s.organisateurId === user?.id));
+        if (!cancelled) setSalles(json.data);
       } catch (err) {
         if (!cancelled) setSallesError(err.message || 'Échec du chargement des salles.');
       } finally {
@@ -98,7 +101,7 @@ export default function NouvelEvenementScreen() {
     return () => {
       cancelled = true;
     };
-  }, [user?.id]);
+  }, [token]);
 
   const salle = salles.find((s) => s.id === salleId);
   const dateHeure = parseDateHeure(date, heure);

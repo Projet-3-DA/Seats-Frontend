@@ -53,3 +53,29 @@
     - `Evenement.tarif` (`Decimal(8,2)`, tarif unique de la place en $ CAD) : obligatoire à la création (0 si gratuit) ; les événements existants gardent un tarif vide.
     - La fonctionnalité brouillon (statut, salle et date facultatives) a été envisagée puis abandonnée : seul le tarif est conservé.
   - Une seule application Expo (React Native, avec le web via react-native-web) qui tourne sur toutes les plateformes (web, iOS et Android), au lieu de deux clients séparés (React Native puis React web). Cette décision remplace celle du bloc 4.
+
+## Lundi 28 septembre
+- **Présences** : Glodie, Junior, Yanis.
+- **Avancé** :
+  - Déploiement de toute l'application avec Docker (Junior, backend PR #15 et frontend PR #61) : `docker compose up` démarre la base de données, le backend et le frontend en une seule commande depuis un clone neuf, avec migrations Prisma et comptes de démonstration (un par rôle) créés automatiquement au démarrage.
+  - Yanis a corrigé plusieurs problèmes rencontrés en testant ce déploiement (`docker-compose.yml`, construction de l'image), redirigé l'utilisateur vers la page de connexion après la création d'un compte (bug trouvé en testant le parcours complet), et fusionné dans `main` l'ensemble des PR prêtes de la journée (#15, #16, #56, #61, #62, #63, #64, #65).
+  - #6, #26, #27 — Réserver un ou plusieurs sièges et garantir l'unicité en base, par Junior : ajout d'une étape « Confirmer » avant l'enregistrement (auparavant, aucun écran ni endpoint ne confirmait la réservation, qui restait bloquée 15 minutes sans jamais s'afficher comme réservée).
+  - Barre de navigation adaptée au rôle (spectateur / organisateur), par Junior : onglets « Salles » et « Mes événements » avec bouton de création, affichage corrigé sur mobile (libellés coupés), et protection empêchant un retour arrière vers la page de connexion une fois authentifié.
+- **Blocage** :
+  - En testant l'application déployée, plusieurs bugs ont été détectés et corrigés dans la journée :
+    - Un siège en sélection non expiré s'affichait à tort comme réservé (plutôt que bloqué) dans le plan de salle — corrigé par Delavie (#30).
+    - D'anciennes réservations en sélection jamais confirmées bloquaient définitivement un siège que le plan affichait pourtant comme libre — corrigé par Junior.
+    - Le formulaire de création d'événement avait cessé de charger les salles disponibles (appel à l'API sans le jeton d'authentification désormais requis) — corrigé par Junior.
+    - Après la création d'un compte, l'utilisateur n'était pas redirigé vers la connexion — corrigé par Yanis.
+- **Décisions** :
+  - Passage des deux dépôts (Seats-Backend et Seats-Frontend) en visibilité publique, pour que `docker compose` puisse construire l'image du backend depuis son URL GitHub sans authentification — exigé par la grille d'évaluation (un correcteur qui n'a que Docker installé).
+  - Pas de tag `alpha-v1` pour le point de contrôle du jour : seule une application fonctionnelle via Docker était exigée, le tag reste pour la remise finale du sprint.
+
+## Mercredi 30 septembre
+- **Présences** : Delavie, Glodie, Junior, Yanis.
+- **Avancé** :
+  - #30 — Empêcher la sélection d'un siège déjà réservé, par Delavie (backend PR #17, mergée) : le plan de salle compte désormais les réservations « en_selection » non expirées comme sièges indisponibles, pas seulement celles confirmées.
+  - #7 — Voir mes réservations, par Glodie (backend PR #18, frontend PR #70) : écran des billets, regroupés par événement et par statut (à venir, terminé, annulé), avec l'affiche de l'événement.
+  - #26 — Refuser une réservation si un siège a été pris entretemps, par Glodie (backend PR #19, frontend PR #71).
+- **Décisions** :
+  - Clarification du périmètre entre #26 et #30, qui concernent tous deux un conflit sur un siège mais à des moments différents : #26 agit **au moment de la confirmation** (le siège visé vient d'être pris juste avant que la réservation ne soit enregistrée, la contrainte unique en base le détecte) ; #30 agit **pendant la sélection**, en empêchant de choisir un siège déjà pris par quelqu'un d'autre avant même de tenter de réserver.
