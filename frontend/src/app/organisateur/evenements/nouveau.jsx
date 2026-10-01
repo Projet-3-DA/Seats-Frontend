@@ -10,13 +10,11 @@ import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { MaxContentWidth } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
+import { useAuth } from '@/lib/auth-context';
 import { parseDateHeure } from '@/utils/dates';
 import { isLienHttp } from '@/utils/liens';
 import { capaciteSalle } from '@/utils/salle';
 
-// ponytail: pas d'auth branchée côté frontend (récit #1 pas fait) donc pas d'ID d'organisateur réel.
-// À remplacer par l'utilisateur connecté une fois le login en place.
-const DEMO_ORGANISATEUR_ID = 1;
 // Même limite que le backend (express.raw, 5 Mo) : on refuse avant d'envoyer.
 const MAX_AFFICHE_OCTETS = 5 * 1024 * 1024;
 
@@ -53,6 +51,7 @@ function Champ({ label, erreur, children }) {
 export default function NouvelEvenementScreen() {
   const theme = useTheme();
   const router = useRouter();
+  const { user, token } = useAuth();
 
   const [titre, setTitre] = useState('');
   const [description, setDescription] = useState('');
@@ -87,8 +86,8 @@ export default function NouvelEvenementScreen() {
         const json = await res.json();
         if (!res.ok || !json.success) throw new Error(json.error || 'Échec du chargement des salles.');
         // ponytail: le backend renvoie toutes les salles, on garde celles de l'organisateur ici.
-        // À faire côté serveur (req.user.id) une fois l'auth en place.
-        if (!cancelled) setSalles(json.data.filter((s) => s.organisateurId === DEMO_ORGANISATEUR_ID));
+        // À faire côté serveur (req.user.id) : GET /salles n'est pas encore filtré par organisateur.
+        if (!cancelled) setSalles(json.data.filter((s) => s.organisateurId === user?.id));
       } catch (err) {
         if (!cancelled) setSallesError(err.message || 'Échec du chargement des salles.');
       } finally {
@@ -99,7 +98,7 @@ export default function NouvelEvenementScreen() {
     return () => {
       cancelled = true;
     };
-  }, []);
+  }, [user?.id]);
 
   const salle = salles.find((s) => s.id === salleId);
   const dateHeure = parseDateHeure(date, heure);
@@ -151,7 +150,7 @@ export default function NouvelEvenementScreen() {
     if (blob.size > MAX_AFFICHE_OCTETS) throw new Error("L'image dépasse 5 Mo.");
     const res = await fetch(`${API_URL}/evenements/affiche`, {
       method: 'POST',
-      headers: { 'Content-Type': fichier.mimeType || blob.type || 'image/jpeg' },
+      headers: { 'Content-Type': fichier.mimeType || blob.type || 'image/jpeg', Authorization: `Bearer ${token}` },
       body: blob,
     });
     const json = await res.json();
@@ -171,9 +170,9 @@ export default function NouvelEvenementScreen() {
         : lien.trim() || urlImageAleatoire(graine ?? nouvelleGraine());
       const res = await fetch(`${API_URL}/evenements`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        // L'organisateur est déduit du token par le backend.
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
         body: JSON.stringify({
-          organisateurId: DEMO_ORGANISATEUR_ID,
           salleId,
           titre: titre.trim(),
           description: description.trim(),
