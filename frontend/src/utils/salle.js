@@ -1,3 +1,9 @@
+// Lettre d'une rangée à partir de son numéro (1 → A, 2 → B…). Au-delà de Z, on garde le numéro.
+export function lettreRangee(numero) {
+  const n = Number(numero);
+  return n >= 1 && n <= 26 ? String.fromCharCode(64 + n) : String(numero);
+}
+
 export function capaciteSalle(salle) {
   return salle.nombreRangees * salle.siegesParRangee;
 }

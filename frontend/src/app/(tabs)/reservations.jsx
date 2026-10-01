@@ -4,16 +4,12 @@ import { ActivityIndicator, FlatList, Pressable, StyleSheet, View } from 'react-
 
 import { Affiche } from '@/components/affiche';
 import { ThemedText } from '@/components/themed-text';
-import { ThemedView } from '@/components/themed-view';
 import { API_URL } from '@/constants/api';
 import { useTheme } from '@/hooks/use-theme';
 import { useAuth } from '@/lib/auth-context';
+import { lettreRangee } from '@/utils/salle';
 
 const COULEUR_TERMINE = '#16A34A';
-
-function lettreRangee(numero) {
-  return String.fromCharCode('A'.charCodeAt(0) + numero - 1);
-}
 
 function formaterSieges(sieges) {
   const parRangee = new Map();
