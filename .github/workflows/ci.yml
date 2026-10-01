@@ -3,7 +3,7 @@ name: CI
 on:
   push:
     branches: [main]
-    tags: ['latest']
+    tags: ['latest', 'alpha-v1']
   pull_request:
     branches: [main]
 
@@ -42,11 +42,12 @@ jobs:
         run: npx expo export -p web
 
   # Construit l'image Docker et la publie sur ghcr.io. Ne tourne que si "test" a réussi, et seulement
-  # quand on pousse le tag "latest" — pas à chaque push sur main. Ce tag est mobile : pour publier une
-  # nouvelle image, `git tag -f latest && git push origin latest --force` — même schéma que le backend.
+  # quand on pousse le tag "latest" ou "alpha-v1" — pas à chaque push sur main. "latest" est mobile :
+  # pour publier une nouvelle image, `git tag -f latest && git push origin latest --force` — même
+  # schéma que le backend. "alpha-v1" est fixe, posé une seule fois pour la remise.
   image:
     needs: test
-    if: github.ref == 'refs/tags/latest'
+    if: github.ref == 'refs/tags/latest' || github.ref == 'refs/tags/alpha-v1'
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -59,14 +60,15 @@ jobs:
       - name: Se connecter au registre
         run: echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u "${{ github.actor }}" --password-stdin
 
-      # Deux tags Docker : `latest` (celui qu'on vient de pousser) et `sha-xxxxxxx`, figé sur ce commit.
+      # Deux tags Docker : celui du tag Git poussé (`latest` ou `alpha-v1`) et `sha-xxxxxxx`, figé sur ce commit.
       - name: Construire et publier l'image
         run: |
           OWNER=${GITHUB_REPOSITORY_OWNER,,}
           SHA=sha-${GITHUB_SHA::7}
+          TAG=${GITHUB_REF_NAME}
 
           docker build -f frontend/Dockerfile \
-            -t ghcr.io/$OWNER/seats-frontend:latest \
+            -t ghcr.io/$OWNER/seats-frontend:$TAG \
             -t ghcr.io/$OWNER/seats-frontend:$SHA \
             frontend
           docker push --all-tags ghcr.io/$OWNER/seats-frontend
