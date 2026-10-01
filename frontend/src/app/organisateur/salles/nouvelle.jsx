@@ -8,6 +8,7 @@ import { ThemedView } from '@/components/themed-view';
 import { MaxContentWidth } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 import { useAuth } from '@/lib/auth-context';
+import { lettreRangee } from '@/utils/salle';
 
 
 const MAX_APERCU = 26;
@@ -21,10 +22,6 @@ function toCount(value) {
 
 function onlyDigits(value) {
   return value.replace(/[^0-9]/g, '');
-}
-
-function rowLabel(index) {
-  return index < 26 ? String.fromCharCode(65 + index) : String(index + 1);
 }
 
 export default function NouvelleSalleScreen() {
@@ -49,7 +46,7 @@ export default function NouvelleSalleScreen() {
   const isValid = !nomManquant && !sansSiege;
 
   const rows = useMemo(
-    () => Array.from({ length: Math.min(nbRangees, MAX_APERCU) }, (_, i) => rowLabel(i)),
+    () => Array.from({ length: Math.min(nbRangees, MAX_APERCU) }, (_, i) => lettreRangee(i + 1)),
     [nbRangees],
   );
   const seatCols = useMemo(

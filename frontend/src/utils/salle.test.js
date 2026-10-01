@@ -1,4 +1,20 @@
-import { capaciteSalle, groupSiegesParRangee } from './salle';
+import { capaciteSalle, groupSiegesParRangee, lettreRangee } from './salle';
+
+describe('lettreRangee', () => {
+  it('associe une lettre au numéro de rangée (1 → A)', () => {
+    expect(lettreRangee(1)).toBe('A');
+    expect(lettreRangee(5)).toBe('E');
+    expect(lettreRangee(26)).toBe('Z');
+  });
+
+  it("accepte un numéro en texte (clé d'objet)", () => {
+    expect(lettreRangee('2')).toBe('B');
+  });
+
+  it('garde le numéro au-delà de Z', () => {
+    expect(lettreRangee(27)).toBe('27');
+  });
+});
 
 describe('capaciteSalle', () => {
   it('multiplie le nombre de rangées par le nombre de sièges par rangée', () => {
