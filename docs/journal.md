@@ -79,3 +79,16 @@
   - #26 — Refuser une réservation si un siège a été pris entretemps, par Glodie (backend PR #19, frontend PR #71).
 - **Décisions** :
   - Clarification du périmètre entre #26 et #30, qui concernent tous deux un conflit sur un siège mais à des moments différents : #26 agit **au moment de la confirmation** (le siège visé vient d'être pris juste avant que la réservation ne soit enregistrée, la contrainte unique en base le détecte) ; #30 agit **pendant la sélection**, en empêchant de choisir un siège déjà pris par quelqu'un d'autre avant même de tenter de réserver.
+
+## Jeudi 1er octobre
+- **Présences** : Delavie, Glodie, Junior, Yanis.
+- **Avancé** :
+  - Yanis a testé toutes les PR entrantes avant leur fusion et a rempli `04-sprints.md` (responsables des récits et bilan du sprint).
+  - Glodie a corrigé des bugs de connexion et de réservation, et mis à jour `03-conception.md`.
+  - #82 — Masquer les événements passés et refuser leur réservation, par Junior (backend PR #22, frontend PR #83) : la liste ne montre plus que les événements à venir, le serveur refuse la réservation d'un événement passé, et la page d'un événement terminé l'indique.
+  - Junior a aussi corrigé le rafraîchissement de la liste des événements après une création (PR #74), simplifié le démarrage Docker (PR #75), ramené dans `main` les correctifs de la barre d'onglets (PR #80) et rédigé le compte rendu de la rétrospective (PR #79).
+  - Delavie a rempli le README, `06-risques.md` et `05-equipe.md`, et a protégé les routes réservées aux organisateurs dans le backend.
+  - Rétrospective du sprint 1 tenue en fin de bloc (`docs/retrospectives/sprint-1.md`).
+- **Décisions** :
+  - Un seul dépôt à cloner, le frontend : `compose.yml` construit l'image du backend directement depuis l'URL GitHub de Seats-Backend, plutôt que d'exiger deux dépôts clonés côte à côte. La commande qui remplaçait `docker-entrypoint.sh` est retirée, pour que les comptes de démonstration soient bien créés.
+  - Ajout de l'issue #82 : une requête directe à l'API (par exemple avec `curl`) permettait de réserver un événement terminé. Masquer le bouton ne suffit pas, la validation doit se faire côté serveur.
