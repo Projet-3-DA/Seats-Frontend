@@ -5,6 +5,9 @@
 ### Diagramme Entité-Association (Sprint 1)
 <img width="651" height="886" alt="Capture d’écran 2026-08-24 111048" src="https://github.com/user-attachments/assets/4e9e56ef-047c-4a9d-8c1b-be6590040a8d" />
 
+### Diagramme Entité-Association mis à jour
+<img width="897" height="672" alt="Diagramme entité-association à jour avec le schéma Prisma actuel" src="diagramme-entite-association.png" />
+
 ### Détails des Entités — Sprint 1
 ### UTILISATEURS (Inscription/Connexion)
 id : Entier, clé primaire
