@@ -41,7 +41,7 @@ function formaterDate(dateHeure) {
 
 function formaterPrix(tarif, nombreSieges) {
   if (tarif == null) return null;
-  return (Number(tarif) * nombreSieges).toLocaleString('fr-FR', { style: 'currency', currency: 'EUR' });
+  return (Number(tarif) * nombreSieges).toLocaleString('fr-CA', { style: 'currency', currency: 'CAD' });
 }
 
 function grouperReservations(reservations) {
