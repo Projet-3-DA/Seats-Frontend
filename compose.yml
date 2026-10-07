@@ -1,7 +1,9 @@
 # Seats en une commande : docker compose up
 #
 # Ce fichier lance la db, le backend et le frontend Seats. Avec --build, le frontend est construit
-# depuis ./frontend et le backend directement depuis le dépôt GitHub Seats-Backend.
+# depuis ./frontend et le backend directement depuis le dépôt GitHub Seats-Backend (tag alpha-v1).
+# Sous Windows, --build échoue avec « failed to execute bake » (bug de Docker Compose avec un
+# contexte de build distant) : lancer `$env:COMPOSE_BAKE="false"` (PowerShell) avant la commande.
 # Le frontend communique avec le backend via le réseau Docker privé (http://backend:3000).
 #
 # La base de données est un Postgres local (volume `seats_db_data`, survit aux redémarrages).
@@ -24,11 +26,11 @@ services:
 
   backend:
     image: ghcr.io/projet-3-da/seats-backend:alpha-v1
-    # Construit depuis le dépôt Seats-Backend sur GitHub (dossier backend/ de main) : un clone de ce
+    # Construit depuis le dépôt Seats-Backend sur GitHub (dossier backend/ du tag alpha-v1) : un clone de ce
     # seul dépôt suffit. La commande par défaut de l'image (docker-entrypoint.sh) applique les
     # migrations et crée les comptes de démonstration avant de démarrer l'API.
     build:
-      context: https://github.com/Projet-3-DA/Seats-Backend.git#main:backend
+      context: https://github.com/Projet-3-DA/Seats-Backend.git#alpha-v1:backend
     ports:
       - "3000:3000"
     environment:
