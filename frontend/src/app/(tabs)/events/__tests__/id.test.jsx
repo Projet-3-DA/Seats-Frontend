@@ -1,5 +1,16 @@
 jest.mock('expo-router', () => ({ useLocalSearchParams: () => ({ id: '1' }) }));
 jest.mock('@/lib/auth-context', () => ({ useAuth: jest.fn() }));
+// Faux socket : le serveur accepte toute sélection, et `socketTest.recevoir` simule un événement diffusé.
+jest.mock('socket.io-client', () => {
+  const ecouteurs = {};
+  const socket = {
+    on: (evt, fn) => (ecouteurs[evt] = fn),
+    emit: jest.fn((evt, data, ack) => ack?.(globalThis.reponseSelection ?? { ok: true })),
+    disconnect: jest.fn(),
+  };
+  globalThis.socketTest = { socket, recevoir: (evt, data) => ecouteurs[evt]?.(data) };
+  return { io: () => socket };
+});
 
 import { render, screen, fireEvent, act } from '@testing-library/react-native';
 
@@ -239,5 +250,43 @@ describe('EventSeatMapScreen', () => {
     expect(screen.queryByText('Confirmer votre réservation')).toBeNull();
     expect(screen.getByText('Réserver (1)')).toBeTruthy();
     expect(global.fetch).toHaveBeenCalledTimes(1);
+  });
+
+  it("affiche en jaune et bloque un siège en sélection par un autre, puis le rend dès qu'il est libéré (#8, #31, #32)", async () => {
+    useAuth.mockReturnValue({ token: 'jeton', user: { id: 5, role: 'spectateur' } });
+    global.fetch = jest.fn().mockResolvedValue(reponse({ success: true, data: plan }));
+
+    await render(<EventSeatMapScreen />);
+    await attendreQue(() => screen.queryByText('Salle A') !== null);
+    expect(screen.getByText('En sélection par un autre')).toBeTruthy();
+    expect(screen.getByText('Ma sélection')).toBeTruthy();
+
+    await act(async () => globalThis.socketTest.recevoir('siege:selectionne', { siegeId: 101 }));
+    expect(screen.getByTestId('siege-101')).toHaveStyle({ backgroundColor: '#eab308' });
+    await fireEvent.press(screen.getByTestId('siege-101'));
+    expect(screen.queryByText('Réserver (1)')).toBeNull();
+
+    await act(async () => globalThis.socketTest.recevoir('siege:libere', { siegeId: 101 }));
+    await fireEvent.press(screen.getByTestId('siege-101'));
+    expect(screen.getByText('Réserver (1)')).toBeTruthy();
+    expect(screen.getByTestId('siege-101')).toHaveStyle({ backgroundColor: '#2563eb' });
+
+    // Délai d'une minute écoulé côté serveur : notre propre sélection est annulée.
+    await act(async () => globalThis.socketTest.recevoir('siege:libere', { siegeId: 101 }));
+    expect(screen.getByText('Réserver')).toBeTruthy();
+  });
+
+  it("affiche le refus du serveur si le siège vient d'être sélectionné par un autre", async () => {
+    useAuth.mockReturnValue({ token: 'jeton', user: { id: 5, role: 'spectateur' } });
+    global.fetch = jest.fn().mockResolvedValue(reponse({ success: true, data: plan }));
+    globalThis.reponseSelection = { ok: false, error: "Ce siège est en cours de sélection par quelqu'un d'autre." };
+
+    await render(<EventSeatMapScreen />);
+    await attendreQue(() => screen.queryByText('Salle A') !== null);
+    await fireEvent.press(screen.getByTestId('siege-101'));
+
+    expect(screen.getByText("Ce siège est en cours de sélection par quelqu'un d'autre.")).toBeTruthy();
+    expect(screen.queryByText('Réserver (1)')).toBeNull();
+    globalThis.reponseSelection = undefined;
   });
 });
