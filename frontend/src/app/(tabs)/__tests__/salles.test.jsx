@@ -77,4 +77,23 @@ describe('MesSallesScreen (onglet Salles)', () => {
 
     expect(screen.getByLabelText('Créer une salle')).toBeTruthy();
   });
+
+  it("propose « Modifier » pour une salle libre et explique pourquoi une salle utilisée ne l'est pas (#10)", async () => {
+    useAuth.mockReturnValue({ token: 'jeton-orga' });
+    global.fetch = jest.fn().mockResolvedValue(
+      reponse({
+        success: true,
+        data: [
+          { id: 1, nom: 'Libre', nombreRangees: 1, siegesParRangee: 1, _count: { evenements: 0 } },
+          { id: 2, nom: 'Utilisée', nombreRangees: 1, siegesParRangee: 1, _count: { evenements: 1 } },
+        ],
+      }),
+    );
+
+    await render(<MesSallesScreen />);
+    await attendreQue(() => screen.queryByText('Libre') !== null);
+
+    expect(screen.getAllByText('Modifier')).toHaveLength(1);
+    expect(screen.getByText('Utilisée par un événement : modification impossible.')).toBeTruthy();
+  });
 });
