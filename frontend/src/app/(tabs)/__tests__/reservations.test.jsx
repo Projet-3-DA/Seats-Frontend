@@ -1,0 +1,79 @@
+jest.mock('expo-router', () => ({ Link: ({ children }) => children }));
+jest.mock('@/lib/auth-context', () => ({ useAuth: jest.fn() }));
+
+import { render, screen, act } from '@testing-library/react-native';
+
+import { useAuth } from '@/lib/auth-context';
+import MyReservationsScreen from '../reservations';
+
+function reponse(json, ok = true) {
+  return { ok, json: async () => json };
+}
+
+// ponytail: même limitation que events/index.test.jsx — `findByText` ne se résout jamais avec le
+// test-renderer de ce projet, on sonde donc nous-mêmes en vrai temps.
+async function attendreQue(predicat, { limiteMs = 5000, intervalleMs = 25 } = {}) {
+  const debut = Date.now();
+  for (;;) {
+    let atteint = false;
+    await act(async () => {
+      await new Promise((resolve) => setTimeout(resolve, intervalleMs));
+      atteint = predicat();
+    });
+    if (atteint) return;
+    if (Date.now() - debut > limiteMs) throw new Error(`attendreQue : condition jamais atteinte après ${limiteMs} ms`);
+  }
+}
+
+const evenement = { id: 1, titre: 'Concert de jazz', dateHeure: '2099-11-05T19:00:00Z', tarif: 25, afficheUrl: null };
+
+function reservation(overrides) {
+  return {
+    id: 1,
+    evenementId: 1,
+    evenement,
+    statut: 'confirmee',
+    siege: { id: 101, numeroRangee: 1, numeroColonne: 1 },
+    motifAnnulation: null,
+    ...overrides,
+  };
+}
+
+describe('MyReservationsScreen : réservation annulée par l’organisateur (#14)', () => {
+  const fetchOriginal = global.fetch;
+
+  beforeEach(() => {
+    useAuth.mockReturnValue({ token: 'jeton-spec', user: { id: 5, role: 'spectateur' } });
+  });
+  afterEach(() => {
+    global.fetch = fetchOriginal;
+  });
+
+  it("affiche la réservation comme annulée avec le motif de l'organisateur", async () => {
+    global.fetch = jest.fn().mockResolvedValue(
+      reponse({
+        success: true,
+        data: [
+          reservation({ id: 1, statut: 'annulee', motifAnnulation: 'Siège endommagé' }),
+          reservation({ id: 2, statut: 'annulee', motifAnnulation: 'Siège endommagé', siege: { id: 102, numeroRangee: 1, numeroColonne: 2 } }),
+        ],
+      }),
+    );
+
+    await render(<MyReservationsScreen />);
+    await attendreQue(() => screen.queryByText('Concert de jazz') !== null);
+
+    expect(screen.getByText('Annulée')).toBeTruthy();
+    // Un seul motif affiché même s'il concerne plusieurs sièges
+    expect(screen.getByText("Motif de l'annulation : Siège endommagé")).toBeTruthy();
+  });
+
+  it("n'affiche pas de motif pour une réservation en cours", async () => {
+    global.fetch = jest.fn().mockResolvedValue(reponse({ success: true, data: [reservation({})] }));
+
+    await render(<MyReservationsScreen />);
+    await attendreQue(() => screen.queryByText('Concert de jazz') !== null);
+
+    expect(screen.queryByText(/Motif de l'annulation/)).toBeNull();
+  });
+});

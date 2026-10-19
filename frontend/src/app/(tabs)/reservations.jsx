@@ -51,9 +51,12 @@ function grouperReservations(reservations) {
     .forEach((r) => {
       const cle = `${r.evenementId}-${r.statut}`;
       if (!groupes.has(cle)) {
-        groupes.set(cle, { id: cle, evenement: r.evenement, statut: r.statut, sieges: [] });
+        groupes.set(cle, { id: cle, evenement: r.evenement, statut: r.statut, sieges: [], motifs: [] });
       }
-      groupes.get(cle).sieges.push(r.siege);
+      const groupe = groupes.get(cle);
+      groupe.sieges.push(r.siege);
+      // Motif donné par l'organisateur à l'annulation (#14), sans doublon si plusieurs sièges le partagent.
+      if (r.motifAnnulation && !groupe.motifs.includes(r.motifAnnulation)) groupe.motifs.push(r.motifAnnulation);
     });
 
   return Array.from(groupes.values()).sort(
@@ -100,6 +103,12 @@ function TicketCard({ groupe, theme }) {
           </View>
         </View>
       </View>
+
+      {groupe.motifs.length > 0 && (
+        <ThemedText type="small" themeColor="textSecondary">
+          Motif de l'annulation : {groupe.motifs.join(' · ')}
+        </ThemedText>
+      )}
 
       <View style={[styles.separateur, { backgroundColor: theme.border }]} />
 
