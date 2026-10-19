@@ -66,6 +66,14 @@ export default function TabsLayout() {
         }}
       />
       <Tabs.Screen
+        name="supervision"
+        options={{
+          title: 'Supervision',
+          tabBarIcon: icone('shield'),
+          href: user?.role === 'administrateur' ? undefined : null,
+        }}
+      />
+      <Tabs.Screen
         name="profil"
         options={{
           title: user ? 'Profil' : 'Se connecter',
