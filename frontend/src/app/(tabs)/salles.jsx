@@ -21,6 +21,17 @@ function SalleCard({ item, theme }) {
       <ThemedText type="small" themeColor="textSecondary">
         {item.nombreRangees} rangées × {item.siegesParRangee} sièges · {capaciteSalle(item)} places
       </ThemedText>
+      {item._count?.evenements > 0 ? (
+        <ThemedText type="small" themeColor="textSecondary">
+          Utilisée par un événement : modification impossible.
+        </ThemedText>
+      ) : (
+        <Link href={`/organisateur/salles/${item.id}`}>
+          <ThemedText type="link" style={{ color: theme.primary }}>
+            Modifier
+          </ThemedText>
+        </Link>
+      )}
     </View>
   );
 }

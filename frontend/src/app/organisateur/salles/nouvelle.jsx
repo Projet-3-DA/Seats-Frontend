@@ -1,5 +1,5 @@
-import { useRouter } from 'expo-router';
-import { useMemo, useState } from 'react';
+import { useLocalSearchParams, useRouter } from 'expo-router';
+import { useEffect, useMemo, useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, TextInput, useWindowDimensions, View } from 'react-native';
 
 import { API_URL } from '@/constants/api';
@@ -24,18 +24,34 @@ function onlyDigits(value) {
   return value.replace(/[^0-9]/g, '');
 }
 
+// Sert aussi à modifier une salle (#10) : la route organisateur/salles/[id] réutilise cet écran.
 export default function NouvelleSalleScreen() {
   const theme = useTheme();
   const router = useRouter();
+  const { id } = useLocalSearchParams();
   const { token } = useAuth();
   const { width } = useWindowDimensions();
   const isDesktop = width >= DESKTOP_BREAKPOINT;
 
-  const [nom, setNom] = useState('Studio Multimédia Cégep');
-  const [rangees, setRangees] = useState('5');
-  const [siegesParRangee, setSiegesParRangee] = useState('10');
+  const [nom, setNom] = useState(id ? '' : 'Studio Multimédia Cégep');
+  const [rangees, setRangees] = useState(id ? '' : '5');
+  const [siegesParRangee, setSiegesParRangee] = useState(id ? '' : '10');
   const [saving, setSaving] = useState(false);
   const [apiError, setApiError] = useState('');
+
+  // En modification, on part de la salle telle qu'elle est enregistrée.
+  useEffect(() => {
+    if (!id) return;
+    fetch(`${API_URL}/salles/${id}`)
+      .then((res) => res.json())
+      .then((json) => {
+        if (!json.success) throw new Error(json.error || 'Salle introuvable.');
+        setNom(json.data.nom);
+        setRangees(String(json.data.nombreRangees));
+        setSiegesParRangee(String(json.data.siegesParRangee));
+      })
+      .catch((err) => setApiError(err.message || 'Salle introuvable.'));
+  }, [id]);
 
   const nbRangees = toCount(rangees);
   const nbSieges = toCount(siegesParRangee);
@@ -59,8 +75,8 @@ export default function NouvelleSalleScreen() {
     setSaving(true);
     setApiError('');
     try {
-      const res = await fetch(`${API_URL}/salles`, {
-        method: 'POST',
+      const res = await fetch(id ? `${API_URL}/salles/${id}` : `${API_URL}/salles`, {
+        method: id ? 'PUT' : 'POST',
         // L'organisateur est déduit du token par le backend.
         headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
         body: JSON.stringify({
@@ -71,11 +87,11 @@ export default function NouvelleSalleScreen() {
       });
       const json = await res.json();
       if (!res.ok || !json.success) {
-        throw new Error(json.error || 'Échec de la création de la salle.');
+        throw new Error(json.error || "Échec de l'enregistrement de la salle.");
       }
       router.back();
     } catch (err) {
-      setApiError(err.message || 'Échec de la création de la salle.');
+      setApiError(err.message || "Échec de l'enregistrement de la salle.");
     } finally {
       setSaving(false);
     }
@@ -85,7 +101,7 @@ export default function NouvelleSalleScreen() {
     <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
       <ThemedView style={styles.page}>
         <View style={[styles.wrapper, { maxWidth: MaxContentWidth }]}>
-          <ThemedText style={styles.heading}>Créer une salle</ThemedText>
+          <ThemedText style={styles.heading}>{id ? 'Modifier la salle' : 'Créer une salle'}</ThemedText>
           <ThemedText themeColor="textSecondary">Configurez la structure des rangées et des sièges.</ThemedText>
 
           <View style={[styles.cards, isDesktop && styles.cardsRow]}>
