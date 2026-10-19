@@ -1,6 +1,6 @@
 import { Stack, useLocalSearchParams } from 'expo-router';
-import { useEffect, useState } from 'react';
-import { ActivityIndicator, ScrollView, StyleSheet, View } from 'react-native';
+import { useEffect, useRef, useState } from 'react';
+import { ActivityIndicator, Pressable, ScrollView, StyleSheet, TextInput, View } from 'react-native';
 
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
@@ -50,6 +50,15 @@ export default function VentesEvenementScreen() {
   const [ventes, setVentes] = useState(null);
   const [erreur, setErreur] = useState('');
   const [miseAJour, setMiseAJour] = useState(null);
+  // Annulation d'une réservation par l'organisateur (#14)
+  const [siegeChoisiId, setSiegeChoisiId] = useState(null);
+  const [motif, setMotif] = useState('');
+  const [enConfirmation, setEnConfirmation] = useState(false);
+  const [annulationEnCours, setAnnulationEnCours] = useState(false);
+  const [erreurAnnulation, setErreurAnnulation] = useState('');
+  const [messageAnnulation, setMessageAnnulation] = useState('');
+  // Permet de recharger tout de suite après une annulation, sans attendre le prochain rafraîchissement.
+  const chargerRef = useRef(null);
 
   useEffect(() => {
     // AuthProvider relit le jeton depuis le stockage au démarrage : sans lui, l'API répondrait 401.
@@ -73,6 +82,7 @@ export default function VentesEvenementScreen() {
       }
     }
 
+    chargerRef.current = charger;
     charger();
     const minuterie = setInterval(charger, INTERVALLE_RAFRAICHISSEMENT_MS);
     return () => {
@@ -94,7 +104,43 @@ export default function VentesEvenementScreen() {
     );
   }
 
+  function choisirSiege(siege) {
+    setMessageAnnulation('');
+    setErreurAnnulation('');
+    setEnConfirmation(false);
+    setMotif('');
+    setSiegeChoisiId((precedent) => (precedent === siege.id ? null : siege.id));
+  }
+
+  async function annulerReservation(siege) {
+    if (annulationEnCours) return;
+    setAnnulationEnCours(true);
+    setErreurAnnulation('');
+    try {
+      const res = await fetch(`${API_URL}/reservations/${siege.reservation.id}/annulation`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ motif: motif.trim() || undefined }),
+      });
+      const json = await res.json();
+      if (!res.ok || !json.success) throw new Error(json.error || "Échec de l'annulation.");
+      setMessageAnnulation(
+        `Réservation annulée : rangée ${lettreRangee(siege.rangee)}, siège ${siege.colonne} est de nouveau libre.`,
+      );
+      setSiegeChoisiId(null);
+      setMotif('');
+      setEnConfirmation(false);
+      await chargerRef.current?.();
+    } catch (err) {
+      setErreurAnnulation(err.message || "Échec de l'annulation.");
+    } finally {
+      setAnnulationEnCours(false);
+    }
+  }
+
   const { evenement, salle, totaux, recette, sieges } = ventes;
+  // Le siège choisi peut avoir été libéré entretemps (rafraîchissement) : le panneau disparaît alors.
+  const siegeChoisi = sieges.find((s) => s.id === siegeChoisiId && s.reservation);
   const tauxRemplissage = totaux.total > 0 ? Math.round((totaux.vendus / totaux.total) * 100) : 0;
   const { rangees, numerosRangees } = groupSiegesParRangee(sieges);
 
@@ -151,16 +197,22 @@ export default function VentesEvenementScreen() {
                     {lettreRangee(rangee)}
                   </ThemedText>
                   {rangees[rangee].map((s) => (
-                    <View
+                    <Pressable
                       key={s.id}
                       testID={`siege-${s.id}`}
                       accessibilityLabel={`Rangée ${lettreRangee(s.rangee)}, siège ${s.colonne} : ${s.etat}`}
-                      style={[styles.siege, { backgroundColor: COULEURS[s.etat] }]}
+                      onPress={() => choisirSiege(s)}
+                      disabled={!s.reservation || annulationEnCours}
+                      style={[
+                        styles.siege,
+                        { backgroundColor: COULEURS[s.etat] },
+                        s.id === siegeChoisiId && { borderWidth: 3, borderColor: theme.text },
+                      ]}
                     >
                       <ThemedText type="small" style={styles.siegeTexte}>
                         {s.colonne}
                       </ThemedText>
-                    </View>
+                    </Pressable>
                   ))}
                   <ThemedText type="small" themeColor="textSecondary" style={styles.lettreRangee}>
                     {lettreRangee(rangee)}
@@ -183,7 +235,71 @@ export default function VentesEvenementScreen() {
               </View>
             ))}
           </View>
+          <ThemedText type="small" themeColor="textSecondary">
+            Touchez un siège vendu ou en sélection pour voir la réservation et l'annuler.
+          </ThemedText>
         </View>
+
+        {messageAnnulation.length > 0 && <ThemedText style={styles.succes}>{messageAnnulation}</ThemedText>}
+
+        {siegeChoisi && (
+          <View style={[styles.panneau, { backgroundColor: theme.backgroundElement, borderColor: theme.border }]}>
+            <ThemedText type="smallBold">
+              {`Rangée ${lettreRangee(siegeChoisi.rangee)}, siège ${siegeChoisi.colonne} · ${
+                siegeChoisi.etat === 'vendu' ? 'Vendu' : 'En sélection'
+              }`}
+            </ThemedText>
+            <ThemedText type="small" themeColor="textSecondary">
+              {`Réservé par ${siegeChoisi.reservation.spectateur.prenom} ${siegeChoisi.reservation.spectateur.nom} (${siegeChoisi.reservation.spectateur.email})`}
+            </ThemedText>
+            <TextInput
+              value={motif}
+              onChangeText={setMotif}
+              placeholder="Motif de l'annulation (facultatif)"
+              placeholderTextColor={theme.textSecondary}
+              maxLength={500}
+              editable={!annulationEnCours}
+              style={[styles.champ, { borderColor: theme.border, color: theme.text }]}
+            />
+            {erreurAnnulation.length > 0 && (
+              <ThemedText type="small" style={styles.erreur}>
+                {erreurAnnulation}
+              </ThemedText>
+            )}
+            {enConfirmation ? (
+              <>
+                <ThemedText type="small">
+                  Le spectateur verra cette réservation comme annulée et le siège redeviendra libre.
+                </ThemedText>
+                <Pressable
+                  onPress={() => annulerReservation(siegeChoisi)}
+                  disabled={annulationEnCours}
+                  style={[styles.bouton, { backgroundColor: '#DC2626', opacity: annulationEnCours ? 0.5 : 1 }]}
+                >
+                  <ThemedText type="smallBold" style={styles.boutonTexte}>
+                    {annulationEnCours ? 'Annulation…' : "Confirmer l'annulation"}
+                  </ThemedText>
+                </Pressable>
+                <Pressable
+                  onPress={() => setEnConfirmation(false)}
+                  disabled={annulationEnCours}
+                  style={[styles.bouton, styles.boutonSecondaire, { borderColor: theme.border }]}
+                >
+                  <ThemedText type="smallBold">Garder la réservation</ThemedText>
+                </Pressable>
+              </>
+            ) : (
+              <Pressable
+                onPress={() => setEnConfirmation(true)}
+                style={[styles.bouton, styles.boutonSecondaire, { borderColor: '#DC2626' }]}
+              >
+                <ThemedText type="smallBold" style={styles.erreur}>
+                  Annuler cette réservation
+                </ThemedText>
+              </Pressable>
+            )}
+          </View>
+        )}
       </View>
     </ScrollView>
   );
@@ -215,4 +331,10 @@ const styles = StyleSheet.create({
   legendeItem: { flexDirection: 'row', alignItems: 'center', gap: 6 },
   pastille: { width: 12, height: 12, borderRadius: 3 },
   erreur: { color: '#DC2626', textAlign: 'center' },
+  succes: { color: '#16a34a' },
+  panneau: { borderWidth: 1, borderRadius: 12, padding: 16, gap: 12 },
+  champ: { borderWidth: 1, borderRadius: 8, padding: 12, fontSize: 16 },
+  bouton: { borderRadius: 8, paddingVertical: 14, alignItems: 'center' },
+  boutonSecondaire: { borderWidth: 1 },
+  boutonTexte: { color: '#ffffff' },
 });

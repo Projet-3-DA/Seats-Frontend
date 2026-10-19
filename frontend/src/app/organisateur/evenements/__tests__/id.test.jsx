@@ -1,7 +1,7 @@
 jest.mock('expo-router', () => ({ Stack: { Screen: () => null }, useLocalSearchParams: () => ({ id: '1' }) }));
 jest.mock('@/lib/auth-context', () => ({ useAuth: jest.fn() }));
 
-import { render, screen, act } from '@testing-library/react-native';
+import { render, screen, act, fireEvent } from '@testing-library/react-native';
 
 import { useAuth } from '@/lib/auth-context';
 import VentesEvenementScreen, { INTERVALLE_RAFRAICHISSEMENT_MS } from '../[id]';
@@ -32,8 +32,20 @@ function ventes({ vendus = 2, enSelection = 1, libres = 1, recette = 50 } = {}) 
     totaux: { total: vendus + enSelection + libres, vendus, enSelection, libres },
     recette,
     sieges: [
-      { id: 101, rangee: 1, colonne: 1, etat: 'vendu' },
-      { id: 102, rangee: 1, colonne: 2, etat: 'en_selection' },
+      {
+        id: 101,
+        rangee: 1,
+        colonne: 1,
+        etat: 'vendu',
+        reservation: { id: 55, spectateur: { prenom: 'Ana', nom: 'Roy', email: 'ana@test.ca' } },
+      },
+      {
+        id: 102,
+        rangee: 1,
+        colonne: 2,
+        etat: 'en_selection',
+        reservation: { id: 56, spectateur: { prenom: 'Léo', nom: 'Gagnon', email: 'leo@test.ca' } },
+      },
       { id: 103, rangee: 2, colonne: 1, etat: 'libre' },
     ],
   };
@@ -153,5 +165,82 @@ describe('VentesEvenementScreen (#13)', () => {
     });
 
     expect(global.fetch).not.toHaveBeenCalled();
+  });
+});
+
+describe('VentesEvenementScreen : annuler une réservation (#14)', () => {
+  const fetchOriginal = global.fetch;
+
+  beforeEach(() => {
+    useAuth.mockReturnValue({ token: 'jeton-orga', user: { id: 7, role: 'organisateur' } });
+  });
+  afterEach(() => {
+    global.fetch = fetchOriginal;
+    jest.restoreAllMocks();
+  });
+
+  async function ouvrirTableauDeBord(fetch) {
+    global.fetch = fetch;
+    await render(<VentesEvenementScreen />);
+    await attendreQue(() => screen.queryByText('Concert de jazz') !== null);
+  }
+
+  it('affiche le spectateur du siège touché et ne propose rien pour un siège libre', async () => {
+    await ouvrirTableauDeBord(jest.fn().mockResolvedValue(reponse({ success: true, data: ventes() })));
+
+    expect(screen.getByTestId('siege-103').props.accessibilityState?.disabled).toBe(true);
+    await fireEvent.press(screen.getByTestId('siege-101'));
+
+    expect(screen.getByText('Rangée A, siège 1 · Vendu')).toBeTruthy();
+    expect(screen.getByText('Réservé par Ana Roy (ana@test.ca)')).toBeTruthy();
+    expect(screen.getByText('Annuler cette réservation')).toBeTruthy();
+  });
+
+  it("demande une confirmation, envoie le motif puis recharge les chiffres", async () => {
+    const fetch = jest
+      .fn()
+      .mockResolvedValueOnce(reponse({ success: true, data: ventes() }))
+      .mockResolvedValueOnce(reponse({ success: true, data: { id: 55, statut: 'annulee' } }))
+      .mockResolvedValueOnce(reponse({ success: true, data: ventes({ vendus: 1, libres: 2, recette: 25 }) }));
+    await ouvrirTableauDeBord(fetch);
+
+    await fireEvent.press(screen.getByTestId('siege-101'));
+    await fireEvent.changeText(screen.getByPlaceholderText("Motif de l'annulation (facultatif)"), '  Erreur de siège  ');
+    await fireEvent.press(screen.getByText('Annuler cette réservation'));
+    expect(fetch).toHaveBeenCalledTimes(1); // rien n'est envoyé avant la confirmation
+    await fireEvent.press(screen.getByText("Confirmer l'annulation"));
+
+    await attendreQue(() => screen.queryByText(/Réservation annulée : rangée A, siège 1/) !== null);
+    const [url, options] = fetch.mock.calls[1];
+    expect(url).toMatch(/\/reservations\/55\/annulation$/);
+    expect(options).toMatchObject({ method: 'POST', headers: { Authorization: 'Bearer jeton-orga' } });
+    expect(JSON.parse(options.body)).toEqual({ motif: 'Erreur de siège' });
+    await attendreQue(() => screen.queryByText('1 / 4 sièges vendus (25 %)') !== null);
+  });
+
+  it("« Garder la réservation » n'annule rien", async () => {
+    const fetch = jest.fn().mockResolvedValue(reponse({ success: true, data: ventes() }));
+    await ouvrirTableauDeBord(fetch);
+
+    await fireEvent.press(screen.getByTestId('siege-102'));
+    await fireEvent.press(screen.getByText('Annuler cette réservation'));
+    await fireEvent.press(screen.getByText('Garder la réservation'));
+
+    expect(screen.getByText('Annuler cette réservation')).toBeTruthy();
+    expect(fetch.mock.calls.some(([, o]) => o?.method === 'POST')).toBe(false);
+  });
+
+  it("affiche l'erreur de l'API si l'annulation est refusée", async () => {
+    const fetch = jest
+      .fn()
+      .mockResolvedValueOnce(reponse({ success: true, data: ventes() }))
+      .mockResolvedValueOnce(reponse({ success: false, error: 'Cette réservation est déjà annulée.' }, false));
+    await ouvrirTableauDeBord(fetch);
+
+    await fireEvent.press(screen.getByTestId('siege-101'));
+    await fireEvent.press(screen.getByText('Annuler cette réservation'));
+    await fireEvent.press(screen.getByText("Confirmer l'annulation"));
+
+    await attendreQue(() => screen.queryByText('Cette réservation est déjà annulée.') !== null);
   });
 });
