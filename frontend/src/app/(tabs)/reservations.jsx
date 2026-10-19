@@ -1,6 +1,6 @@
 import { Link } from 'expo-router';
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { ActivityIndicator, Alert, FlatList, Pressable, StyleSheet, View } from 'react-native';
+import { ActivityIndicator, Alert, FlatList, Platform, Pressable, StyleSheet, View } from 'react-native';
 
 import { Affiche } from '@/components/affiche';
 import { ThemedText } from '@/components/themed-text';
@@ -10,6 +10,20 @@ import { useAuth } from '@/lib/auth-context';
 import { lettreRangee } from '@/utils/salle';
 
 const COULEUR_TERMINE = '#16A34A';
+
+// Alert.alert() ne fait rien sur le web (react-native-web ne l'implémente pas) : on utilise
+// window.confirm à la place sur cette plateforme, Alert natif ailleurs (iOS/Android).
+function confirmer(titre, message) {
+  if (Platform.OS === 'web') {
+    return Promise.resolve(window.confirm(`${titre}\n\n${message}`));
+  }
+  return new Promise((resolve) => {
+    Alert.alert(titre, message, [
+      { text: 'Retour', style: 'cancel', onPress: () => resolve(false) },
+      { text: 'Annuler la réservation', style: 'destructive', onPress: () => resolve(true) },
+    ]);
+  });
+}
 
 function formaterSieges(sieges) {
   const parRangee = new Map();
@@ -189,37 +203,34 @@ export default function MyReservationsScreen() {
   }, [charger]);
 
   async function annulerGroupe(groupe) {
-    Alert.alert('Annuler cette réservation ?', `${groupe.evenement.titre} — les sièges seront libérés.`, [
-      { text: 'Retour', style: 'cancel' },
-      {
-        text: 'Annuler la réservation',
-        style: 'destructive',
-        onPress: async () => {
-          setError('');
-          setGroupeEnAnnulation(groupe.id);
-          try {
-            const reponses = await Promise.all(
-              groupe.reservationIds.map((id) =>
-                fetch(`${API_URL}/reservations/${id}/annuler`, {
-                  method: 'POST',
-                  headers: { Authorization: `Bearer ${token}` },
-                }),
-              ),
-            );
-            const echec = reponses.find((res) => !res.ok);
-            if (echec) {
-              const json = await echec.json();
-              throw new Error(json.error || "Échec de l'annulation.");
-            }
-            await charger();
-          } catch (err) {
-            setError(err.message || "Échec de l'annulation.");
-          } finally {
-            setGroupeEnAnnulation(null);
-          }
-        },
-      },
-    ]);
+    const confirme = await confirmer(
+      'Annuler cette réservation ?',
+      `${groupe.evenement.titre} — les sièges seront libérés.`,
+    );
+    if (!confirme) return;
+
+    setError('');
+    setGroupeEnAnnulation(groupe.id);
+    try {
+      const reponses = await Promise.all(
+        groupe.reservationIds.map((id) =>
+          fetch(`${API_URL}/reservations/${id}/annuler`, {
+            method: 'POST',
+            headers: { Authorization: `Bearer ${token}` },
+          }),
+        ),
+      );
+      const echec = reponses.find((res) => !res.ok);
+      if (echec) {
+        const json = await echec.json();
+        throw new Error(json.error || "Échec de l'annulation.");
+      }
+      await charger();
+    } catch (err) {
+      setError(err.message || "Échec de l'annulation.");
+    } finally {
+      setGroupeEnAnnulation(null);
+    }
   }
 
   const tickets = useMemo(() => grouperReservations(reservations), [reservations]);
