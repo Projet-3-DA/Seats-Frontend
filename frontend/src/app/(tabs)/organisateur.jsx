@@ -13,7 +13,8 @@ import { formatTarif } from '@/utils/tarif';
 
 function EvenementCard({ item, theme }) {
   return (
-    <Link href={`/(tabs)/events/${item.id}`} asChild>
+    // L'organisateur arrive sur le tableau de bord des ventes de son événement (#13).
+    <Link href={`/organisateur/evenements/${item.id}`} asChild>
       <Pressable
         style={StyleSheet.flatten([
           styles.card,
