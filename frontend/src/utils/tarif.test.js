@@ -1,4 +1,4 @@
-import { formatTarif } from './tarif';
+import { formatMontant, formatTarif, parseTarif } from './tarif';
 
 // Intl.NumberFormat insère une espace insécable avant "$" (fr-CA) : on la normalise en
 // espace classique (\s couvre aussi l'insécable) pour ne pas dépendre d'un caractère
@@ -30,5 +30,27 @@ describe('formatTarif', () => {
 
   it('affiche un tarif de quelques cents comme un prix, pas comme gratuit', () => {
     expect(normaliserEspaces(formatTarif('0.50'))).toBe('0,50 $');
+  });
+});
+
+describe('parseTarif', () => {
+  it('accepte un entier, une virgule ou un point décimal', () => {
+    expect(parseTarif('25')).toBe(25);
+    expect(parseTarif(' 25,5 ')).toBe(25.5);
+    expect(parseTarif('25.50')).toBe(25.5);
+  });
+
+  it('refuse un texte, plus de 2 décimales ou un montant négatif', () => {
+    expect(parseTarif('abc')).toBeNull();
+    expect(parseTarif('10,123')).toBeNull();
+    expect(parseTarif('-5')).toBeNull();
+    expect(parseTarif('')).toBeNull();
+  });
+});
+
+describe('formatMontant', () => {
+  it('formate un montant en dollars canadiens, y compris 0', () => {
+    expect(normaliserEspaces(formatMontant(40))).toBe('40,00 $');
+    expect(normaliserEspaces(formatMontant(0))).toBe('0,00 $');
   });
 });
