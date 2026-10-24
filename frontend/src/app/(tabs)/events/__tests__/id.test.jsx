@@ -241,3 +241,33 @@ describe('EventSeatMapScreen', () => {
     expect(global.fetch).toHaveBeenCalledTimes(1);
   });
 });
+
+describe('EventSeatMapScreen : prix par section dans le récapitulatif (#11)', () => {
+  const fetchOriginal = global.fetch;
+  afterEach(() => {
+    global.fetch = fetchOriginal;
+  });
+
+  it('affiche le prix de chaque siège choisi et le total', async () => {
+    useAuth.mockReturnValue({ token: 'jeton', user: { id: 5, role: 'spectateur' } });
+    const planAvecPrix = {
+      ...plan,
+      sieges: [
+        { id: 101, rangee: 1, colonne: 1, etat: 'libre', sectionId: 10, prix: 40 },
+        { id: 102, rangee: 1, colonne: 2, etat: 'libre', sectionId: null, prix: 25 },
+      ],
+    };
+    global.fetch = jest.fn().mockResolvedValue(reponse({ success: true, data: planAvecPrix }));
+
+    await render(<EventSeatMapScreen />);
+    await attendreQue(() => screen.queryByText('Salle A') !== null);
+    await fireEvent.press(screen.getByTestId('siege-101'));
+    await fireEvent.press(screen.getByTestId('siege-102'));
+    await fireEvent.press(screen.getByText('Réserver (2)'));
+
+    expect(screen.getByText(/^40,00/)).toBeTruthy();
+    expect(screen.getByText(/^25,00/)).toBeTruthy();
+    expect(screen.getByText('Total')).toBeTruthy();
+    expect(screen.getByText(/^65,00/)).toBeTruthy();
+  });
+});

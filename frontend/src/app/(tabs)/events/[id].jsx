@@ -9,6 +9,7 @@ import { API_URL } from '@/constants/api';
 import { groupSiegesParRangee, lettreRangee } from '@/utils/salle';
 import { useAuth } from '@/lib/auth-context';
 import { useTheme } from '@/hooks/use-theme';
+import { formatMontant } from '@/utils/tarif';
 
 export default function EventSeatMapScreen() {
   const { id } = useLocalSearchParams();
@@ -135,6 +136,9 @@ export default function EventSeatMapScreen() {
   const siegesChoisis = plan.sieges
     .filter((s) => selection.has(s.id))
     .sort((a, b) => a.rangee - b.rangee || a.colonne - b.colonne);
+  // Prix de chaque siège : celui de sa section, ou le tarif de l'événement (#11). null si inconnu.
+  const prixConnus = siegesChoisis.every((s) => s.prix !== null && s.prix !== undefined);
+  const total = siegesChoisis.reduce((somme, s) => somme + (s.prix ?? 0), 0);
 
   function styleSiege(siege) {
     if (siege.etat === 'reserve') return styles.occupe;
@@ -219,10 +223,23 @@ export default function EventSeatMapScreen() {
         >
           <ThemedText type="smallBold">Confirmer votre réservation</ThemedText>
           {siegesChoisis.map((s) => (
-            <ThemedText key={s.id} type="small" themeColor="textSecondary">
-              Rangée {lettreRangee(s.rangee)}, siège {s.colonne}
-            </ThemedText>
+            <View key={s.id} style={styles.ligneRecap}>
+              <ThemedText type="small" themeColor="textSecondary">
+                Rangée {lettreRangee(s.rangee)}, siège {s.colonne}
+              </ThemedText>
+              {s.prix !== null && s.prix !== undefined && (
+                <ThemedText type="small" themeColor="textSecondary">
+                  {formatMontant(s.prix)}
+                </ThemedText>
+              )}
+            </View>
           ))}
+          {prixConnus && siegesChoisis.length > 0 && (
+            <View style={styles.ligneRecap}>
+              <ThemedText type="smallBold">Total</ThemedText>
+              <ThemedText type="smallBold">{formatMontant(total)}</ThemedText>
+            </View>
+          )}
           <Pressable
             onPress={handleConfirmer}
             disabled={envoiEnCours}
@@ -258,6 +275,7 @@ export default function EventSeatMapScreen() {
 }
 
 const styles = StyleSheet.create({
+  ligneRecap: { flexDirection: 'row', justifyContent: 'space-between', gap: 12 },
   container: { flex: 1, padding: Spacing.four, gap: Spacing.four },
   center: { flex: 1, alignItems: 'center', justifyContent: 'center' },
   grille: { gap: Spacing.two },

@@ -14,6 +14,7 @@ import { useAuth } from '@/lib/auth-context';
 import { parseDateHeure } from '@/utils/dates';
 import { isLienHttp } from '@/utils/liens';
 import { capaciteSalle } from '@/utils/salle';
+import { parseTarif } from '@/utils/tarif';
 
 // Même limite que le backend (express.raw, 5 Mo) : on refuse avant d'envoyer.
 const MAX_AFFICHE_OCTETS = 5 * 1024 * 1024;
@@ -26,12 +27,6 @@ function nouvelleGraine() {
 
 function urlImageAleatoire(graine) {
   return `https://picsum.photos/seed/${graine}/600/900`;
-}
-
-// Accepte "25", "25,5" ou "25.50" : 6 chiffres avant la virgule et 2 après au plus (Decimal(8,2) en base).
-function parseTarif(texte) {
-  const t = texte.trim().replace(',', '.');
-  return /^\d{1,6}(\.\d{1,2})?$/.test(t) ? Number(t) : null;
 }
 
 function Champ({ label, erreur, children }) {
