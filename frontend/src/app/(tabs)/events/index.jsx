@@ -10,7 +10,6 @@ import { MaxContentWidth } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 import { useAuth } from '@/lib/auth-context';
 import { formatDateHeure } from '@/utils/dates';
-import { formatTarif } from '@/utils/tarif';
 
 function EventCard({ item, theme, peutReserver }) {
   return (
@@ -34,12 +33,6 @@ function EventCard({ item, theme, peutReserver }) {
             </ThemedText>
           </View>
         )}
-        <View style={styles.metaRow}>
-          <Feather name="dollar-sign" size={14} color={theme.textSecondary} />
-          <ThemedText type="small" themeColor="textSecondary">
-            {formatTarif(item.tarif)}
-          </ThemedText>
-        </View>
         {peutReserver && (
           <Link href={`/(tabs)/events/${item.id}`} asChild>
             <Pressable style={StyleSheet.flatten([styles.button, { backgroundColor: theme.primary }])}>
