@@ -276,6 +276,22 @@ describe('EventSeatMapScreen', () => {
     expect(screen.getByText('Réserver')).toBeTruthy();
   });
 
+  it('ferme le récapitulatif quand le délai de sélection expire', async () => {
+    useAuth.mockReturnValue({ token: 'jeton', user: { id: 5, role: 'spectateur' } });
+    global.fetch = jest.fn().mockResolvedValue(reponse({ success: true, data: plan }));
+
+    await render(<EventSeatMapScreen />);
+    await attendreQue(() => screen.queryByText('Salle A') !== null);
+    await fireEvent.press(screen.getByTestId('siege-101'));
+    await fireEvent.press(screen.getByText('Réserver (1)'));
+    expect(screen.getByText('Confirmer')).toBeTruthy();
+
+    await act(async () => globalThis.socketTest.recevoir('siege:libere', { siegeId: 101 }));
+    expect(screen.queryByText('Confirmer')).toBeNull();
+    expect(screen.getByText('Réserver')).toBeTruthy();
+    expect(screen.getByTestId('siege-101').props.accessibilityState?.disabled).toBe(false);
+  });
+
   it("affiche le refus du serveur si le siège vient d'être sélectionné par un autre", async () => {
     useAuth.mockReturnValue({ token: 'jeton', user: { id: 5, role: 'spectateur' } });
     global.fetch = jest.fn().mockResolvedValue(reponse({ success: true, data: plan }));

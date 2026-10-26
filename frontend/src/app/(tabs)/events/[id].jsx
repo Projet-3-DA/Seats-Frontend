@@ -156,6 +156,9 @@ export default function EventSeatMapScreen() {
     }
   }
 
+  // Sélection vidée pendant le récapitulatif (délai d'une minute écoulé) : plus rien à confirmer.
+  if (enConfirmation && selection.size === 0 && !envoiEnCours) setEnConfirmation(false);
+
   if (chargement) {
     return (
       <ThemedView style={styles.center}>
