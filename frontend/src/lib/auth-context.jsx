@@ -48,6 +48,19 @@ export function AuthProvider({ children }) {
     setUser(json.data.user);
   }
 
+  // Connexion externe (GitHub, etc.) : le backend a déjà émis le token, on le vérifie avec /auth/me.
+  async function loginAvecToken(nouveauToken) {
+    const res = await fetch(`${API_URL}/auth/me`, {
+      headers: { Authorization: `Bearer ${nouveauToken}` },
+    });
+    const json = await res.json();
+    if (!res.ok) throw new Error(json.error || 'Erreur de connexion');
+
+    await SecureStore.setItemAsync(TOKEN_KEY, nouveauToken);
+    setToken(nouveauToken);
+    setUser(json.data);
+  }
+
   async function logout() {
     await SecureStore.deleteItemAsync(TOKEN_KEY);
     setToken(null);
@@ -55,7 +68,7 @@ export function AuthProvider({ children }) {
   }
 
   return (
-    <AuthContext.Provider value={{ token, user, chargementInitial, login, logout }}>
+    <AuthContext.Provider value={{ token, user, chargementInitial, login, loginAvecToken, logout }}>
       {children}
     </AuthContext.Provider>
   );

@@ -1,0 +1,15 @@
+import { API_URL } from '@/constants/api';
+
+// Fournisseurs de connexion externe. `disponible: false` = route pas encore faite côté backend :
+// le bouton reste visible mais désactivé, avec la mention « Bientôt » (simulation annoncée à l'écran).
+// GitHub : OAuth 2 (#101). Google, Microsoft : OpenID Connect (#114).
+export const FOURNISSEURS = [
+  { id: 'github', nom: 'GitHub', icone: 'logo-github', disponible: true },
+  { id: 'google', nom: 'Google', icone: 'logo-google', disponible: false },
+  { id: 'microsoft', nom: 'Microsoft', icone: 'logo-microsoft', disponible: false },
+];
+
+// Le backend redirige vers le fournisseur, puis revient sur /connexion-externe avec le token.
+export function urlConnexion(fournisseur) {
+  return `${API_URL}/auth/${fournisseur}`;
+}
