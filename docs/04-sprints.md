@@ -35,6 +35,10 @@
 - **Récits** : #8 (3), #31 (2), #32 (3), #9 (3), #33 (2), #10 (3), #11 (3),
   #34 (2), #12 (3), #13 (3), #35 (2), #14 (3), #19 (3), #36 (2) —
   **37 points**.
+- **Ajout en cours de sprint (26 octobre)** : #101 — Se connecter avec
+  GitHub (5), exigé pour la version bêta et constaté au point de
+  contrôle 2. Il remplace l'inscription par mot de passe (#1). Engagement
+  révisé : **42 points**.
 - **Incrément démontrable** : deux spectateurs ouvrent le même plan de
   salle dans deux fenêtres ; le siège que l'un sélectionne passe « en
   sélection » chez l'autre en temps réel, et redevient libre s'il n'est

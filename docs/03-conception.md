@@ -11,16 +11,19 @@
 Mis à jour suite à l'ajout des colonnes `tarif` et `affiche_url` sur la table `Evenement`. Ces colonnes auraient dû être présentes dès la conception initiale du diagramme, puisque chaque événement a une affiche et un tarif — elles avaient été oubliées.
 
 ### Détails des Entités — Sprint 1
-### UTILISATEURS (Inscription/Connexion)
+### UTILISATEURS (Connexion)
 id : Entier, clé primaire
 email : Chaîne, unique (index pour login)
-mot_de_passe : Hash bcrypt (jamais stocké en clair)
+mot_de_passe : Hash bcrypt (jamais stocké en clair), **facultatif depuis le sprint 2** : null pour un compte créé par la connexion GitHub ; seuls les comptes de démonstration en ont un
+github_id : Chaîne, unique, facultatif — identifiant du compte GitHub relié (sprint 2, #101)
 nom, prenom : Chaînes obligatoires
 role : ENUM('spectateur', 'organisateur', 'admin')
 spectateur : Consulte événements, réserve sièges, annule ses réservations
 organisateur : Crée salles/événements, voit stats de vente, annule toute réservation
 admin : Accès complet
 created_at : Timestamp création
+
+**Rôle par défaut** : un compte créé à sa première connexion GitHub reçoit le rôle `spectateur`. Il n'y a plus d'inscription par mot de passe (sprint 2, #101) ; les rôles `organisateur` et `administrateur` sont présents dans les comptes de démonstration.
 
 ### SALLES (Créées par organisateur)
 id : Entier, clé primaire
@@ -74,9 +77,12 @@ Contrainte : Si statut = 'confirmee', date_confirmation est non nul
 #### Authentification — `backend/src/modules/auth`
 | Méthode | Route | Auth | Détails |
 |---------|-------|------|---------|
-| POST | `/api/auth/register` | Publique | Corps : `{ email, motDePasse, nom, prenom, role }`, tous requis. Mot de passe haché (bcrypt). 409 si l'email existe déjà. Réponse : utilisateur créé (sans mot de passe). |
-| POST | `/api/auth/login` | Publique | Corps : `{ email, password }`. Réponse : `{ token, user }`. 401 (message générique) si email ou mot de passe invalide. |
+| POST | `/api/auth/login` | Publique | Corps : `{ email, password }`. Réponse : `{ token, user }`. 401 (message générique) si email ou mot de passe invalide, ou si le compte n'a pas de mot de passe (compte GitHub). |
 | GET | `/api/auth/me` | `Authorization: Bearer <token>` | Retourne l'utilisateur courant (déduit du token, sans mot de passe). |
+| GET | `/api/auth/github` | Publique | Redirige vers GitHub (OAuth 2). Un `state` aléatoire est gardé dans un cookie httpOnly (10 min) contre le CSRF. |
+| GET | `/api/auth/github/callback` | Publique (appelée par GitHub) | Vérifie le `state`, échange le code contre un jeton côté serveur, lit le profil et le courriel vérifié, retrouve ou crée l'utilisateur (rôle `spectateur`), puis redirige vers `<frontend>/connexion-externe#token=<JWT>` (ou `#erreur=<message>`). |
+
+*`POST /api/auth/register` a été retirée au sprint 2 (#101).*
 
 #### Salles — `backend/src/modules/salles`
 | Méthode | Route | Auth | Détails |
@@ -102,6 +108,8 @@ Contrainte : Si statut = 'confirmee', date_confirmation est non nul
 
 ## 3. Maquettes
 ### Maquettes 1 :  Pages Inscription
+*Page retirée au sprint 2 (#101) : un compte se crée en se connectant avec GitHub. La page de connexion affiche désormais les boutons « Continuer avec GitHub / Google / Microsoft » sous le formulaire.*
+
 <img width="390" height="844" alt="mobile-register" src="maquettes/mobile-register.png" />
 
 ### Maquettes 2 :  Pages Connexion
@@ -149,6 +157,8 @@ Contrainte : Si statut = 'confirmee', date_confirmation est non nul
 - Token JWT signé, payload contient `userId`, `role`
 - Cookie `HttpOnly` (non accessible en JS, protection XSS)
 - Durée courte (1h), refresh token pour renouvellement (optionnel)
+
+**Mise à jour (sprint 2)** : l'implémentation n'utilise pas de cookie pour le JWT. Le token est conservé côté client (SecureStore sur mobile, stockage du navigateur sur le web) et envoyé dans l'en-tête `Authorization: Bearer <token>`. Le seul cookie httpOnly sert au `state` de la connexion GitHub (voir décision 7).
  
 **Raison** : 
 - Simple pour API REST et stateless
@@ -260,3 +270,31 @@ Contrainte : Si statut = 'confirmee', date_confirmation est non nul
 
 **Coût** :
 - Deux suites à maintenir ; la suite d'intégration est plus lente et nécessite Postgres (Docker) pour tourner en local.
+
+---
+
+### Décision 7 : Connexion externe avec GitHub (OAuth 2) et retrait de l'inscription
+
+**Question** : Comment répondre à l'exigence de la bêta (« connexion GitHub ») sans perdre les comptes de démonstration nécessaires pour tester chaque rôle ?
+
+**Options envisagées** :
+1. Garder l'inscription par mot de passe et ajouter GitHub à côté.
+2. GitHub seul, inscription par mot de passe retirée, comptes de démonstration conservés.
+3. Passer par un service d'authentification tiers (Auth0, Supabase Auth).
+
+**Choix** : **Option 2**
+- Flux OAuth 2 « authorization code » implémenté dans le backend (`/api/auth/github`, `/api/auth/github/callback`).
+- Un `state` aléatoire, gardé dans un cookie httpOnly, protège contre le CSRF ; le secret de l'OAuth App reste côté serveur.
+- Le compte est retrouvé par `githubId`, sinon relié à un compte existant **uniquement par courriel vérifié par GitHub**, sinon créé avec le rôle `spectateur`.
+- Le backend émet le **même JWT** que la connexion par mot de passe : rôles et permissions sont vérifiés de la même façon.
+- Le JWT revient au frontend dans le fragment de l'URL (`#token=`), jamais envoyé à un serveur ni gardé dans les journaux, et effacé dès sa lecture.
+
+**Raison** :
+- Plus de mots de passe à stocker pour les vrais utilisateurs.
+- Les comptes de démonstration (un par rôle, avec mot de passe) restent indispensables : un nouveau compte GitHub est toujours `spectateur`.
+- Un service tiers ajouterait une dépendance et des secrets de plus, pour un flux qui tient en deux routes.
+
+**Coût** :
+- Plus aucun moyen de devenir organisateur sans action d'un administrateur (route de changement de rôle à prévoir).
+- Le récit #1 (inscription), livré au sprint 1, est retiré.
+- L'URL de callback doit correspondre exactement à celle de l'OAuth App : risque de connexion qui marche « chez nous » mais pas ailleurs (voir risque 6 de `06-risques.md`).
