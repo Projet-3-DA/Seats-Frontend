@@ -1,0 +1,57 @@
+# Blueprint Render (#19) : met Seats en ligne sur deux adresses publiques, redéployées automatiquement
+# à chaque commit sur la branche main de chaque dépôt. Procédure : docs/07-deploiement.md.
+#
+# Les valeurs « sync: false » sont demandées par Render à la création du Blueprint (jamais commitées).
+# La base de données est le projet Supabase : ses données persistent d'un déploiement à l'autre.
+
+services:
+  # API Express. Au démarrage, le conteneur applique les migrations Prisma et crée les comptes de
+  # démonstration (docker-entrypoint.sh) : la base Supabase est donc toujours au niveau de main.
+  - type: web
+    name: seats-backend
+    runtime: docker
+    plan: free
+    # À aligner sur la région du projet Supabase (non modifiable après la création).
+    region: virginia
+    repo: https://github.com/Projet-3-DA/Seats-Backend
+    branch: main
+    dockerContext: ./backend
+    dockerfilePath: ./backend/Dockerfile
+    healthCheckPath: /
+    autoDeploy: true
+    envVars:
+      - key: NODE_ENV
+        value: production
+      # Supabase > Connect > « Session pooler » (IPv4, port 5432) pour les deux : la connexion
+      # directe db.<ref>.supabase.co n'est joignable qu'en IPv6, ce que Render ne prend pas en charge.
+      - key: DATABASE_URL
+        sync: false
+      - key: DIRECT_URL
+        sync: false
+      - key: JWT_SECRET
+        generateValue: true
+      # Affiches (Supabase Storage) : facultatif, l'envoi d'affiche est refusé si vide.
+      - key: SUPABASE_URL
+        sync: false
+      - key: SUPABASE_SERVICE_ROLE_KEY
+        sync: false
+      - key: SUPABASE_BUCKET
+        value: affiches
+
+  # Application web (export Expo servi par server.js).
+  - type: web
+    name: seats-frontend
+    runtime: docker
+    plan: free
+    region: virginia
+    repo: https://github.com/Projet-3-DA/Seats-Frontend
+    branch: main
+    dockerContext: ./frontend
+    dockerfilePath: ./frontend/Dockerfile
+    healthCheckPath: /
+    autoDeploy: true
+    envVars:
+      # Adresse publique de l'API, figée dans le bundle au build (Render passe les variables
+      # d'environnement en build args au Dockerfile). Ex. https://seats-backend.onrender.com/api
+      - key: EXPO_PUBLIC_API_URL
+        sync: false

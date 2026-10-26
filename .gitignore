@@ -141,8 +141,3 @@ dist
 vite.config.js.timestamp-*
 vite.config.ts.timestamp-*
 .vite/
-
-# Déploiement (#19) : configuration et état propres au serveur
-deploy/.env
-deploy/.dernier-deploiement
-deploy/.verrou

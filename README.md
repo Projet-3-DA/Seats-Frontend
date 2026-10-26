@@ -20,7 +20,7 @@ docker compose up --build
 
 Puis ouvrir http://localhost:5173 (l'API écoute sur http://localhost:3000/api). Le premier démarrage prend quelques minutes (construction des images). La base de données est créée et migrée automatiquement ; ses données sont conservées dans un volume Docker et survivent à un redémarrage (`docker compose down` puis `docker compose up`). `docker compose down -v` la remet à zéro.
 
-Pour la mise en ligne sur le serveur du département (adresse publique, mises à jour automatiques), voir [Déploiement](./docs/07-deploiement.md).
+Pour la version en ligne (Render + Supabase, redéployée automatiquement à chaque fusion dans `main`), voir [Déploiement](./docs/07-deploiement.md).
 
 ### Comptes de démonstration
 Créés automatiquement au démarrage (mot de passe : `Demo1234!`).

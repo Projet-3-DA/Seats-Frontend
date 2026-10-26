@@ -1,88 +1,52 @@
-# Déploiement sur le serveur du département (#19)
+# Déploiement en ligne : Render + Supabase (#19)
 
-Seats tourne sur le serveur du département avec Docker Compose. Tout passe par **une seule adresse publique** : le reverse proxy Caddy envoie `/api` et `/socket.io` au backend, et le reste au frontend.
+Seats est en ligne sur deux adresses publiques, hébergées gratuitement par [Render](https://render.com) :
 
-```
-navigateur / app mobile ──► Caddy (port 80, ou 443 en HTTPS)
-                             ├── /api/*, /socket.io/* ──► backend (Express, port 3000 interne)
-                             └── le reste ─────────────► frontend (Expo web, port 3000 interne)
-                                                          backend ──► db (Postgres 17, volume)
-```
+| Service | Contenu | Adresse (exemple) |
+|---|---|---|
+| `seats-frontend` | L'application web, celle que les utilisateurs ouvrent | `https://seats-frontend.onrender.com` |
+| `seats-backend` | L'API Express | `https://seats-backend.onrender.com/api` |
 
-Les fichiers se trouvent dans [`deploy/`](../deploy) :
+La base de données est le projet **Supabase**, donc les données persistent d'un déploiement à l'autre. Render construit chaque service à partir de son `Dockerfile`, le même que pour `docker compose`. Toute la configuration se trouve dans [`render.yaml`](../render.yaml), un *Blueprint* Render.
 
-| Fichier | Rôle |
-|---|---|
-| `compose.prod.yml` | Les quatre services (db, backend, frontend, caddy), qui redémarrent automatiquement. |
-| `Caddyfile` | Les règles du reverse proxy. |
-| `env.example` | Le modèle de configuration. Sur le serveur, on le copie en `deploy/.env`, qui n'est jamais commité. |
-| `mettre-a-jour.sh` | Reconstruit et redémarre l'application quand `main` a changé dans l'un des deux dépôts. |
+## Mises à jour automatiques
 
-## Prérequis sur le serveur
+Chaque service se redéploie tout seul après chaque commit sur `main` de son dépôt, donc après chaque PR fusionnée. Le nouveau déploiement est en ligne quelques minutes plus tard. Pendant la construction, l'ancienne version reste en ligne.
 
-- Linux avec Docker Engine et le plugin Compose (`docker compose version`), ainsi que `git` et `flock` (paquet `util-linux`, présent par défaut).
-- Un accès sortant vers GitHub (clone, construction du backend) et Docker Hub (images `postgres`, `caddy`, `node`).
-- Le port 80 (et 443 pour HTTPS) joignable depuis le réseau des utilisateurs. S'ils sont pris, on change `HTTP_PORT` et `HTTPS_PORT`.
+Au démarrage, le backend applique les migrations Prisma sur Supabase. Il n'y a donc plus besoin de lancer `npx prisma migrate deploy` à la main après une fusion (risque 5 de [06-risques.md](06-risques.md)).
 
-## Première installation
+Pour redéployer à la main, ouvrir le service dans le tableau de bord Render, puis choisir **Manual Deploy** et **Deploy latest commit**.
 
-```sh
-git clone https://github.com/Projet-3-DA/Seats-Frontend.git ~/seats
-cd ~/seats
-cp deploy/env.example deploy/.env
-```
+## Mise en place (une seule fois)
 
-Remplir `deploy/.env` :
+1. **Supabase** : dans le projet, ouvrir **Connect**, puis copier l'URL du **Session pooler**. C'est elle qu'on utilise pour `DATABASE_URL` et pour `DIRECT_URL`, et non l'URL de connexion directe `db.<ref>.supabase.co`, qui n'est joignable qu'en IPv6 alors que Render ne fonctionne qu'en IPv4. Noter aussi la région du projet.
+2. **Render** : créer un compte avec **Sign in with GitHub**. Autoriser l'application Render sur l'organisation **Projet-3-DA**, pour les deux dépôts Seats-Backend et Seats-Frontend. C'est un propriétaire de l'organisation qui doit le faire.
+3. Si la région Supabase n'est pas `us-east-1`, remplacer `region: virginia` dans `render.yaml` par la région Render la plus proche (`ohio`, `oregon`, `frankfurt` ou `singapore`). Ce choix ne peut plus changer une fois les services créés.
+4. Dans Render, choisir **New**, puis **Blueprint**, puis le dépôt **Seats-Frontend** (branche `main`). Render lit `render.yaml` et demande les valeurs secrètes :
+   - `DATABASE_URL` et `DIRECT_URL` : l'URL du Session pooler, avec le mot de passe de la base.
+   - `SUPABASE_URL` et `SUPABASE_SERVICE_ROLE_KEY` : facultatives, elles ne servent qu'aux affiches.
+   - `EXPO_PUBLIC_API_URL` : `https://seats-backend.onrender.com/api`. Si Render a donné un autre nom au backend, utiliser son adresse affichée et ajouter `/api` à la fin.
 
-- **`SEATS_URL`** : l'adresse que les utilisateurs taperont, par exemple `http://10.0.0.42` ou `https://seats.exemple.ca`. Elle est figée dans l'application web au moment de la construction.
-- **`SITE_ADDRESS`** : `:80` pour une adresse IP ou un nom interne. Pour un nom de domaine public, mettre ce nom, et Caddy obtient le certificat HTTPS tout seul.
-- **`POSTGRES_PASSWORD`** et **`JWT_SECRET`** : deux longues chaînes aléatoires (`openssl rand -hex 32`). La pile refuse de démarrer sans elles.
-- `SUPABASE_*` : facultatif, seulement pour envoyer des affiches.
+   `JWT_SECRET` est généré par Render.
+5. Cliquer sur **Apply**. Le premier déploiement prend environ 10 minutes. Si l'adresse réelle du backend diffère de celle saisie à l'étape 4, corriger `EXPO_PUBLIC_API_URL` dans **seats-frontend**, puis **Environment**, puis enregistrer : le frontend se reconstruit avec la bonne adresse.
 
-Lancer ensuite :
+Vérification :
+- `https://seats-backend.onrender.com/` répond `{"status":"ok", …}` ;
+- sur l'application web, on peut se connecter avec un compte de démonstration (mot de passe `Demo1234!`).
 
-```sh
-sh deploy/mettre-a-jour.sh --force
-```
+## À savoir (offre gratuite)
 
-La première construction prend quelques minutes. Au démarrage, le backend applique les migrations Prisma et crée les comptes de démonstration (mot de passe `Demo1234!`). L'application est alors accessible à `SEATS_URL`.
+- **Mise en veille** : un service sans visite pendant 15 minutes s'endort. La visite suivante le réveille en 30 à 60 secondes. Avant une démonstration, ouvrir les deux adresses une minute à l'avance.
+- **Une seule base pour le développement et la production** : avec cette configuration, l'application en ligne utilise la même base Supabase que l'équipe en développement. Pour les séparer, créer un second projet Supabase (l'offre gratuite en permet deux) et mettre ses URL dans Render.
+- **Comptes de démonstration** : ils sont recréés au démarrage avec le mot de passe `Demo1234!`. Ce mot de passe est public, l'administrateur compris.
+- Les variables `EXPO_PUBLIC_*` sont figées au build. Après les avoir modifiées, il faut reconstruire le frontend (Render le fait automatiquement quand on enregistre).
 
-## Mises à jour : automatiques
+## Dépannage
 
-Le script ne reconstruit l'application que si le dernier commit de `main` a changé dans Seats-Frontend, ou dans Seats-Backend (branche `BACKEND_REF`). On le lance toutes les 5 minutes avec cron (`crontab -e`) :
-
-```
-*/5 * * * * sh ~/seats/deploy/mettre-a-jour.sh >> ~/seats/deploy/deploiement.log 2>&1
-```
-
-Une PR fusionnée dans `main` est donc en ligne environ 5 à 10 minutes plus tard, construction comprise. C'est le serveur qui va chercher les nouveautés : GitHub n'a besoin d'aucun accès au serveur, ni d'aucun secret.
-
-Pour déployer tout de suite, ou après avoir modifié `deploy/.env` : `sh deploy/mettre-a-jour.sh --force`.
-
-## Persistance des données
-
-- Les données vivent dans le volume Docker `seats-prod_seats_prod_db`. Elles survivent aux mises à jour, aux redémarrages des conteneurs et du serveur.
-- Les migrations sont appliquées au démarrage du backend, sans effacer de données.
-- **Ne jamais lancer `docker compose down -v`** : l'option `-v` supprime le volume, donc toute la base.
-
-Sauvegarde et restauration :
-
-```sh
-docker compose -f deploy/compose.prod.yml --env-file deploy/.env exec -T db pg_dump -U seats seats > sauvegarde.sql
-docker compose -f deploy/compose.prod.yml --env-file deploy/.env exec -T db psql -U seats seats < sauvegarde.sql
-```
-
-## Surveiller et dépanner
-
-```sh
-docker compose -f deploy/compose.prod.yml --env-file deploy/.env ps              # état des services
-docker compose -f deploy/compose.prod.yml --env-file deploy/.env logs -f backend # journaux de l'API
-tail -n 50 deploy/deploiement.log                                                # journal des déploiements
-```
-
-- **La page s'affiche, mais la connexion échoue** : `SEATS_URL` ne correspond pas à l'adresse tapée dans le navigateur. Corriger la valeur, puis relancer avec `--force`.
-- **Le backend redémarre en boucle** : regarder les journaux du backend. C'est souvent une migration en échec ou un `deploy/.env` incomplet.
+- **La page s'ouvre, mais la connexion échoue** : `EXPO_PUBLIC_API_URL` ne pointe pas vers le backend, ou le backend dort encore. Ouvrir l'adresse du backend, attendre sa réponse, puis réessayer.
+- **Le backend échoue au démarrage** : lire ses **Logs** dans Render. Un message `P1001` (base injoignable) vient presque toujours d'une URL de connexion directe au lieu du Session pooler, ou d'un mot de passe mal saisi.
+- **Le déploiement ne se lance pas après une fusion** : vérifier que l'application Render a bien accès au dépôt concerné (GitHub, puis **Settings**, puis **GitHub Apps**).
 
 ## Application mobile
 
-Le build mobile (Expo) doit viser l'adresse publique. Avant de construire, définir `EXPO_PUBLIC_API_URL=<SEATS_URL>/api`.
+Le build mobile (Expo) doit viser l'API publique. Avant de le construire, définir `EXPO_PUBLIC_API_URL=https://seats-backend.onrender.com/api`.
