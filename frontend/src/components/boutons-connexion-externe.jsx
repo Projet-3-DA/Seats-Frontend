@@ -1,16 +1,16 @@
-import { useEffect, useState } from "react";
-import { Ionicons } from "@expo/vector-icons";
-import { Linking, Platform, Pressable, StyleSheet, View } from "react-native";
+import { useEffect, useState } from 'react';
+import { Ionicons } from '@expo/vector-icons';
+import { Linking, Platform, Pressable, StyleSheet, View } from 'react-native';
 
-import { ThemedText } from "@/components/themed-text";
-import { API_URL } from "@/constants/api";
-import { FOURNISSEURS, urlConnexion } from "@/constants/fournisseurs";
-import { Spacing } from "@/constants/theme";
-import { useTheme } from "@/hooks/use-theme";
+import { ThemedText } from '@/components/themed-text';
+import { API_URL } from '@/constants/api';
+import { FOURNISSEURS, urlConnexion } from '@/constants/fournisseurs';
+import { Spacing } from '@/constants/theme';
+import { useTheme } from '@/hooks/use-theme';
 
 // Sur le web, on quitte la page dans le même onglet : le backend nous renverra sur /connexion-externe.
 function ouvrir(url) {
-  if (Platform.OS === "web") {
+  if (Platform.OS === 'web') {
     window.location.assign(url);
   } else {
     Linking.openURL(url);
@@ -66,13 +66,13 @@ export function BoutonsConnexionExterne() {
 const styles = StyleSheet.create({
   liste: { gap: Spacing.two },
   bouton: {
-    flexDirection: "row",
-    alignItems: "center",
+    flexDirection: 'row',
+    alignItems: 'center',
     gap: Spacing.two,
     borderWidth: 1,
     borderRadius: 10,
     paddingVertical: Spacing.three,
     paddingHorizontal: Spacing.three,
   },
-  texte: { flex: 1, fontWeight: "600" },
+  texte: { flex: 1, fontWeight: '600' },
 });

@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Link, router } from 'expo-router';
-import { ActivityIndicator, Image, Pressable, StyleSheet, TextInput } from 'react-native';
+import { ActivityIndicator, Image, Pressable, ScrollView, StyleSheet, TextInput } from 'react-native';
 
 import { BoutonsConnexionExterne } from '@/components/boutons-connexion-externe';
 import { ThemedText } from '@/components/themed-text';
@@ -31,78 +31,82 @@ export default function LoginScreen() {
   }
 
   return (
-    <ThemedView style={styles.container}>
-      <Image source={require('../../../assets/images/icon.png')} style={styles.logo} />
-      <ThemedText type="title" style={styles.titre}>
-        Seats
-      </ThemedText>
-      <ThemedText themeColor="textSecondary" style={styles.tagline}>
-        Réservez vos places pour vos spectacles préférés en quelques clics.
-      </ThemedText>
-
-      <ThemedView type="backgroundElement" style={styles.carte}>
-        <ThemedText type="subtitle" style={styles.carteTitle}>
-          Se connecter
+    // Défilement : avec les boutons de connexion externe, la page dépasse la hauteur d'un petit écran.
+    <ThemedView style={styles.ecran}>
+      <ScrollView contentContainerStyle={styles.container} keyboardShouldPersistTaps="handled">
+        <Image source={require('../../../assets/images/icon.png')} style={styles.logo} />
+        <ThemedText type="title" style={styles.titre}>
+          Seats
+        </ThemedText>
+        <ThemedText themeColor="textSecondary" style={styles.tagline}>
+          Réservez vos places pour vos spectacles préférés en quelques clics.
         </ThemedText>
 
-        <ThemedText type="smallBold">Adresse email</ThemedText>
-        <TextInput
-          style={[styles.input, { borderColor: theme.backgroundSelected, color: theme.text }]}
-          placeholder="votre@email.com"
-          placeholderTextColor={theme.textSecondary}
-          autoCapitalize="none"
-          keyboardType="email-address"
-          value={email}
-          onChangeText={setEmail}
-          onSubmitEditing={handleLogin}
-        />
-
-        <ThemedText type="smallBold">Mot de passe</ThemedText>
-        <TextInput
-          style={[styles.input, { borderColor: theme.backgroundSelected, color: theme.text }]}
-          placeholder="••••••••"
-          placeholderTextColor={theme.textSecondary}
-          secureTextEntry
-          value={password}
-          onChangeText={setPassword}
-          onSubmitEditing={handleLogin}
-        />
-
-        {erreur && (
-          <ThemedText type="small" style={styles.erreur}>
-            {erreur}
+        <ThemedView type="backgroundElement" style={styles.carte}>
+          <ThemedText type="subtitle" style={styles.carteTitle}>
+            Se connecter
           </ThemedText>
-        )}
 
-        <Pressable
-          style={[styles.bouton, { backgroundColor: theme.primary }]}
-          onPress={handleLogin}
-          disabled={enCours}
-        >
-          {enCours ? <ActivityIndicator color="#fff" /> : <ThemedText style={styles.boutonTexte}>Se connecter</ThemedText>}
-        </Pressable>
+          <ThemedText type="smallBold">Adresse email</ThemedText>
+          <TextInput
+            style={[styles.input, { borderColor: theme.backgroundSelected, color: theme.text }]}
+            placeholder="votre@email.com"
+            placeholderTextColor={theme.textSecondary}
+            autoCapitalize="none"
+            keyboardType="email-address"
+            value={email}
+            onChangeText={setEmail}
+            onSubmitEditing={handleLogin}
+          />
 
-        <ThemedText type="small" themeColor="textSecondary" style={styles.separateur}>
-          ou
+          <ThemedText type="smallBold">Mot de passe</ThemedText>
+          <TextInput
+            style={[styles.input, { borderColor: theme.backgroundSelected, color: theme.text }]}
+            placeholder="••••••••"
+            placeholderTextColor={theme.textSecondary}
+            secureTextEntry
+            value={password}
+            onChangeText={setPassword}
+            onSubmitEditing={handleLogin}
+          />
+
+          {erreur && (
+            <ThemedText type="small" style={styles.erreur}>
+              {erreur}
+            </ThemedText>
+          )}
+
+          <Pressable
+            style={[styles.bouton, { backgroundColor: theme.primary }]}
+            onPress={handleLogin}
+            disabled={enCours}
+          >
+            {enCours ? <ActivityIndicator color="#fff" /> : <ThemedText style={styles.boutonTexte}>Se connecter</ThemedText>}
+          </Pressable>
+
+          <ThemedText type="small" themeColor="textSecondary" style={styles.separateur}>
+            ou
+          </ThemedText>
+          <BoutonsConnexionExterne />
+        </ThemedView>
+
+        <ThemedText type="small" themeColor="textSecondary">
+          Nouveau sur Seats ?{' '}
+          <Link href="/(auth)/register">
+            <ThemedText type="linkPrimary" style={{ color: theme.primary }}>
+              Créer un compte
+            </ThemedText>
+          </Link>
         </ThemedText>
-        <BoutonsConnexionExterne />
-      </ThemedView>
-
-      <ThemedText type="small" themeColor="textSecondary">
-        Nouveau sur Seats ?{' '}
-        <Link href="/(auth)/register">
-          <ThemedText type="linkPrimary" style={{ color: theme.primary }}>
-            Créer un compte
-          </ThemedText>
-        </Link>
-      </ThemedText>
+      </ScrollView>
     </ThemedView>
   );
 }
 
 const styles = StyleSheet.create({
+  ecran: { flex: 1 },
   container: {
-    flex: 1,
+    flexGrow: 1,
     alignItems: 'center',
     justifyContent: 'center',
     gap: Spacing.two,
