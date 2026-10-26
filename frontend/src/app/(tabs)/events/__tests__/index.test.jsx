@@ -96,7 +96,7 @@ describe('EventsListScreen', () => {
     expect(screen.getByText('Théâtre A')).toBeTruthy();
   });
 
-  it("affiche le tarif et l'affiche de chaque événement, y compris un événement gratuit sans affiche", async () => {
+  it("affiche l'affiche de chaque événement, sans le tarif (il apparaît sur le plan de salle)", async () => {
     global.fetch = jest.fn().mockResolvedValue(
       reponse({
         success: true,
@@ -116,25 +116,10 @@ describe('EventsListScreen', () => {
     await render(<EventsListScreen />);
     await attendreQue(() => screen.queryByText('Festival de Jazz') !== null);
 
-    expect(screen.getByText('25,00 $')).toBeTruthy();
-    expect(screen.getByText('Gratuit')).toBeTruthy();
+    expect(screen.queryByText('25,00 $')).toBeNull();
+    expect(screen.queryByText('Gratuit')).toBeNull();
     expect(screen.getAllByTestId('affiche-image')).toHaveLength(1);
     expect(screen.getAllByTestId('affiche-icone-defaut')).toHaveLength(1);
-  });
-
-  it("affiche « Gratuit » pour un événement créé avec un tarif de 0 (et non « 0,00 $ »)", async () => {
-    global.fetch = jest.fn().mockResolvedValue(
-      reponse({
-        success: true,
-        data: [{ id: 1, titre: 'Portes ouvertes', dateHeure: '2026-11-01T21:00:00', tarif: '0.00', afficheUrl: null }],
-      }),
-    );
-
-    await render(<EventsListScreen />);
-    await attendreQue(() => screen.queryByText('Portes ouvertes') !== null);
-
-    expect(screen.getByText('Gratuit')).toBeTruthy();
-    expect(screen.queryByText('0,00 $')).toBeNull();
   });
 
   it("recharge la liste au retour sur l'écran, pour afficher un événement créé entre-temps", async () => {
