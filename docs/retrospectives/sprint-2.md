@@ -13,9 +13,8 @@ Les constats ci-dessous s'appuient sur l'historique des deux dépôts : PR fusio
   - #11, sections tarifaires, par Delavie (backend PR #33, frontend PR #100).
   - #12, annulation par le spectateur, par Glodie (backend PR #30, frontend PR #97).
   - #13 et #14, ventes en direct et annulation par l'organisateur, par Delavie (backend PR #24 et #25, frontend PR #93 et #95).
-  - #36, supervision des événements par l'administrateur, par Oladé (frontend PR #98).
 
-  Cela fait **27 points sur 37**.
+  Cela fait **25 points sur 37**.
 - **Les tests ont suivi.** Le backend compte 291 tests unitaires. Les migrations de schéma (#14, #11) sont aussi vérifiées par des tests d'intégration sur un vrai PostgreSQL, notamment pour la concurrence : deux réservations simultanées n'en laissent passer qu'une.
 - **Les fusions sont faites par un autre membre que l'auteur** : 16 PR sur 17, en général après un commentaire de validation (« Testé et approuvé »).
 
@@ -34,9 +33,10 @@ Les constats ci-dessous s'appuient sur l'historique des deux dépôts : PR fusio
 | #32 Libérer automatiquement un siège en sélection non confirmé | 3 | Glodie | Pas de PR fusionnée |
 | #34 Afficher les sections par couleur sur le plan de salle | 2 | Yanis | Pas de PR fusionnée. La couleur des sections est déjà enregistrée par #11 |
 | #35 Mettre à jour les statistiques de vente en direct | 2 | Glodie | Pas de PR fusionnée. Le tableau de bord de #13 se rafraîchit déjà toutes les 5 s, il faut vérifier ce qu'il reste à faire |
+| #36 Liste globale des événements + détail au clic | 2 | Oladé | Frontend fusionné (frontend PR #98), mais le backend est encore en revue (backend PR #31, ouverte le 19 octobre). L'écran appelle `GET /api/admin/evenements`, qui n'existe pas encore dans `main` |
 | Liste globale des organisateurs (admin), #19 du backlog | 3 | — | Pas de PR fusionnée |
 
-Ces récits totalisent 10 points et passent au sprint 3. Vélocité du sprint 2 : **27 points** (39 au sprint 1).
+Ces récits totalisent 12 points. Si le backend de #36 est fusionné avant la remise du 29 octobre, il compte (27 points livrés) ; sinon, il passe au sprint 3 avec les autres. Vélocité du sprint 2 au 26 octobre : **25 points** (39 au sprint 1).
 
 ## Les changements décidés au sprint 1 : appliqués ?
 
