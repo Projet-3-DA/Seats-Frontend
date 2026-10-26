@@ -57,3 +57,5 @@ Les tests du backend (dépôt Seats-Backend) se lancent avec `npm test` dans son
 - [Equipe](./docs/05-equipe.md)
 - [Risques](./docs/06-risques.md)
 - [Journal](./docs/journal.md)
+- [Règles de confidentialité](./docs/confidentialite.md)
+- [Conditions d'utilisation](./docs/conditions-utilisation.md)
