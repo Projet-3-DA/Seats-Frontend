@@ -161,3 +161,40 @@ describe('MyReservationsScreen : annuler une réservation à venir (#12)', () =>
     await attendreQue(() => screen.queryByText('Cet événement a déjà eu lieu.') !== null);
   });
 });
+
+describe('MyReservationsScreen : prix par section (#11)', () => {
+  const fetchOriginal = global.fetch;
+
+  beforeEach(() => {
+    useAuth.mockReturnValue({ token: 'jeton-spec', user: { id: 5, role: 'spectateur' } });
+  });
+  afterEach(() => {
+    global.fetch = fetchOriginal;
+  });
+
+  it('additionne le prix de chaque place (section ou tarif de l\'événement)', async () => {
+    global.fetch = jest.fn().mockResolvedValue(
+      reponse({
+        success: true,
+        data: [
+          reservation({ id: 1, prix: 40 }),
+          reservation({ id: 2, prix: 25, siege: { id: 102, numeroRangee: 1, numeroColonne: 2 } }),
+        ],
+      }),
+    );
+
+    await render(<MyReservationsScreen />);
+    await attendreQue(() => screen.queryByText('Concert de jazz') !== null);
+
+    expect(screen.getByText(/^65,00/)).toBeTruthy();
+  });
+
+  it("retombe sur le tarif de l'événement si le prix de la place est absent", async () => {
+    global.fetch = jest.fn().mockResolvedValue(reponse({ success: true, data: [reservation({ id: 1 })] }));
+
+    await render(<MyReservationsScreen />);
+    await attendreQue(() => screen.queryByText('Concert de jazz') !== null);
+
+    expect(screen.getByText(/^25,00/)).toBeTruthy();
+  });
+});

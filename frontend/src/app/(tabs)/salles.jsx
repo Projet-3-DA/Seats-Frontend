@@ -26,11 +26,19 @@ function SalleCard({ item, theme }) {
           Utilisée par un événement : modification impossible.
         </ThemedText>
       ) : (
-        <Link href={`/organisateur/salles/${item.id}`}>
-          <ThemedText type="link" style={{ color: theme.primary }}>
-            Modifier
-          </ThemedText>
-        </Link>
+        <View style={styles.liens}>
+          <Link href={`/organisateur/salles/${item.id}`}>
+            <ThemedText type="link" style={{ color: theme.primary }}>
+              Modifier
+            </ThemedText>
+          </Link>
+          {/* Sections tarifaires (#11) : mêmes règles que la modification de la salle. */}
+          <Link href={`/organisateur/salles/sections/${item.id}`}>
+            <ThemedText type="link" style={{ color: theme.primary }}>
+              Sections et tarifs
+            </ThemedText>
+          </Link>
+        </View>
       )}
     </View>
   );
@@ -136,4 +144,5 @@ const styles = StyleSheet.create({
   card: { borderWidth: 1, borderRadius: 12, padding: 16, gap: 8 },
   cardHeader: { flexDirection: 'row', alignItems: 'center', gap: 8 },
   cardTitle: { fontSize: 18 },
+  liens: { flexDirection: 'row', flexWrap: 'wrap', gap: 16 },
 });

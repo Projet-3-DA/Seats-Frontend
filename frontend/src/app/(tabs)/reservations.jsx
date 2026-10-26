@@ -53,9 +53,13 @@ function formaterDate(dateHeure) {
   });
 }
 
-function formaterPrix(tarif, nombreSieges) {
-  if (tarif == null) return null;
-  return (Number(tarif) * nombreSieges).toLocaleString('fr-CA', { style: 'currency', currency: 'CAD' });
+// Total payé : chaque place a son prix (celui de sa section, ou le tarif de l'événement, #11). Les
+// anciennes réponses sans prix par place retombent sur le tarif de l'événement.
+function formaterPrix(groupe) {
+  const prix = groupe.prix.map((p) => (p === null || p === undefined ? groupe.evenement.tarif : p));
+  if (prix.some((p) => p === null || p === undefined)) return null;
+  const total = prix.reduce((somme, p) => somme + Number(p), 0);
+  return total.toLocaleString('fr-CA', { style: 'currency', currency: 'CAD' });
 }
 
 function grouperReservations(reservations) {
@@ -65,10 +69,11 @@ function grouperReservations(reservations) {
     .forEach((r) => {
       const cle = `${r.evenementId}-${r.statut}`;
       if (!groupes.has(cle)) {
-        groupes.set(cle, { id: cle, evenement: r.evenement, statut: r.statut, sieges: [], motifs: [], reservationIds: [] });
+        groupes.set(cle, { id: cle, evenement: r.evenement, statut: r.statut, sieges: [], prix: [], motifs: [], reservationIds: [] });
       }
       const groupe = groupes.get(cle);
       groupe.sieges.push(r.siege);
+      groupe.prix.push(r.prix);
       groupe.reservationIds.push(r.id);
       // Motif donné par l'organisateur à l'annulation (#14), sans doublon si plusieurs sièges le partagent.
       if (r.motifAnnulation && !groupe.motifs.includes(r.motifAnnulation)) groupe.motifs.push(r.motifAnnulation);
@@ -89,7 +94,7 @@ function statutAffiche(groupe, theme) {
 
 function TicketCard({ groupe, theme, onAnnuler, annulationEnCours }) {
   const { label, couleur } = statutAffiche(groupe, theme);
-  const prix = formaterPrix(groupe.evenement.tarif, groupe.sieges.length);
+  const prix = formaterPrix(groupe);
   const estPasse = new Date(groupe.evenement.dateHeure) < new Date();
   const peutReserverANouveau = groupe.statut === 'annulee' && !estPasse;
 

@@ -94,6 +94,7 @@ describe('MesSallesScreen (onglet Salles)', () => {
     await attendreQue(() => screen.queryByText('Libre') !== null);
 
     expect(screen.getAllByText('Modifier')).toHaveLength(1);
+    expect(screen.getAllByText('Sections et tarifs')).toHaveLength(1); // #11 : mêmes règles que « Modifier »
     expect(screen.getByText('Utilisée par un événement : modification impossible.')).toBeTruthy();
   });
 });
