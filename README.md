@@ -9,7 +9,9 @@ cd Seats-Frontend
 docker compose up --build
 ```
 
-Il n'est pas nécessaire de cloner le dépôt de l'API ([Seats-Backend](https://github.com/Projet-3-DA/Seats-Backend)) : `compose.yml` construit son image directement depuis GitHub (dossier `backend/` du tag `alpha-v1`).
+Avant de lancer, placer le fichier `.env` à la racine du dépôt (à côté de `compose.yml`). Ses variables sont décrites dans [`.env.example`](.env.example) ; sans lui, l'application démarre mais la connexion GitHub ne fonctionne pas.
+
+Il n'est pas nécessaire de cloner le dépôt de l'API ([Seats-Backend](https://github.com/Projet-3-DA/Seats-Backend)) : `compose.yml` construit son image directement depuis GitHub (dossier `backend/` de la branche `main`).
 
 **Sous Windows**, si la construction échoue avec `failed to execute bake: exit status 1` (bug de Docker Compose avec un contexte de build distant), désactiver bake avant de relancer :
 
@@ -19,6 +21,12 @@ docker compose up --build
 ```
 
 Puis ouvrir http://localhost:5173 (l'API écoute sur http://localhost:3000/api). Le premier démarrage prend quelques minutes (construction des images). La base de données est créée et migrée automatiquement ; ses données sont conservées dans un volume Docker et survivent à un redémarrage (`docker compose down` puis `docker compose up`). `docker compose down -v` la remet à zéro.
+
+### Connexion
+- **Avec GitHub** : bouton « Continuer avec GitHub » sur la page de connexion. Un nouveau compte reçoit le rôle `spectateur`.
+- **Comptes de démonstration** (courriel + mot de passe), un par rôle, ci-dessous.
+
+Il n'y a plus d'inscription par mot de passe : un nouveau compte se crée en se connectant avec GitHub.
 
 ### Comptes de démonstration
 Créés automatiquement au démarrage (mot de passe : `Demo1234!`).

@@ -1,7 +1,8 @@
 import { useState } from 'react';
-import { Link, router } from 'expo-router';
+import { router } from 'expo-router';
 import { ActivityIndicator, Image, Pressable, StyleSheet, TextInput } from 'react-native';
 
+import { BoutonsConnexionExterne } from '@/components/boutons-connexion-externe';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { useTheme } from '@/hooks/use-theme';
@@ -80,16 +81,12 @@ export default function LoginScreen() {
         >
           {enCours ? <ActivityIndicator color="#fff" /> : <ThemedText style={styles.boutonTexte}>Se connecter</ThemedText>}
         </Pressable>
-      </ThemedView>
 
-      <ThemedText type="small" themeColor="textSecondary">
-        Nouveau sur Seats ?{' '}
-        <Link href="/(auth)/register">
-          <ThemedText type="linkPrimary" style={{ color: theme.primary }}>
-            Créer un compte
-          </ThemedText>
-        </Link>
-      </ThemedText>
+        <ThemedText type="small" themeColor="textSecondary" style={styles.separateur}>
+          ou
+        </ThemedText>
+        <BoutonsConnexionExterne />
+      </ThemedView>
     </ThemedView>
   );
 }
@@ -127,4 +124,5 @@ const styles = StyleSheet.create({
     marginTop: Spacing.two,
   },
   boutonTexte: { color: '#fff', fontWeight: '600' },
+  separateur: { textAlign: 'center', marginVertical: Spacing.one },
 });

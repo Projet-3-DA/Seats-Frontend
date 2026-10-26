@@ -7,6 +7,9 @@
 | 3 — Concurrence mal implémentée, doubles réservations | Pas survenu ; atténuation commencée plus tôt que prévu | Probabilité en baisse |
 | 4 — Un changement d'API dans un dépôt casse l'autre | **Nouveau**, déjà survenu deux fois | Élevé |
 | 5 — Base Supabase partagée désynchronisée des migrations | **Nouveau**, survenu une fois | Moyen |
+| 6 — La connexion GitHub marche chez nous mais pas chez le correcteur | **Nouveau** (sprint 2) | Moyen |
+| 7 — Plus aucun moyen de créer un organisateur | **Nouveau** (sprint 2), conséquence du retrait de l'inscription | Moyen |
+| 8 — Connexion Google ou Microsoft refusée au correcteur | **Nouveau** (sprint 2, #114) | Moyen |
 
 Aucun risque n'a disparu. Les risques 1 et 3 restent suivis : le premier peut revenir à chaque changement du `docker-compose.yml`, le second est au cœur du sprint 3.
 
@@ -54,3 +57,23 @@ Aucun risque n'a disparu. Les risques 1 et 3 restent suivis : le premier peut re
 - **Déjà survenu** : le 21 septembre, la création d'un événement échouait tant que les migrations ajoutant l'affiche et le tarif n'étaient pas appliquées à la base partagée.
 - Signal d'alerte : une PR ajoute un dossier dans `prisma/migrations` ; un membre obtient une erreur Prisma sur une colonne ou une table inconnue.
 - Mesure d'atténuation : développer en local contre le PostgreSQL du `docker compose`, où les migrations sont appliquées au démarrage. Appliquer une migration à Supabase seulement après la fusion de sa PR dans `main`, et l'annoncer à la mêlée suivante.
+
+# Risque 6 - La connexion GitHub marche chez nous mais pas chez le correcteur
+- Probabilité : Moyenne — la connexion dépend de valeurs hors du dépôt (`GITHUB_CLIENT_ID`, `GITHUB_CLIENT_SECRET` dans le `.env`) et d'une URL de callback qui doit correspondre exactement à celle de l'OAuth App.
+- Impact : Élevé — la connexion GitHub avec un compte inconnu de l'application fait partie du niveau « Acquis » de l'objectif 1 de la bêta.
+- Signal d'alerte : depuis un clone neuf, le bouton « Continuer avec GitHub » mène à une erreur (`redirect_uri` refusée, connexion non configurée) ou revient sur la page de connexion avec un message d'erreur.
+- Mesure d'atténuation : `.env.example` à la racine du dépôt (à côté de `compose.yml`) qui liste chaque variable ; callback fixé à `http://localhost:3000/api/auth/github/callback` et documenté dans le README ; test depuis un clone neuf avec un compte GitHub qui ne s'est jamais connecté ; `.env` complet envoyé par MIO avant l'échéance.
+
+# Risque 7 - Plus aucun moyen de créer un organisateur
+- Probabilité : Élevée — depuis le retrait de l'inscription (#101), un nouveau compte est toujours `spectateur`.
+- Impact : Moyen — seul le compte de démonstration `organisateur@seats.demo` peut créer des salles et des événements.
+- Signal d'alerte : un vrai utilisateur veut organiser un événement et ne peut pas.
+- Mesure d'atténuation : ajouter une route réservée à l'administrateur pour changer le rôle d'un utilisateur (vérifiée côté serveur), avec un écran dans l'interface d'administration.
+
+# Risque 8 - Connexion Google ou Microsoft refusée au correcteur
+- Probabilité : Moyenne — plusieurs réglages hors du code peuvent bloquer un compte qui n'appartient pas à l'équipe.
+- Impact : Faible à moyen — #114 est un `Could` ; la connexion GitHub reste la méthode exigée.
+- Signal d'alerte :
+  - Google : « Accès bloqué : l'application n'a pas terminé la procédure de validation » (application restée en mode « Test ») ;
+  - Microsoft : « Approbation de l'administrateur requise » avec un compte d'organisation (cégep), ou « secret client expiré ».
+- Mesure d'atténuation : publier l'application Google (pages d'accueil et de confidentialité sur GitHub) ; inscrire l'application Microsoft pour les comptes personnels **et** professionnels ; noter la date d'expiration du secret Microsoft (180 jours) et le renouveler avant ; un fournisseur non configuré reste affiché « Bientôt » plutôt que de mener à une erreur.

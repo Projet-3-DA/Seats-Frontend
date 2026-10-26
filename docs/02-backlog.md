@@ -32,8 +32,9 @@ numéro réel attribué par GitHub à la création.
 
 | # | Récit | Épique | Points | Sprint |
 |---|---|---|---|---|
-| [#1](../../../issues/1) | Créer un compte (inscription) | Comptes | 3 | 1 |
+| [#1](../../../issues/1) | Créer un compte (inscription) — *remplacé par #101 au sprint 2* | Comptes | 3 | 1 |
 | [#28](../../../issues/28) | Se connecter et maintenir ma session | Comptes | 2 | 1 |
+| [#101](../../../issues/101) | Se connecter avec GitHub (OAuth 2) | Comptes | 5 | 2 |
 | [#2](../../../issues/2) | Créer une salle (nom + disposition de base) | Salles | 3 | 1 |
 | [#24](../../../issues/24) | Générer et afficher le plan de sièges individuel | Salles | 3 | 1 |
 | [#25](../../../issues/25) | Voir la liste de mes salles | Salles | 2 | 1 |
@@ -78,6 +79,7 @@ numéro réel attribué par GitHub à la création.
 | [#21](../../../issues/21) | Filtrer les événements par date ou lieu | Événements | Should | 3 | 3 |
 | [#22](../../../issues/22) | Voir des statistiques simples de vente par section | Suivi organisateur | Should | 3 | 3 |
 | [#23](../../../issues/23) | Dupliquer un événement existant pour créer rapidement une nouvelle séance | Événements | Could | 2 | — |
+| [#114](../../../issues/114) | Se connecter avec Google et Microsoft (OpenID Connect) | Comptes | Could | 5 | 3 |
 
 ## Won't (hors portée cette session)
 
@@ -106,6 +108,8 @@ décrété à **3 points** : lecture simple, une seule entité, pas d'écriture.
 - Un courriel déjà utilisé refuse une nouvelle inscription, avec un message clair.
 - Le mot de passe est stocké hashé (jamais en clair).
 
+> **Sprint 2** : l'inscription par mot de passe est retirée et remplacée par #101 (connexion GitHub). Un compte se crée à sa première connexion GitHub, avec le rôle `spectateur`. Les comptes de démonstration gardent leur mot de passe.
+
 ### [#28](../../../issues/28) — Se connecter et maintenir ma session
 **En tant qu'**utilisateur inscrit, **je veux** me connecter et rester connecté d'une page à l'autre **afin de** ne pas avoir à ressaisir mes identifiants à chaque navigation.
 
@@ -113,7 +117,7 @@ décrété à **3 points** : lecture simple, une seule entité, pas d'écriture.
 - Une fois connecté, ma session persiste d'une page à l'autre.
 - Un mot de passe incorrect refuse la connexion sans révéler si le courriel existe.
 
-*Dépend de : #1*
+*Dépend de : #1. Depuis le sprint 2, la connexion se fait avec GitHub (#101) ou avec un compte de démonstration.*
 
 ### [#2](../../../issues/2) — Créer une salle (nom + disposition de base)
 **En tant qu'**organisateur, **je veux** créer une salle en indiquant un nom, un nombre de rangées et de sièges par rangée **afin de** pouvoir la réutiliser pour tous les événements qui s'y tiennent.
@@ -341,7 +345,36 @@ Dépend de : #1, #3, #4, #6, #7
 
 *Dépend de : #19*
 
+### [#101](../../../issues/101) — Se connecter avec GitHub (OAuth 2)
+**En tant qu'**utilisateur, **je veux** me connecter avec mon compte GitHub **afin de** ne pas avoir à créer un mot de passe propre à Seats.
+
+*Ajouté en cours de sprint : la connexion GitHub est exigée pour la version bêta.*
+
+**Critères d'acceptation**
+- Un bouton « Continuer avec GitHub » lance le flux OAuth 2 (callback sur `localhost`).
+- Un compte GitHub inconnu peut se connecter dès la première fois ; il est créé avec le rôle `spectateur`.
+- Un utilisateur déjà connu retrouve son compte et son rôle.
+- La déconnexion fonctionne.
+- Le secret de l'OAuth App reste côté serveur, jamais dans le frontend ni dans le dépôt.
+- Les comptes de démonstration (courriel + mot de passe) fonctionnent toujours.
+- L'inscription par mot de passe est retirée.
+- Tests automatisés du callback (nouvel utilisateur, utilisateur existant, erreur, `state` invalide).
+
+*Remplace : #1*
+
 ## Récits du sprint 3 (avec critères d'acceptation)
+
+### [#114](../../../issues/114) — Se connecter avec Google et Microsoft (OpenID Connect)
+**En tant qu'**utilisateur, **je veux** me connecter avec mon compte Google ou Microsoft **afin de** ne pas dépendre d'un compte GitHub.
+
+**Critères d'acceptation**
+- Les boutons « Continuer avec Google » et « Continuer avec Microsoft » ne sont actifs que si le fournisseur est configuré ; sinon ils affichent « Bientôt ».
+- Un nouvel utilisateur reçoit le rôle `spectateur` ; un utilisateur connu garde son rôle.
+- L'ID token est vérifié (signature, audience, émetteur, nonce) ; un token falsifié ou rejoué est refusé.
+- Les secrets restent côté serveur et sont documentés dans `.env.example`.
+- L'application Google est publiée, pour que n'importe quel compte Google puisse se connecter.
+
+*Dépend de : #101*
 
 ### [#15](../../../issues/15) — Expiration automatique du délai de sélection (serveur)
 **En tant que** spectateur, **je veux** que mon siège sélectionné redevienne libre si je ne confirme pas dans un délai raisonnable **afin de** ne pas bloquer un siège indéfiniment.
