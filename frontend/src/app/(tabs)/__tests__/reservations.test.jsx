@@ -1,7 +1,18 @@
 jest.mock('expo-router', () => ({ Link: ({ children }) => children }));
 jest.mock('@/lib/auth-context', () => ({ useAuth: jest.fn() }));
 
-import { render, screen, act } from '@testing-library/react-native';
+import { Alert } from 'react-native';
+import { render, screen, fireEvent, act } from '@testing-library/react-native';
+
+// La confirmation (Alert.alert) lance une chaîne async (Promise.all des annulations, puis rechargement)
+// que fireEvent.press ne peut pas attendre lui-même : on force quelques tours de micro-tâches dans un
+// act() après l'appui, comme le fait déjà attendreQue pendant son sondage.
+async function pressAndFlush(element) {
+  await act(async () => {
+    fireEvent.press(element);
+    for (let i = 0; i < 5; i += 1) await Promise.resolve();
+  });
+}
 
 import { useAuth } from '@/lib/auth-context';
 import MyReservationsScreen from '../reservations';
@@ -75,6 +86,79 @@ describe('MyReservationsScreen : réservation annulée par l’organisateur (#14
     await attendreQue(() => screen.queryByText('Concert de jazz') !== null);
 
     expect(screen.queryByText(/Motif de l'annulation/)).toBeNull();
+  });
+});
+
+describe('MyReservationsScreen : annuler une réservation à venir (#12)', () => {
+  const fetchOriginal = global.fetch;
+
+  beforeEach(() => {
+    useAuth.mockReturnValue({ token: 'jeton-spec', user: { id: 5, role: 'spectateur' } });
+    // Simule l'appui sur le bouton destructif de la boîte de dialogue de confirmation.
+    jest.spyOn(Alert, 'alert').mockImplementation((titre, message, boutons) => {
+      const confirmer = boutons.find((b) => b.style === 'destructive');
+      confirmer.onPress();
+    });
+  });
+  afterEach(() => {
+    global.fetch = fetchOriginal;
+    Alert.alert.mockRestore();
+  });
+
+  it('demande confirmation puis annule chaque siège de la réservation', async () => {
+    global.fetch = jest
+      .fn()
+      .mockResolvedValueOnce(
+        reponse({
+          success: true,
+          data: [
+            reservation({ id: 1, siege: { id: 101, numeroRangee: 1, numeroColonne: 1 } }),
+            reservation({ id: 2, siege: { id: 102, numeroRangee: 1, numeroColonne: 2 } }),
+          ],
+        }),
+      )
+      .mockResolvedValueOnce(reponse({ success: true, data: { id: 1, statut: 'annulee' } }))
+      .mockResolvedValueOnce(reponse({ success: true, data: { id: 2, statut: 'annulee' } }))
+      .mockResolvedValueOnce(
+        reponse({
+          success: true,
+          data: [
+            reservation({ id: 1, statut: 'annulee', siege: { id: 101, numeroRangee: 1, numeroColonne: 1 } }),
+            reservation({ id: 2, statut: 'annulee', siege: { id: 102, numeroRangee: 1, numeroColonne: 2 } }),
+          ],
+        }),
+      );
+
+    await render(<MyReservationsScreen />);
+    await attendreQue(() => screen.queryByText('Annuler') !== null);
+
+    await pressAndFlush(screen.getByText('Annuler'));
+    expect(Alert.alert).toHaveBeenCalled();
+
+    await attendreQue(() => screen.queryByText('Annulée') !== null);
+
+    expect(global.fetch).toHaveBeenCalledWith(
+      expect.stringContaining('/reservations/1/annuler'),
+      expect.objectContaining({ method: 'POST', headers: { Authorization: 'Bearer jeton-spec' } }),
+    );
+    expect(global.fetch).toHaveBeenCalledWith(
+      expect.stringContaining('/reservations/2/annuler'),
+      expect.objectContaining({ method: 'POST' }),
+    );
+  });
+
+  it("affiche l'erreur du serveur si l'annulation échoue", async () => {
+    global.fetch = jest
+      .fn()
+      .mockResolvedValueOnce(reponse({ success: true, data: [reservation({ id: 1 })] }))
+      .mockResolvedValueOnce(reponse({ success: false, error: 'Cet événement a déjà eu lieu.' }, false));
+
+    await render(<MyReservationsScreen />);
+    await attendreQue(() => screen.queryByText('Annuler') !== null);
+
+    await pressAndFlush(screen.getByText('Annuler'));
+
+    await attendreQue(() => screen.queryByText('Cet événement a déjà eu lieu.') !== null);
   });
 });
 

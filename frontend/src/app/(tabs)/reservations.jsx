@@ -1,6 +1,6 @@
 import { Link } from 'expo-router';
-import { useEffect, useMemo, useState } from 'react';
-import { ActivityIndicator, FlatList, Pressable, StyleSheet, View } from 'react-native';
+import { useCallback, useEffect, useMemo, useState } from 'react';
+import { ActivityIndicator, Alert, FlatList, Platform, Pressable, StyleSheet, View } from 'react-native';
 
 import { Affiche } from '@/components/affiche';
 import { ThemedText } from '@/components/themed-text';
@@ -10,6 +10,20 @@ import { useAuth } from '@/lib/auth-context';
 import { lettreRangee } from '@/utils/salle';
 
 const COULEUR_TERMINE = '#16A34A';
+
+// Alert.alert() ne fait rien sur le web (react-native-web ne l'implémente pas) : on utilise
+// window.confirm à la place sur cette plateforme, Alert natif ailleurs (iOS/Android).
+function confirmer(titre, message) {
+  if (Platform.OS === 'web') {
+    return Promise.resolve(window.confirm(`${titre}\n\n${message}`));
+  }
+  return new Promise((resolve) => {
+    Alert.alert(titre, message, [
+      { text: 'Retour', style: 'cancel', onPress: () => resolve(false) },
+      { text: 'Annuler la réservation', style: 'destructive', onPress: () => resolve(true) },
+    ]);
+  });
+}
 
 function formaterSieges(sieges) {
   const parRangee = new Map();
@@ -55,11 +69,12 @@ function grouperReservations(reservations) {
     .forEach((r) => {
       const cle = `${r.evenementId}-${r.statut}`;
       if (!groupes.has(cle)) {
-        groupes.set(cle, { id: cle, evenement: r.evenement, statut: r.statut, sieges: [], prix: [], motifs: [] });
+        groupes.set(cle, { id: cle, evenement: r.evenement, statut: r.statut, sieges: [], prix: [], motifs: [], reservationIds: [] });
       }
       const groupe = groupes.get(cle);
       groupe.sieges.push(r.siege);
       groupe.prix.push(r.prix);
+      groupe.reservationIds.push(r.id);
       // Motif donné par l'organisateur à l'annulation (#14), sans doublon si plusieurs sièges le partagent.
       if (r.motifAnnulation && !groupe.motifs.includes(r.motifAnnulation)) groupe.motifs.push(r.motifAnnulation);
     });
@@ -77,7 +92,7 @@ function statutAffiche(groupe, theme) {
   return estPasse ? { label: 'Terminé', couleur: COULEUR_TERMINE } : { label: 'À venir', couleur: theme.primary };
 }
 
-function TicketCard({ groupe, theme }) {
+function TicketCard({ groupe, theme, onAnnuler, annulationEnCours }) {
   const { label, couleur } = statutAffiche(groupe, theme);
   const prix = formaterPrix(groupe);
   const estPasse = new Date(groupe.evenement.dateHeure) < new Date();
@@ -134,12 +149,16 @@ function TicketCard({ groupe, theme }) {
         )}
         {groupe.statut === 'confirmee' && !estPasse && (
           <View style={styles.boutonsRow}>
-            {/* Annulation et téléchargement du billet : à implémenter dans un autre récit (#12) */}
-            <Pressable style={[styles.bouton, { borderColor: theme.error }]}>
+            <Pressable
+              style={[styles.bouton, { borderColor: theme.error, opacity: annulationEnCours ? 0.6 : 1 }]}
+              onPress={() => onAnnuler(groupe)}
+              disabled={annulationEnCours}
+            >
               <ThemedText type="small" style={{ color: theme.error }}>
-                Annuler
+                {annulationEnCours ? 'Annulation…' : 'Annuler'}
               </ThemedText>
             </Pressable>
+            {/* Téléchargement du billet : à implémenter dans un autre récit */}
             <Pressable style={[styles.bouton, { borderColor: theme.border }]}>
               <ThemedText type="small">Billet PDF</ThemedText>
             </Pressable>
@@ -156,32 +175,68 @@ export default function MyReservationsScreen() {
   const [reservations, setReservations] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const [groupeEnAnnulation, setGroupeEnAnnulation] = useState(null);
+
+  const charger = useCallback(async () => {
+    if (!token) {
+      setLoading(false);
+      return;
+    }
+    try {
+      const res = await fetch(`${API_URL}/reservations`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      const json = await res.json();
+      if (!res.ok || !json.success) throw new Error(json.error || 'Échec du chargement des réservations.');
+      setReservations(json.data);
+    } catch (err) {
+      setError(err.message || 'Échec du chargement des réservations.');
+    } finally {
+      setLoading(false);
+    }
+  }, [token]);
 
   useEffect(() => {
     let cancelled = false;
-    async function load() {
-      if (!token) {
-        setLoading(false);
-        return;
-      }
-      try {
-        const res = await fetch(`${API_URL}/reservations`, {
-          headers: { Authorization: `Bearer ${token}` },
-        });
-        const json = await res.json();
-        if (!res.ok || !json.success) throw new Error(json.error || 'Échec du chargement des réservations.');
-        if (!cancelled) setReservations(json.data);
-      } catch (err) {
-        if (!cancelled) setError(err.message || 'Échec du chargement des réservations.');
-      } finally {
-        if (!cancelled) setLoading(false);
-      }
-    }
-    load();
+    (async () => {
+      if (cancelled) return;
+      await charger();
+    })();
     return () => {
       cancelled = true;
     };
-  }, [token]);
+  }, [charger]);
+
+  async function annulerGroupe(groupe) {
+    const confirme = await confirmer(
+      'Annuler cette réservation ?',
+      `${groupe.evenement.titre} — les sièges seront libérés.`,
+    );
+    if (!confirme) return;
+
+    setError('');
+    setGroupeEnAnnulation(groupe.id);
+    try {
+      const reponses = await Promise.all(
+        groupe.reservationIds.map((id) =>
+          fetch(`${API_URL}/reservations/${id}/annuler`, {
+            method: 'POST',
+            headers: { Authorization: `Bearer ${token}` },
+          }),
+        ),
+      );
+      const echec = reponses.find((res) => !res.ok);
+      if (echec) {
+        const json = await echec.json();
+        throw new Error(json.error || "Échec de l'annulation.");
+      }
+      await charger();
+    } catch (err) {
+      setError(err.message || "Échec de l'annulation.");
+    } finally {
+      setGroupeEnAnnulation(null);
+    }
+  }
 
   const tickets = useMemo(() => grouperReservations(reservations), [reservations]);
 
@@ -189,7 +244,14 @@ export default function MyReservationsScreen() {
     <FlatList
       data={tickets}
       keyExtractor={(item) => item.id}
-      renderItem={({ item }) => <TicketCard groupe={item} theme={theme} />}
+      renderItem={({ item }) => (
+        <TicketCard
+          groupe={item}
+          theme={theme}
+          onAnnuler={annulerGroupe}
+          annulationEnCours={groupeEnAnnulation === item.id}
+        />
+      )}
       contentContainerStyle={styles.list}
       style={{ backgroundColor: theme.background }}
       ListHeaderComponent={

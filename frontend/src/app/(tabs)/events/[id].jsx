@@ -1,11 +1,13 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useLocalSearchParams } from 'expo-router';
 import { ActivityIndicator, Pressable, StyleSheet, View } from 'react-native';
 
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { Spacing } from '@/constants/theme';
-import { API_URL } from '@/constants/api';
+import { io } from 'socket.io-client';
+
+import { API_URL, SOCKET_URL } from '@/constants/api';
 import { groupSiegesParRangee, lettreRangee } from '@/utils/salle';
 import { useAuth } from '@/lib/auth-context';
 import { useTheme } from '@/hooks/use-theme';
@@ -23,6 +25,9 @@ export default function EventSeatMapScreen() {
   const [envoiEnCours, setEnvoiEnCours] = useState(false);
   const [erreurReservation, setErreurReservation] = useState('');
   const [succes, setSucces] = useState(false);
+  // Sièges en cours de sélection par d'autres spectateurs, diffusés en temps réel (#8).
+  const [selectionsAutres, setSelectionsAutres] = useState(new Set());
+  const socketRef = useRef(null);
 
   const peutReserver = user?.role === 'spectateur';
 
@@ -64,13 +69,52 @@ export default function EventSeatMapScreen() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [id]);
 
+  // La déconnexion (départ de la page) libère côté serveur les sièges qu'on tenait encore.
+  useEffect(() => {
+    const evenementId = Number(id);
+    const socket = io(SOCKET_URL, { auth: { token }, transports: ['websocket'] });
+    socketRef.current = socket;
+    const retirer = (ensemble, ids) => new Set([...ensemble].filter((s) => !ids.includes(s)));
+
+    socket.on('connect', () => socket.emit('plan:rejoindre', evenementId));
+    socket.on('plan:selections', ({ siegeIds }) => setSelectionsAutres(new Set(siegeIds)));
+    socket.on('siege:selectionne', ({ siegeId }) => setSelectionsAutres((p) => new Set(p).add(siegeId)));
+    // Libéré par l'autre, ou délai d'une minute écoulé (y compris pour notre propre sélection).
+    socket.on('siege:libere', ({ siegeId }) => {
+      setSelectionsAutres((p) => retirer(p, [siegeId]));
+      setSelection((p) => retirer(p, [siegeId]));
+    });
+    socket.on('sieges:reserves', ({ siegeIds }) => {
+      setSelectionsAutres((p) => retirer(p, siegeIds));
+      setPlan((p) => p && { ...p, sieges: p.sieges.map((s) => (siegeIds.includes(s.id) ? { ...s, etat: 'reserve' } : s)) });
+    });
+
+    return () => {
+      socket.disconnect();
+      setSelectionsAutres(new Set());
+    };
+  }, [id, token]);
+
   function basculerSelection(siege) {
-    if (siege.etat !== 'libre') return;
-    setSelection((precedente) => {
-      const suivante = new Set(precedente);
-      if (suivante.has(siege.id)) suivante.delete(siege.id);
-      else suivante.add(siege.id);
-      return suivante;
+    if (siege.etat !== 'libre' || selectionsAutres.has(siege.id)) return;
+    const evenementId = Number(id);
+    if (selection.has(siege.id)) {
+      socketRef.current?.emit('siege:deselectionner', { evenementId, siegeId: siege.id });
+      setSelection((p) => {
+        const suivante = new Set(p);
+        suivante.delete(siege.id);
+        return suivante;
+      });
+      return;
+    }
+    // Le serveur arbitre : si quelqu'un l'a pris une fraction de seconde avant nous, il refuse (#31).
+    socketRef.current?.emit('siege:selectionner', { evenementId, siegeId: siege.id }, (reponse) => {
+      if (!reponse?.ok) {
+        setErreurReservation(reponse?.error || 'Ce siège ne peut pas être sélectionné.');
+        return;
+      }
+      setErreurReservation('');
+      setSelection((p) => new Set(p).add(siege.id));
     });
   }
 
@@ -143,6 +187,7 @@ export default function EventSeatMapScreen() {
   function styleSiege(siege) {
     if (siege.etat === 'reserve') return styles.occupe;
     if (selection.has(siege.id)) return styles.selectionne;
+    if (selectionsAutres.has(siege.id)) return styles.enSelection;
     return styles.dispo;
   }
 
@@ -161,7 +206,7 @@ export default function EventSeatMapScreen() {
                 key={s.id}
                 testID={`siege-${s.id}`}
                 onPress={() => basculerSelection(s)}
-                disabled={!reservationOuverte || s.etat !== 'libre' || enConfirmation}
+                disabled={!reservationOuverte || s.etat !== 'libre' || selectionsAutres.has(s.id) || enConfirmation}
                 style={[styles.siege, styleSiege(s)]}
               >
                 <ThemedText type="small" style={styles.siegeTexte}>
@@ -184,6 +229,14 @@ export default function EventSeatMapScreen() {
         <View style={styles.legendeItem}>
           <View style={[styles.pastille, styles.occupe]} />
           <ThemedText type="small" themeColor="textSecondary">Occupé</ThemedText>
+        </View>
+        <View style={styles.legendeItem}>
+          <View style={[styles.pastille, styles.selectionne]} />
+          <ThemedText type="small" themeColor="textSecondary">Ma sélection</ThemedText>
+        </View>
+        <View style={styles.legendeItem}>
+          <View style={[styles.pastille, styles.enSelection]} />
+          <ThemedText type="small" themeColor="textSecondary">En sélection par un autre</ThemedText>
         </View>
       </View>
 
@@ -286,7 +339,8 @@ const styles = StyleSheet.create({
   dispo: { backgroundColor: '#22c55e' },
   occupe: { backgroundColor: '#ef4444' },
   selectionne: { backgroundColor: '#2563eb' },
-  legende: { flexDirection: 'row', gap: Spacing.four, marginTop: Spacing.two },
+  enSelection: { backgroundColor: '#eab308' },
+  legende: { flexDirection: 'row', flexWrap: 'wrap', gap: Spacing.four, marginTop: Spacing.two },
   legendeItem: { flexDirection: 'row', alignItems: 'center', gap: Spacing.one },
   pastille: { width: 12, height: 12, borderRadius: 3 },
   bouton: { borderRadius: 8, paddingVertical: 14, alignItems: 'center' },
