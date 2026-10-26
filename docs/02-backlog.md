@@ -79,6 +79,7 @@ numéro réel attribué par GitHub à la création.
 | [#21](../../../issues/21) | Filtrer les événements par date ou lieu | Événements | Should | 3 | 3 |
 | [#22](../../../issues/22) | Voir des statistiques simples de vente par section | Suivi organisateur | Should | 3 | 3 |
 | [#23](../../../issues/23) | Dupliquer un événement existant pour créer rapidement une nouvelle séance | Événements | Could | 2 | — |
+| [#114](../../../issues/114) | Se connecter avec Google et Microsoft (OpenID Connect) | Comptes | Could | 5 | 3 |
 
 ## Won't (hors portée cette session)
 
@@ -362,6 +363,18 @@ Dépend de : #1, #3, #4, #6, #7
 *Remplace : #1*
 
 ## Récits du sprint 3 (avec critères d'acceptation)
+
+### [#114](../../../issues/114) — Se connecter avec Google et Microsoft (OpenID Connect)
+**En tant qu'**utilisateur, **je veux** me connecter avec mon compte Google ou Microsoft **afin de** ne pas dépendre d'un compte GitHub.
+
+**Critères d'acceptation**
+- Les boutons « Continuer avec Google » et « Continuer avec Microsoft » ne sont actifs que si le fournisseur est configuré ; sinon ils affichent « Bientôt ».
+- Un nouvel utilisateur reçoit le rôle `spectateur` ; un utilisateur connu garde son rôle.
+- L'ID token est vérifié (signature, audience, émetteur, nonce) ; un token falsifié ou rejoué est refusé.
+- Les secrets restent côté serveur et sont documentés dans `.env.example`.
+- L'application Google est publiée, pour que n'importe quel compte Google puisse se connecter.
+
+*Dépend de : #101*
 
 ### [#15](../../../issues/15) — Expiration automatique du délai de sélection (serveur)
 **En tant que** spectateur, **je veux** que mon siège sélectionné redevienne libre si je ne confirme pas dans un délai raisonnable **afin de** ne pas bloquer un siège indéfiniment.

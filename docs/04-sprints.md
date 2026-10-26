@@ -56,6 +56,9 @@
   et l'application est accessible publiquement.*
 - **Récits** : #15 (3), #37 (2), #16 (3), #38 (3), #39 (2), #17 (3), #40 (2),
   #18 (3), #20 (3), #41 (2), #21 (3), #22 (3) — **32 points**.
+- **Could ajouté** : #114 — Se connecter avec Google et Microsoft (5).
+  Commencé dès le sprint 2 ; il saute en premier si le sprint prend du
+  retard.
 - **Incrément démontrable** : un siège en sélection non confirmé se libère
   automatiquement après le délai, avec compte à rebours visible ; deux
   confirmations envoyées au même instant sur le même siège n'en laissent

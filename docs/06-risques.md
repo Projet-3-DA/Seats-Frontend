@@ -9,6 +9,7 @@
 | 5 — Base Supabase partagée désynchronisée des migrations | **Nouveau**, survenu une fois | Moyen |
 | 6 — La connexion GitHub marche chez nous mais pas chez le correcteur | **Nouveau** (sprint 2) | Moyen |
 | 7 — Plus aucun moyen de créer un organisateur | **Nouveau** (sprint 2), conséquence du retrait de l'inscription | Moyen |
+| 8 — Connexion Google ou Microsoft refusée au correcteur | **Nouveau** (sprint 2, #114) | Moyen |
 
 Aucun risque n'a disparu. Les risques 1 et 3 restent suivis : le premier peut revenir à chaque changement du `docker-compose.yml`, le second est au cœur du sprint 3.
 
@@ -68,3 +69,11 @@ Aucun risque n'a disparu. Les risques 1 et 3 restent suivis : le premier peut re
 - Impact : Moyen — seul le compte de démonstration `organisateur@seats.demo` peut créer des salles et des événements.
 - Signal d'alerte : un vrai utilisateur veut organiser un événement et ne peut pas.
 - Mesure d'atténuation : ajouter une route réservée à l'administrateur pour changer le rôle d'un utilisateur (vérifiée côté serveur), avec un écran dans l'interface d'administration.
+
+# Risque 8 - Connexion Google ou Microsoft refusée au correcteur
+- Probabilité : Moyenne — plusieurs réglages hors du code peuvent bloquer un compte qui n'appartient pas à l'équipe.
+- Impact : Faible à moyen — #114 est un `Could` ; la connexion GitHub reste la méthode exigée.
+- Signal d'alerte :
+  - Google : « Accès bloqué : l'application n'a pas terminé la procédure de validation » (application restée en mode « Test ») ;
+  - Microsoft : « Approbation de l'administrateur requise » avec un compte d'organisation (cégep), ou « secret client expiré ».
+- Mesure d'atténuation : publier l'application Google (pages d'accueil et de confidentialité sur GitHub) ; inscrire l'application Microsoft pour les comptes personnels **et** professionnels ; noter la date d'expiration du secret Microsoft (180 jours) et le renouveler avant ; un fournisseur non configuré reste affiché « Bientôt » plutôt que de mener à une erreur.
