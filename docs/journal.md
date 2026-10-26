@@ -92,3 +92,13 @@
 - **Décisions** :
   - Un seul dépôt à cloner, le frontend : `compose.yml` construit l'image du backend directement depuis l'URL GitHub de Seats-Backend, plutôt que d'exiger deux dépôts clonés côte à côte. La commande qui remplaçait `docker-entrypoint.sh` est retirée, pour que les comptes de démonstration soient bien créés.
   - Ajout de l'issue #82 : une requête directe à l'API (par exemple avec `curl`) permettait de réserver un événement terminé. Masquer le bouton ne suffit pas, la validation doit se faire côté serveur.
+
+## Lundi 26 octobre
+- **Avancé** :
+  - Relecture des exigences de la bêta (point de contrôle 2) : la connexion GitHub (OAuth 2) est exigée et n'existait pas. Création du récit #101 (5 points), ajouté au sprint 2.
+  - #101 — Se connecter avec GitHub, par Junior (backend PR #34, frontend PR #119) : routes `/api/auth/github` et `/github/callback`, bouton « Continuer avec GitHub », page de retour `/connexion-externe`, migration (`motDePasse` facultatif, `githubId`).
+  - Le `compose.yml` construisait encore le backend du tag `alpha-v1` : il pointe maintenant sur `main`, pour qu'un clone neuf démarre la version à jour.
+  - Création des tickets de documentation du sprint 2 (#110 à #113).
+- **Décisions** :
+  - L'inscription par mot de passe est retirée : un compte se crée en se connectant avec GitHub, avec le rôle `spectateur`. Les comptes de démonstration sont conservés, car ils sont le seul moyen de tester les rôles organisateur et administrateur (décision 7 de `03-conception.md`).
+  - Un compte existant n'est relié à GitHub que par un courriel **vérifié** par GitHub, pour qu'on ne puisse pas prendre le contrôle d'un compte de démonstration avec une adresse non vérifiée.
