@@ -23,7 +23,15 @@ organisateur : Crée salles/événements, voit stats de vente, annule toute rés
 admin : Accès complet
 created_at : Timestamp création
 
-**Rôle par défaut** : un compte créé à sa première connexion GitHub reçoit le rôle `spectateur`. Il n'y a plus d'inscription par mot de passe (sprint 2, #101) ; les rôles `organisateur` et `administrateur` sont présents dans les comptes de démonstration.
+**Rôle par défaut** : un compte créé à sa première connexion GitHub, Google ou Microsoft reçoit le rôle `spectateur`. Il n'y a plus d'inscription par mot de passe (sprint 2, #101) ; les rôles `organisateur` et `administrateur` sont présents dans les comptes de démonstration.
+
+### IDENTITES_EXTERNES (Connexion Google / Microsoft, #114)
+id : Entier, clé primaire
+fournisseur : Chaîne (`google`, `microsoft`)
+sujet : Chaîne — le `sub` de l'ID token OpenID Connect, identifiant stable du compte chez ce fournisseur
+utilisateur_id : FK → UTILISATEURS (non nul, suppression en cascade)
+created_at : Timestamp création
+Contrainte : unique (fournisseur, sujet). Un utilisateur peut avoir plusieurs identités externes (ex. Google et Microsoft).
 
 ### SALLES (Créées par organisateur)
 id : Entier, clé primaire
@@ -81,6 +89,10 @@ Contrainte : Si statut = 'confirmee', date_confirmation est non nul
 | GET | `/api/auth/me` | `Authorization: Bearer <token>` | Retourne l'utilisateur courant (déduit du token, sans mot de passe). |
 | GET | `/api/auth/github` | Publique | Redirige vers GitHub (OAuth 2). Un `state` aléatoire est gardé dans un cookie httpOnly (10 min) contre le CSRF. |
 | GET | `/api/auth/github/callback` | Publique (appelée par GitHub) | Vérifie le `state`, échange le code contre un jeton côté serveur, lit le profil et le courriel vérifié, retrouve ou crée l'utilisateur (rôle `spectateur`), puis redirige vers `<frontend>/connexion-externe#token=<JWT>` (ou `#erreur=<message>`). |
+
+| GET | `/api/auth/fournisseurs` | Publique | Liste des fournisseurs de connexion configurés (ex. `["github", "google"]`) : le frontend n'active que ces boutons. |
+| GET | `/api/auth/:fournisseur` | Publique | Connexion OpenID Connect (`google`, `microsoft`) : redirige vers le fournisseur avec `state`, `nonce` et défi PKCE, gardés dans un cookie httpOnly. 404 si fournisseur inconnu. |
+| GET | `/api/auth/:fournisseur/callback` | Publique (appelée par le fournisseur) | Vérifie le `state`, échange le code (avec le `code_verifier` PKCE), vérifie l'ID token (signature, audience, émetteur, nonce), retrouve ou crée l'utilisateur, puis redirige comme pour GitHub. |
 
 *`POST /api/auth/register` a été retirée au sprint 2 (#101).*
 
@@ -298,3 +310,31 @@ Contrainte : Si statut = 'confirmee', date_confirmation est non nul
 - Plus aucun moyen de devenir organisateur sans action d'un administrateur (route de changement de rôle à prévoir).
 - Le récit #1 (inscription), livré au sprint 1, est retiré.
 - L'URL de callback doit correspondre exactement à celle de l'OAuth App : risque de connexion qui marche « chez nous » mais pas ailleurs (voir risque 6 de `06-risques.md`).
+
+---
+
+### Décision 8 : Google et Microsoft avec OpenID Connect (#114)
+
+**Question** : Comment ajouter d'autres fournisseurs de connexion sans écrire un flux différent pour chacun ?
+
+**Options envisagées** :
+1. Un flux OAuth 2 par fournisseur, comme pour GitHub (appel à l'API de profil de chacun).
+2. OpenID Connect générique : découverte (`/.well-known/openid-configuration`) et ID token signé, avec une bibliothèque de vérification.
+3. Inclure aussi Apple.
+
+**Choix** : **Option 2, sans Apple**
+- Routes génériques `/api/auth/:fournisseur` et `/api/auth/:fournisseur/callback` ; ajouter un fournisseur = une entrée de configuration et deux variables d'environnement.
+- `state` (CSRF), `nonce` (rejeu de l'ID token) et PKCE (code intercepté), gardés dans un cookie httpOnly le temps de la connexion.
+- ID token vérifié avec `jose` : signature avec les clés publiques du fournisseur, audience, émetteur (y compris l'émetteur par tenant de Microsoft) et nonce. `openid-client` v6 a été écarté parce qu'il n'existe qu'en ESM, alors que le backend est en CommonJS.
+- Table `IdentiteExterne (fournisseur, sujet)` plutôt qu'une colonne par fournisseur.
+- Liaison à un compte existant par courriel vérifié (`email_verified`) pour Google seulement ; jamais pour Microsoft, qui ne garantit pas ce champ pour les comptes personnels.
+
+**Raison** :
+- Un seul flux à maintenir et à tester pour tous les fournisseurs OIDC.
+- L'ID token prouve l'identité sans appel supplémentaire à une API de profil.
+
+**Coût** :
+- Apple est écarté : compte développeur payant, callback HTTPS sur un vrai domaine (`localhost` refusé), secret client à signer soi-même.
+- Google exige des pages publiques (accueil, confidentialité) pour publier l'application ; sans publication, seuls les utilisateurs de test peuvent se connecter.
+- Le secret Microsoft expire (180 jours) et doit être renouvelé.
+- Un compte Microsoft sans courriel vérifié reçoit une adresse technique (`<sujet>@microsoft.invalid`).

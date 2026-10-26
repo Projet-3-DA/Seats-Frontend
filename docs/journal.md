@@ -99,6 +99,8 @@
   - #101 — Se connecter avec GitHub, par Junior (backend PR #34, frontend PR #119) : routes `/api/auth/github` et `/github/callback`, bouton « Continuer avec GitHub », page de retour `/connexion-externe`, migration (`motDePasse` facultatif, `githubId`).
   - Le `compose.yml` construisait encore le backend du tag `alpha-v1` : il pointe maintenant sur `main`, pour qu'un clone neuf démarre la version à jour.
   - Création des tickets de documentation du sprint 2 (#110 à #113).
+  - #114 — Se connecter avec Google et Microsoft (OpenID Connect), commencé (backend PR #35, frontend PR #120) : routes génériques, table `IdentiteExterne`, boutons activés selon les fournisseurs configurés. Pages de confidentialité et de conditions d'utilisation (PR #117), exigées par Google.
 - **Décisions** :
   - L'inscription par mot de passe est retirée : un compte se crée en se connectant avec GitHub, avec le rôle `spectateur`. Les comptes de démonstration sont conservés, car ils sont le seul moyen de tester les rôles organisateur et administrateur (décision 7 de `03-conception.md`).
   - Un compte existant n'est relié à GitHub que par un courriel **vérifié** par GitHub, pour qu'on ne puisse pas prendre le contrôle d'un compte de démonstration avec une adresse non vérifiée.
+  - Apple est écarté de #114 (compte payant, HTTPS obligatoire, pas de `localhost`) ; Google et Microsoft passent par OpenID Connect (décision 8).
