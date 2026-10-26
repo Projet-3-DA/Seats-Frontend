@@ -32,7 +32,7 @@ numéro réel attribué par GitHub à la création.
 
 | # | Récit | Épique | Points | Sprint |
 |---|---|---|---|---|
-| [#1](../../../issues/1) | Créer un compte (inscription) — *remplacé par #101 au sprint 2* | Comptes | 3 | 1 |
+| [#1](../../../issues/1) | Créer un compte (inscription) | Comptes | 3 | 1 |
 | [#28](../../../issues/28) | Se connecter et maintenir ma session | Comptes | 2 | 1 |
 | [#101](../../../issues/101) | Se connecter avec GitHub (OAuth 2) | Comptes | 5 | 2 |
 | [#2](../../../issues/2) | Créer une salle (nom + disposition de base) | Salles | 3 | 1 |
@@ -108,7 +108,7 @@ décrété à **3 points** : lecture simple, une seule entité, pas d'écriture.
 - Un courriel déjà utilisé refuse une nouvelle inscription, avec un message clair.
 - Le mot de passe est stocké hashé (jamais en clair).
 
-> **Sprint 2** : l'inscription par mot de passe est retirée et remplacée par #101 (connexion GitHub). Un compte se crée à sa première connexion GitHub, avec le rôle `spectateur`. Les comptes de démonstration gardent leur mot de passe.
+> **Sprint 2** : l'inscription est conservée à côté de la connexion GitHub, Google et Microsoft (#101, #114). C'est le seul endroit où l'on choisit le rôle organisateur ; un compte créé par un fournisseur externe est `spectateur`. Un courriel déjà utilisé, y compris par un compte externe, refuse l'inscription.
 
 ### [#28](../../../issues/28) — Se connecter et maintenir ma session
 **En tant qu'**utilisateur inscrit, **je veux** me connecter et rester connecté d'une page à l'autre **afin de** ne pas avoir à ressaisir mes identifiants à chaque navigation.
@@ -357,10 +357,10 @@ Dépend de : #1, #3, #4, #6, #7
 - La déconnexion fonctionne.
 - Le secret de l'OAuth App reste côté serveur, jamais dans le frontend ni dans le dépôt.
 - Les comptes de démonstration (courriel + mot de passe) fonctionnent toujours.
-- L'inscription par mot de passe est retirée.
+- L'inscription par mot de passe reste disponible et propose aussi la connexion externe (comme spectateur).
 - Tests automatisés du callback (nouvel utilisateur, utilisateur existant, erreur, `state` invalide).
 
-*Remplace : #1*
+*Complète : #1 et #28*
 
 ## Récits du sprint 3 (avec critères d'acceptation)
 
