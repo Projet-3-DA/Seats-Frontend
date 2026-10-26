@@ -26,7 +26,9 @@ Puis ouvrir http://localhost:5173 (l'API écoute sur http://localhost:3000/api).
 - **Avec GitHub** : bouton « Continuer avec GitHub » sur la page de connexion. Un nouveau compte reçoit le rôle `spectateur`.
 - **Comptes de démonstration** (courriel + mot de passe), un par rôle, ci-dessous.
 
-Il n'y a plus d'inscription par mot de passe : un nouveau compte se crée en se connectant avec GitHub.
+- **Inscription** (courriel + mot de passe) : on y choisit le rôle spectateur ou organisateur.
+
+Un compte créé avec GitHub, Google ou Microsoft reçoit le rôle `spectateur`.
 
 ### Comptes de démonstration
 Créés automatiquement au démarrage (mot de passe : `Demo1234!`).

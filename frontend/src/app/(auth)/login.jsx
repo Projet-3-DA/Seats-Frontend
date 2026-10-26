@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { router } from 'expo-router';
+import { Link, router } from 'expo-router';
 import { ActivityIndicator, Image, Pressable, StyleSheet, TextInput } from 'react-native';
 
 import { BoutonsConnexionExterne } from '@/components/boutons-connexion-externe';
@@ -87,6 +87,15 @@ export default function LoginScreen() {
         </ThemedText>
         <BoutonsConnexionExterne />
       </ThemedView>
+
+      <ThemedText type="small" themeColor="textSecondary">
+        Nouveau sur Seats ?{' '}
+        <Link href="/(auth)/register">
+          <ThemedText type="linkPrimary" style={{ color: theme.primary }}>
+            Créer un compte
+          </ThemedText>
+        </Link>
+      </ThemedText>
     </ThemedView>
   );
 }
