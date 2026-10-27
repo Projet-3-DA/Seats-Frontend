@@ -28,7 +28,7 @@ Puis ouvrir http://localhost:5173 (l'API écoute sur http://localhost:3000/api).
 
 - **Inscription** (courriel + mot de passe) : on y choisit le rôle spectateur ou organisateur.
 
-Un compte créé avec GitHub, Google ou Microsoft reçoit le rôle `spectateur`.
+Un compte créé avec GitHub, Google ou Microsoft depuis la page **de connexion** reçoit le rôle `spectateur`. Depuis la page **d'inscription**, il reçoit le rôle sélectionné (spectateur ou organisateur). Un compte existant garde toujours son rôle.
 
 ### Comptes de démonstration
 Créés automatiquement au démarrage (mot de passe : `Demo1234!`).

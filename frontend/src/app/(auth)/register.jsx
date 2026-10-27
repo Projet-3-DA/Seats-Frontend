@@ -186,11 +186,11 @@ export default function RegisterScreen() {
               </ThemedText>
             </Pressable>
 
-            {/* Un compte créé par un fournisseur externe reçoit le rôle spectateur (#101). */}
+            {/* Le rôle sélectionné plus haut s'applique aussi à un compte créé avec un fournisseur externe. */}
             <ThemedText type="small" themeColor="textSecondary" style={styles.separateur}>
-              ou, comme spectateur
+              ou, comme {role === 'organisateur' ? 'organisateur' : 'spectateur'}
             </ThemedText>
-            <BoutonsConnexionExterne />
+            <BoutonsConnexionExterne role={role} />
           </View>
 
           <View style={styles.footer}>

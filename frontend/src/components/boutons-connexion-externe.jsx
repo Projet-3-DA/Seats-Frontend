@@ -17,7 +17,8 @@ function ouvrir(url) {
   }
 }
 
-export function BoutonsConnexionExterne() {
+// `role` : transmis par la page d'inscription ; absent sur la page de connexion (rôle par défaut).
+export function BoutonsConnexionExterne({ role } = {}) {
   const theme = useTheme();
   // Tant que le backend n'a pas répondu (ou s'il est injoignable), aucun bouton n'est actif.
   const [disponibles, setDisponibles] = useState([]);
@@ -40,7 +41,7 @@ export function BoutonsConnexionExterne() {
             accessibilityRole="button"
             accessibilityState={{ disabled: !disponible }}
             disabled={!disponible}
-            onPress={() => ouvrir(urlConnexion(id))}
+            onPress={() => ouvrir(urlConnexion(id, role))}
             style={[
               styles.bouton,
               {
