@@ -23,7 +23,7 @@ organisateur : Crée salles/événements, voit stats de vente, annule toute rés
 admin : Accès complet
 created_at : Timestamp création
 
-**Rôle par défaut** : un compte créé à sa première connexion GitHub, Google ou Microsoft reçoit le rôle `spectateur`. Il n'y a plus d'inscription par mot de passe (sprint 2, #101) ; les rôles `organisateur` et `administrateur` sont présents dans les comptes de démonstration.
+**Rôle par défaut** : un compte créé à sa première connexion GitHub, Google ou Microsoft reçoit le rôle `spectateur`. Le rôle `organisateur` se choisit à l'inscription par courriel et mot de passe ; `administrateur` ne vient que des comptes de démonstration.
 
 ### IDENTITES_EXTERNES (Connexion Google / Microsoft, #114)
 id : Entier, clé primaire
@@ -94,7 +94,7 @@ Contrainte : Si statut = 'confirmee', date_confirmation est non nul
 | GET | `/api/auth/:fournisseur` | Publique | Connexion OpenID Connect (`google`, `microsoft`) : redirige vers le fournisseur avec `state`, `nonce` et défi PKCE, gardés dans un cookie httpOnly. 404 si fournisseur inconnu. |
 | GET | `/api/auth/:fournisseur/callback` | Publique (appelée par le fournisseur) | Vérifie le `state`, échange le code (avec le `code_verifier` PKCE), vérifie l'ID token (signature, audience, émetteur, nonce), retrouve ou crée l'utilisateur, puis redirige comme pour GitHub. |
 
-*`POST /api/auth/register` a été retirée au sprint 2 (#101).*
+*`POST /api/auth/register` (inscription, rôle `spectateur` ou `organisateur`) reste disponible à côté de la connexion externe.*
 
 #### Salles — `backend/src/modules/salles`
 | Méthode | Route | Auth | Détails |
@@ -120,7 +120,7 @@ Contrainte : Si statut = 'confirmee', date_confirmation est non nul
 
 ## 3. Maquettes
 ### Maquettes 1 :  Pages Inscription
-*Page retirée au sprint 2 (#101) : un compte se crée en se connectant avec GitHub. La page de connexion affiche désormais les boutons « Continuer avec GitHub / Google / Microsoft » sous le formulaire.*
+*Sprint 2 : sous le bouton « Créer mon compte », la page propose aussi « Continuer avec GitHub / Google / Microsoft », avec le rôle sélectionné (spectateur ou organisateur). La page de connexion affiche les mêmes boutons sous le formulaire.*
 
 <img width="390" height="844" alt="mobile-register" src="maquettes/mobile-register.png" />
 
@@ -285,30 +285,32 @@ Contrainte : Si statut = 'confirmee', date_confirmation est non nul
 
 ---
 
-### Décision 7 : Connexion externe avec GitHub (OAuth 2) et retrait de l'inscription
+### Décision 7 : Connexion externe avec GitHub (OAuth 2), à côté de l'inscription
 
-**Question** : Comment répondre à l'exigence de la bêta (« connexion GitHub ») sans perdre les comptes de démonstration nécessaires pour tester chaque rôle ?
+**Question** : Comment répondre à l'exigence de la bêta (« connexion GitHub ») sans perdre la possibilité de choisir son rôle ni les comptes de démonstration ?
 
 **Options envisagées** :
 1. Garder l'inscription par mot de passe et ajouter GitHub à côté.
 2. GitHub seul, inscription par mot de passe retirée, comptes de démonstration conservés.
 3. Passer par un service d'authentification tiers (Auth0, Supabase Auth).
 
-**Choix** : **Option 2**
+**Choix** : **Option 1** (l'option 2 a été appliquée le 26 octobre puis annulée le jour même, voir le journal)
 - Flux OAuth 2 « authorization code » implémenté dans le backend (`/api/auth/github`, `/api/auth/github/callback`).
 - Un `state` aléatoire, gardé dans un cookie httpOnly, protège contre le CSRF ; le secret de l'OAuth App reste côté serveur.
 - Le compte est retrouvé par `githubId`, sinon relié à un compte existant **uniquement par courriel vérifié par GitHub**, sinon créé avec le rôle `spectateur`.
 - Le backend émet le **même JWT** que la connexion par mot de passe : rôles et permissions sont vérifiés de la même façon.
 - Le JWT revient au frontend dans le fragment de l'URL (`#token=`), jamais envoyé à un serveur ni gardé dans les journaux, et effacé dès sa lecture.
+- L'inscription reste le seul endroit où l'on choisit d'être organisateur. Ses boutons de connexion externe envoient le rôle sélectionné (`?role=spectateur|organisateur`) : il est gardé dans le cookie de la tentative et appliqué **uniquement à un compte créé à cette connexion**. Sans ce paramètre (page de connexion), le rôle par défaut `spectateur` s'applique ; `administrateur` est refusé.
 
 **Raison** :
-- Plus de mots de passe à stocker pour les vrais utilisateurs.
-- Les comptes de démonstration (un par rôle, avec mot de passe) restent indispensables : un nouveau compte GitHub est toujours `spectateur`.
+- Sans inscription, plus personne ne pouvait devenir organisateur sans intervention d'un administrateur (option 2 abandonnée pour cette raison).
+- Un compte inscrit par mot de passe peut ensuite se connecter avec GitHub (ou Google) : il est relié par courriel vérifié et garde son rôle.
 - Un service tiers ajouterait une dépendance et des secrets de plus, pour un flux qui tient en deux routes.
 
 **Coût** :
-- Plus aucun moyen de devenir organisateur sans action d'un administrateur (route de changement de rôle à prévoir).
-- Le récit #1 (inscription), livré au sprint 1, est retiré.
+- Deux façons de créer un compte à maintenir et à tester.
+- Des mots de passe (hachés avec bcrypt) restent stockés.
+- Un compte créé depuis la page de connexion reste `spectateur` ; pour qu'il devienne organisateur après coup, il faudra l'écran administrateur de changement de rôle (#121).
 - L'URL de callback doit correspondre exactement à celle de l'OAuth App : risque de connexion qui marche « chez nous » mais pas ailleurs (voir risque 6 de `06-risques.md`).
 
 ---

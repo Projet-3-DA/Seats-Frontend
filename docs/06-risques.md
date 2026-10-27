@@ -8,7 +8,7 @@
 | 4 — Un changement d'API dans un dépôt casse l'autre | **Nouveau**, déjà survenu deux fois | Élevé |
 | 5 — Base Supabase partagée désynchronisée des migrations | **Nouveau**, survenu une fois | Moyen |
 | 6 — La connexion GitHub marche chez nous mais pas chez le correcteur | **Nouveau** (sprint 2) | Moyen |
-| 7 — Plus aucun moyen de créer un organisateur | **Nouveau** (sprint 2), conséquence du retrait de l'inscription | Moyen |
+| 7 — Plus aucun moyen de créer un organisateur | **Survenu** le 26 octobre (retrait de l'inscription), **résolu** le jour même en la remettant | Faible |
 | 8 — Connexion Google ou Microsoft refusée au correcteur | **Nouveau** (sprint 2, #114) | Moyen |
 
 Aucun risque n'a disparu. Les risques 1 et 3 restent suivis : le premier peut revenir à chaque changement du `docker-compose.yml`, le second est au cœur du sprint 3.
@@ -65,10 +65,11 @@ Aucun risque n'a disparu. Les risques 1 et 3 restent suivis : le premier peut re
 - Mesure d'atténuation : `.env.example` à la racine du dépôt (à côté de `compose.yml`) qui liste chaque variable ; callback fixé à `http://localhost:3000/api/auth/github/callback` et documenté dans le README ; test depuis un clone neuf avec un compte GitHub qui ne s'est jamais connecté ; `.env` complet envoyé par MIO avant l'échéance.
 
 # Risque 7 - Plus aucun moyen de créer un organisateur
-- Probabilité : Élevée — depuis le retrait de l'inscription (#101), un nouveau compte est toujours `spectateur`.
-- Impact : Moyen — seul le compte de démonstration `organisateur@seats.demo` peut créer des salles et des événements.
-- Signal d'alerte : un vrai utilisateur veut organiser un événement et ne peut pas.
-- Mesure d'atténuation : ajouter une route réservée à l'administrateur pour changer le rôle d'un utilisateur (vérifiée côté serveur), avec un écran dans l'interface d'administration.
+- Probabilité : Faible depuis que l'inscription est revenue — elle permet de choisir le rôle organisateur.
+- Impact : Moyen — sans moyen de devenir organisateur, seul le compte de démonstration `organisateur@seats.demo` peut créer des salles et des événements.
+- Signal d'alerte : un utilisateur connecté avec GitHub, Google ou Microsoft (toujours `spectateur`) veut organiser un événement.
+- **Ce qui s'est produit (sprint 2)** : le 26 octobre, l'inscription a été retirée au profit de la connexion GitHub ; plus aucun nouvel utilisateur ne pouvait devenir organisateur. L'inscription a été remise le jour même, à côté des boutons de connexion externe.
+- Mesure d'atténuation restante : un écran administrateur pour changer le rôle d'un compte créé par un fournisseur externe (#121, sprint 3).
 
 # Risque 8 - Connexion Google ou Microsoft refusée au correcteur
 - Probabilité : Moyenne — plusieurs réglages hors du code peuvent bloquer un compte qui n'appartient pas à l'équipe.

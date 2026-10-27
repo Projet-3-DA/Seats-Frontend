@@ -55,3 +55,20 @@ describe('BoutonsConnexionExterne', () => {
     expect(screen.getAllByText('Bientôt')).toHaveLength(3);
   });
 });
+
+describe('BoutonsConnexionExterne avec un rôle (page d\'inscription)', () => {
+  beforeEach(() => {
+    jest.clearAllMocks();
+    jest.spyOn(Linking, 'openURL').mockResolvedValue();
+  });
+
+  it('ajoute le rôle à la route du backend', async () => {
+    global.fetch = jest.fn().mockResolvedValue({ json: async () => ({ success: true, data: ['google'] }) });
+    await render(<BoutonsConnexionExterne role="organisateur" />);
+    await act(async () => {});
+
+    fireEvent.press(screen.getByTestId('connexion-google'));
+
+    expect(Linking.openURL).toHaveBeenCalledWith(`${API_URL}/auth/google?role=organisateur`);
+  });
+});

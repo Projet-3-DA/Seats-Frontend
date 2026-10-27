@@ -37,7 +37,7 @@
   **37 points**.
 - **Ajout en cours de sprint (26 octobre)** : #101 — Se connecter avec
   GitHub (5), exigé pour la version bêta et constaté au point de
-  contrôle 2. Il remplace l'inscription par mot de passe (#1). Engagement
+  contrôle 2. Il s'ajoute à l'inscription par mot de passe (#1). Engagement
   révisé : **42 points**.
 - **Incrément démontrable** : deux spectateurs ouvrent le même plan de
   salle dans deux fenêtres ; le siège que l'un sélectionne passe « en

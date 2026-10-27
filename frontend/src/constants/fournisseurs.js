@@ -10,6 +10,8 @@ export const FOURNISSEURS = [
 ];
 
 // Le backend redirige vers le fournisseur, puis revient sur /connexion-externe avec le token.
-export function urlConnexion(fournisseur) {
-  return `${API_URL}/auth/${fournisseur}`;
+// `role` (page d'inscription) : rôle d'un compte créé à cette connexion ; un compte existant garde le sien.
+export function urlConnexion(fournisseur, role) {
+  const base = `${API_URL}/auth/${fournisseur}`;
+  return role ? `${base}?role=${encodeURIComponent(role)}` : base;
 }
