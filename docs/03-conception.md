@@ -120,7 +120,7 @@ Contrainte : Si statut = 'confirmee', date_confirmation est non nul
 
 ## 3. Maquettes
 ### Maquettes 1 :  Pages Inscription
-*Sprint 2 : sous le bouton « Créer mon compte », la page propose aussi « Continuer avec GitHub / Google / Microsoft » (comme spectateur). La page de connexion affiche les mêmes boutons sous le formulaire.*
+*Sprint 2 : sous le bouton « Créer mon compte », la page propose aussi « Continuer avec GitHub / Google / Microsoft », avec le rôle sélectionné (spectateur ou organisateur). La page de connexion affiche les mêmes boutons sous le formulaire.*
 
 <img width="390" height="844" alt="mobile-register" src="maquettes/mobile-register.png" />
 
@@ -300,7 +300,7 @@ Contrainte : Si statut = 'confirmee', date_confirmation est non nul
 - Le compte est retrouvé par `githubId`, sinon relié à un compte existant **uniquement par courriel vérifié par GitHub**, sinon créé avec le rôle `spectateur`.
 - Le backend émet le **même JWT** que la connexion par mot de passe : rôles et permissions sont vérifiés de la même façon.
 - Le JWT revient au frontend dans le fragment de l'URL (`#token=`), jamais envoyé à un serveur ni gardé dans les journaux, et effacé dès sa lecture.
-- L'inscription reste le seul endroit où l'on choisit d'être organisateur ; elle propose aussi la connexion externe, comme spectateur.
+- L'inscription reste le seul endroit où l'on choisit d'être organisateur. Ses boutons de connexion externe envoient le rôle sélectionné (`?role=spectateur|organisateur`) : il est gardé dans le cookie de la tentative et appliqué **uniquement à un compte créé à cette connexion**. Sans ce paramètre (page de connexion), le rôle par défaut `spectateur` s'applique ; `administrateur` est refusé.
 
 **Raison** :
 - Sans inscription, plus personne ne pouvait devenir organisateur sans intervention d'un administrateur (option 2 abandonnée pour cette raison).
@@ -310,7 +310,7 @@ Contrainte : Si statut = 'confirmee', date_confirmation est non nul
 **Coût** :
 - Deux façons de créer un compte à maintenir et à tester.
 - Des mots de passe (hachés avec bcrypt) restent stockés.
-- Un compte créé par GitHub, Google ou Microsoft reste `spectateur` ; pour qu'il devienne organisateur, il faudra l'écran administrateur de changement de rôle (#121).
+- Un compte créé depuis la page de connexion reste `spectateur` ; pour qu'il devienne organisateur après coup, il faudra l'écran administrateur de changement de rôle (#121).
 - L'URL de callback doit correspondre exactement à celle de l'OAuth App : risque de connexion qui marche « chez nous » mais pas ailleurs (voir risque 6 de `06-risques.md`).
 
 ---
