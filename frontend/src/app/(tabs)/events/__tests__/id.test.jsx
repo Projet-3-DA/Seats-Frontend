@@ -336,3 +336,40 @@ describe('EventSeatMapScreen : prix par section dans le récapitulatif (#11)', (
     expect(screen.getByText(/^65,00/)).toBeTruthy();
   });
 });
+
+describe('EventSeatMapScreen : sections par couleur sur le plan (#34)', () => {
+  const fetchOriginal = global.fetch;
+  afterEach(() => {
+    global.fetch = fetchOriginal;
+  });
+
+  it('encadre chaque siège de la couleur de sa section et les liste dans la légende', async () => {
+    useAuth.mockReturnValue({ token: 'jeton', user: { id: 5, role: 'spectateur' } });
+    const planAvecSections = {
+      ...plan,
+      sections: [{ id: 10, nom: 'Balcon', prix: 40, couleur: '#9333ea' }],
+      sieges: [
+        { id: 101, rangee: 1, colonne: 1, etat: 'libre', sectionId: 10, prix: 40 },
+        { id: 102, rangee: 1, colonne: 2, etat: 'libre', sectionId: null, prix: 25 },
+      ],
+    };
+    global.fetch = jest.fn().mockResolvedValue(reponse({ success: true, data: planAvecSections }));
+
+    await render(<EventSeatMapScreen />);
+    await attendreQue(() => screen.queryByText('Salle A') !== null);
+
+    expect(screen.getByTestId('siege-101')).toHaveStyle({ borderColor: '#9333ea', backgroundColor: '#22c55e' });
+    expect(screen.getByTestId('siege-102')).not.toHaveStyle({ borderWidth: 3 });
+    expect(screen.getByText(/^Balcon · 40,00/)).toBeTruthy();
+  });
+
+  it("n'affiche aucune légende de section pour une salle au tarif unique", async () => {
+    useAuth.mockReturnValue({ token: 'jeton', user: { id: 5, role: 'spectateur' } });
+    global.fetch = jest.fn().mockResolvedValue(reponse({ success: true, data: { ...plan, sections: [] } }));
+
+    await render(<EventSeatMapScreen />);
+    await attendreQue(() => screen.queryByText('Salle A') !== null);
+
+    expect(screen.queryByText(/ · /)).toBeNull();
+  });
+});

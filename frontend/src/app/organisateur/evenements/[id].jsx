@@ -2,6 +2,7 @@ import { Stack, useLocalSearchParams } from 'expo-router';
 import { useEffect, useRef, useState } from 'react';
 import { ActivityIndicator, Pressable, ScrollView, StyleSheet, TextInput, View } from 'react-native';
 
+import { LegendeSections, styleSection } from '@/components/legende-sections';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { API_URL } from '@/constants/api';
@@ -138,7 +139,7 @@ export default function VentesEvenementScreen() {
     }
   }
 
-  const { evenement, salle, totaux, recette, sieges } = ventes;
+  const { evenement, salle, totaux, recette, sections, sieges } = ventes;
   // Le siège choisi peut avoir été libéré entretemps (rafraîchissement) : le panneau disparaît alors.
   const siegeChoisi = sieges.find((s) => s.id === siegeChoisiId && s.reservation);
   const tauxRemplissage = totaux.total > 0 ? Math.round((totaux.vendus / totaux.total) * 100) : 0;
@@ -206,6 +207,7 @@ export default function VentesEvenementScreen() {
                       style={[
                         styles.siege,
                         { backgroundColor: COULEURS[s.etat] },
+                        styleSection(s, sections),
                         s.id === siegeChoisiId && { borderWidth: 3, borderColor: theme.text },
                       ]}
                     >
@@ -235,6 +237,7 @@ export default function VentesEvenementScreen() {
               </View>
             ))}
           </View>
+          <LegendeSections sections={sections} />
           <ThemedText type="small" themeColor="textSecondary">
             Touchez un siège vendu ou en sélection pour voir la réservation et l'annuler.
           </ThemedText>
