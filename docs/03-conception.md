@@ -102,6 +102,7 @@ Contrainte : Si statut = 'confirmee', date_confirmation est non nul
 #### Authentification — `backend/src/modules/auth`
 | Méthode | Route | Auth | Détails |
 |---------|-------|------|---------|
+| POST | `/api/auth/register` | Publique | Inscription par courriel. Corps : `{ email, motDePasse, nom, prenom, role }`, avec `role` = `spectateur` ou `organisateur` (`administrateur` refusé, 400). 409 si le courriel est déjà utilisé. |
 | POST | `/api/auth/login` | Publique | Corps : `{ email, password }`. Réponse : `{ token, user }`. 401 (message générique) si email ou mot de passe invalide, ou si le compte n'a pas de mot de passe (compte GitHub). |
 | GET | `/api/auth/me` | `Authorization: Bearer <token>` | Retourne l'utilisateur courant (déduit du token, sans mot de passe). |
 | GET | `/api/auth/github` | Publique | Redirige vers GitHub (OAuth 2). Un `state` aléatoire est gardé dans un cookie httpOnly (10 min) contre le CSRF. |
@@ -110,7 +111,7 @@ Contrainte : Si statut = 'confirmee', date_confirmation est non nul
 | GET | `/api/auth/:fournisseur` | Publique | Connexion OpenID Connect (`google`, `microsoft`) : redirige vers le fournisseur avec `state`, `nonce` et défi PKCE, gardés dans un cookie httpOnly. 404 si fournisseur inconnu. |
 | GET | `/api/auth/:fournisseur/callback` | Publique (appelée par le fournisseur) | Vérifie le `state`, échange le code (avec le `code_verifier` PKCE), vérifie l'ID token (signature, audience, émetteur, nonce), retrouve ou crée l'utilisateur, puis redirige comme pour GitHub. |
 
-*`POST /api/auth/register` (inscription par courriel, rôle `spectateur` ou `organisateur`) a été retiré de `main` avec la connexion GitHub (Seats-Backend PR #34). Sa remise à côté de la connexion externe, décrite dans la décision 7, est en revue (Seats-Backend PR #36, et PR #39 pour le choix du rôle).*
+*L'inscription a été retirée le 26 octobre avec la connexion GitHub (Seats-Backend PR #34), puis remise le jour même (Seats-Backend PR #36, Seats-Frontend PR #123). Sur la page d'inscription, les boutons de connexion externe envoient le rôle choisi (`?role=`), voir la décision 7.*
 
 #### Salles — `backend/src/modules/salles`
 | Méthode | Route | Auth | Détails |
@@ -153,6 +154,8 @@ Même serveur et même port que l'API. Chaque événement a son salon (`evenemen
 | client → serveur | `siege:selectionner` / `siege:deselectionner` | Spectateur connecté seulement. Refusé si le siège est déjà en sélection par quelqu'un d'autre (#31). Une sélection expire après 60 s. |
 | serveur → clients | `siege:selectionne` / `siege:libere` | Un siège passe « en sélection » ou redevient libre (désélection, expiration, déconnexion). |
 | serveur → clients | `sieges:reserves` | Après une réservation confirmée, les sièges passent à « réservé » chez tout le monde. |
+| client → serveur | `ventes:rejoindre` / `ventes:quitter` | Abonnement aux ventes d'un événement (#35), dans un salon séparé `ventes:<id>`. Refusé si le client n'est pas l'organisateur de cet événement (vérifié par le serveur). |
+| serveur → organisateur | `ventes:maj` | Les ventes recalculées (mêmes données que `GET /api/evenements/:id/ventes`), poussées après chaque réservation ou annulation sur l'événement. |
 
 
 ## 3. Maquettes
@@ -302,6 +305,8 @@ Même serveur et même port que l'API. Chaque événement a son salon (`evenemen
 
 **Coût** :
 - Le tag `latest` est mobile (`git tag -f` + push force) : publier une nouvelle image demande une étape manuelle, pas un déploiement continu automatique.
+
+**Mise à jour (sprint 2, #19)** : pour l'adresse publique, l'application est déployée sur **Render** avec la base **Supabase** (`render.yaml`, procédure dans [07-deploiement.md](07-deploiement.md)). Render construit les mêmes `Dockerfile` et redéploie automatiquement chaque service après un commit sur `main` de son dépôt ; le backend applique les migrations au démarrage. Le serveur du département, envisagé d'abord, n'était plus disponible. Coût : l'offre gratuite met un service en veille après 15 minutes sans visite (premier chargement de 30 à 60 s), et la construction du frontend doit tenir dans 512 Mo de mémoire (Seats-Frontend PR #131).
 
 ---
 
@@ -475,18 +480,23 @@ Même serveur et même port que l'API. Chaque événement a son salon (`evenemen
 
 ---
 
-### Décision 13 : Tableau de bord des ventes rafraîchi par sondage (#13)
+### Décision 13 : Tableau de bord des ventes en direct, d'abord par sondage puis par WebSocket (#13, #35)
 
-**Question** : Le tableau de bord de l'organisateur doit-il utiliser le WebSocket de la décision 9 pour se mettre à jour en direct ?
+**Question** : Comment le tableau de bord de l'organisateur suit-il les ventes en direct ?
 
-**Choix** : **Sondage toutes les 5 s pendant que l'écran est ouvert**
-- L'écran redemande `GET /api/evenements/:id/ventes` toutes les 5 secondes, et s'arrête quand on le quitte.
+**Options envisagées** :
+1. **Sondage** : l'écran redemande `GET /api/evenements/:id/ventes` à intervalle régulier.
+2. **WebSocket** (serveur Socket.IO de la décision 9) : le serveur pousse les ventes recalculées dès qu'elles changent.
+
+**Choix** : **Option 1 pour #13, remplacée par l'option 2 avec #35**
+- #13 (19 octobre) : sondage toutes les 5 s, parce que le serveur Socket.IO n'était pas encore fusionné.
+- #35 (29 octobre) : après chaque réservation ou annulation, le backend recalcule les ventes et les pousse (`ventes:maj`) dans un salon `ventes:<id>` séparé du salon public du plan. Le tableau de bord ne fait plus qu'une requête au chargement, puis écoute le socket.
+- Seul l'organisateur de l'événement peut rejoindre ce salon : le serveur le vérifie, parce que les ventes contiennent le nom et le courriel des spectateurs.
 
 **Raison** :
-- Les ventes dépendent de la base (réservations confirmées, annulations), pas seulement des sélections gardées en mémoire par le serveur Socket.IO.
-- Un délai de quelques secondes est acceptable pour un organisateur, contrairement à la sélection d'un siège par un spectateur.
-- Le tableau de bord a été livré avant le serveur Socket.IO, sans dépendre de lui.
+- La mise à jour est immédiate, au lieu d'un délai jusqu'à 5 s et d'une requête par écran toutes les 5 s même sans changement.
+- Le calcul des ventes reste le même que pour `GET /api/evenements/:id/ventes` : une seule source de vérité.
 
 **Coût** :
-- Une requête toutes les 5 s par écran ouvert, même sans changement.
-- La mise à jour par WebSocket (#35) reste possible au sprint 3.
+- La diffusion est faite au mieux : si elle échoue, la réservation reste valide, mais le tableau de bord n'est à jour qu'au prochain chargement de la page.
+- Les ventes ne sont poussées qu'après une réservation ou une annulation en base. Une sélection en cours (en mémoire, décision 9) ne les déclenche pas.
