@@ -1,13 +1,34 @@
 jest.mock('expo-router', () => ({ Stack: { Screen: () => null }, useLocalSearchParams: () => ({ id: '1' }) }));
 jest.mock('@/lib/auth-context', () => ({ useAuth: jest.fn() }));
+jest.mock('socket.io-client', () => ({ io: jest.fn() }));
 
 import { render, screen, act, fireEvent } from '@testing-library/react-native';
+import { io } from 'socket.io-client';
 
 import { useAuth } from '@/lib/auth-context';
-import VentesEvenementScreen, { INTERVALLE_RAFRAICHISSEMENT_MS } from '../[id]';
+import VentesEvenementScreen from '../[id]';
 
 function reponse(json, ok = true) {
   return { ok, json: async () => json };
+}
+
+// Fausse connexion Socket.IO (#35) : `declencher` simule un événement reçu du serveur, les appels à
+// `on`/`emit`/`disconnect` sont espionnables comme sur le vrai client.
+function socketFactice() {
+  const ecouteurs = {};
+  const socket = {
+    on: jest.fn((evt, cb) => {
+      ecouteurs[evt] = cb;
+      // Simule la connexion asynchrone réelle, un instant après l'écoute posée par le composant.
+      if (evt === 'connect') Promise.resolve().then(() => cb());
+    }),
+    emit: jest.fn((evt, donnees, ack) => {
+      if (evt === 'ventes:rejoindre') ack?.({ ok: true });
+    }),
+    disconnect: jest.fn(),
+    declencher: (evt, payload) => ecouteurs[evt]?.(payload),
+  };
+  return socket;
 }
 
 // ponytail: même limitation que events/index.test.jsx — `findByText` ne se résout jamais avec le
@@ -56,6 +77,7 @@ describe('VentesEvenementScreen (#13)', () => {
 
   beforeEach(() => {
     useAuth.mockReturnValue({ token: 'jeton-orga', user: { id: 7, role: 'organisateur' } });
+    io.mockReset().mockReturnValue(socketFactice());
   });
   afterEach(() => {
     global.fetch = fetchOriginal;
@@ -98,34 +120,41 @@ describe('VentesEvenementScreen (#13)', () => {
     expect(screen.getAllByText('B')).toHaveLength(2);
   });
 
-  it('recharge les chiffres automatiquement, sans recharger la page', async () => {
-    const setIntervalEspion = jest.spyOn(global, 'setInterval');
-    global.fetch = jest
-      .fn()
-      .mockResolvedValueOnce(reponse({ success: true, data: ventes() }))
-      .mockResolvedValueOnce(reponse({ success: true, data: ventes({ vendus: 3, libres: 0, recette: 75 }) }));
+  it('rejoint la room des ventes en direct une fois connecté (#35)', async () => {
+    global.fetch = jest.fn().mockResolvedValue(reponse({ success: true, data: ventes() }));
+
+    await render(<VentesEvenementScreen />);
+    await attendreQue(() => screen.queryByText(/^En direct/) !== null);
+
+    const socket = io.mock.results[0].value;
+    expect(io).toHaveBeenCalledWith(expect.any(String), expect.objectContaining({ auth: { token: 'jeton-orga' } }));
+    expect(socket.emit).toHaveBeenCalledWith('ventes:rejoindre', 1, expect.any(Function));
+  });
+
+  it('met à jour les chiffres dès que le socket pousse une mise à jour, sans recharger la page', async () => {
+    global.fetch = jest.fn().mockResolvedValue(reponse({ success: true, data: ventes() }));
 
     await render(<VentesEvenementScreen />);
     await attendreQue(() => screen.queryByText('Concert de jazz') !== null);
 
-    const appel = setIntervalEspion.mock.calls.find(([, delai]) => delai === INTERVALLE_RAFRAICHISSEMENT_MS);
-    expect(appel).toBeDefined();
+    const socket = io.mock.results[0].value;
     await act(async () => {
-      appel[0]();
+      socket.declencher('ventes:maj', ventes({ vendus: 3, libres: 0, recette: 75 }));
     });
+
     await attendreQue(() => screen.queryByText('3 / 4 sièges vendus (75 %)') !== null);
-    expect(global.fetch).toHaveBeenCalledTimes(2);
+    expect(global.fetch).toHaveBeenCalledTimes(1); // la mise à jour vient du socket, pas d'un second fetch
   });
 
-  it('arrête le rafraîchissement en quittant la page', async () => {
-    const clearIntervalEspion = jest.spyOn(global, 'clearInterval');
+  it('se déconnecte du socket en quittant la page', async () => {
     global.fetch = jest.fn().mockResolvedValue(reponse({ success: true, data: ventes() }));
 
     const { unmount } = await render(<VentesEvenementScreen />);
     await attendreQue(() => screen.queryByText('Concert de jazz') !== null);
+    const socket = io.mock.results[0].value;
     await act(async () => unmount());
 
-    expect(clearIntervalEspion).toHaveBeenCalled();
+    expect(socket.disconnect).toHaveBeenCalled();
   });
 
   it("affiche l'erreur de l'API (ex. événement d'un autre organisateur)", async () => {
@@ -137,21 +166,18 @@ describe('VentesEvenementScreen (#13)', () => {
     await attendreQue(() => screen.queryByText("Cet événement n'appartient pas à cet organisateur.") !== null);
   });
 
-  it("garde les derniers chiffres si un rafraîchissement échoue", async () => {
-    const setIntervalEspion = jest.spyOn(global, 'setInterval');
-    global.fetch = jest
-      .fn()
-      .mockResolvedValueOnce(reponse({ success: true, data: ventes() }))
-      .mockRejectedValueOnce(new Error('Erreur réseau'));
+  it('signale la perte de connexion si le socket se coupe', async () => {
+    global.fetch = jest.fn().mockResolvedValue(reponse({ success: true, data: ventes() }));
 
     await render(<VentesEvenementScreen />);
-    await attendreQue(() => screen.queryByText('Concert de jazz') !== null);
+    await attendreQue(() => screen.queryByText(/^En direct/) !== null);
 
-    const appel = setIntervalEspion.mock.calls.find(([, delai]) => delai === INTERVALLE_RAFRAICHISSEMENT_MS);
+    const socket = io.mock.results[0].value;
     await act(async () => {
-      appel[0]();
+      socket.declencher('disconnect');
     });
-    await attendreQue(() => screen.queryByText(/Connexion perdue/) !== null);
+
+    await attendreQue(() => screen.queryByText('Connexion en direct en cours…') !== null);
     expect(screen.getByText('2 / 4 sièges vendus (50 %)')).toBeTruthy();
   });
 
@@ -173,6 +199,7 @@ describe('VentesEvenementScreen : annuler une réservation (#14)', () => {
 
   beforeEach(() => {
     useAuth.mockReturnValue({ token: 'jeton-orga', user: { id: 7, role: 'organisateur' } });
+    io.mockReset().mockReturnValue(socketFactice());
   });
   afterEach(() => {
     global.fetch = fetchOriginal;
