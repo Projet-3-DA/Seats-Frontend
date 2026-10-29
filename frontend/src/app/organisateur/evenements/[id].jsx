@@ -1,20 +1,17 @@
 import { Stack, useLocalSearchParams } from 'expo-router';
 import { useEffect, useRef, useState } from 'react';
 import { ActivityIndicator, Pressable, ScrollView, StyleSheet, TextInput, View } from 'react-native';
+import { io } from 'socket.io-client';
 
 import { LegendeSections, styleSection } from '@/components/legende-sections';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
-import { API_URL } from '@/constants/api';
+import { API_URL, SOCKET_URL } from '@/constants/api';
 import { MaxContentWidth } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 import { useAuth } from '@/lib/auth-context';
 import { formatDateHeure } from '@/utils/dates';
 import { groupSiegesParRangee, lettreRangee } from '@/utils/salle';
-
-// Les chiffres sont rechargés à intervalle régulier pour suivre les ventes « en direct » (#13).
-// ponytail: sondage simple en attendant le WebSocket (#8) ; #35 pourra le remplacer par des messages poussés.
-export const INTERVALLE_RAFRAICHISSEMENT_MS = 5000;
 
 const COULEURS = { vendu: '#ef4444', en_selection: '#f59e0b', libre: '#22c55e' };
 
@@ -51,6 +48,8 @@ export default function VentesEvenementScreen() {
   const [ventes, setVentes] = useState(null);
   const [erreur, setErreur] = useState('');
   const [miseAJour, setMiseAJour] = useState(null);
+  // Diffusion en direct (#35) : connecté tant que le socket tient la room `ventes:<id>`.
+  const [socketConnecte, setSocketConnecte] = useState(false);
   // Annulation d'une réservation par l'organisateur (#14)
   const [siegeChoisiId, setSiegeChoisiId] = useState(null);
   const [motif, setMotif] = useState('');
@@ -78,17 +77,44 @@ export default function VentesEvenementScreen() {
         setErreur('');
         setMiseAJour(new Date());
       } catch (err) {
-        // On garde les derniers chiffres affichés : le prochain rafraîchissement retentera.
         if (!annule) setErreur(err.message || 'Échec du chargement des ventes.');
       }
     }
 
     chargerRef.current = charger;
-    charger();
-    const minuterie = setInterval(charger, INTERVALLE_RAFRAICHISSEMENT_MS);
+    charger(); // Premier affichage ; les mises à jour suivantes arrivent par le socket ci-dessous.
     return () => {
       annule = true;
-      clearInterval(minuterie);
+    };
+  }, [id, token]);
+
+  // Ventes poussées en direct (#35), à la place du sondage : la room `ventes:<id>` n'est rejointe que si
+  // le serveur confirme que ce socket appartient bien à l'organisateur de l'événement.
+  useEffect(() => {
+    if (!token) return undefined;
+    const evenementId = Number(id);
+    const socket = io(SOCKET_URL, { auth: { token }, transports: ['websocket'] });
+
+    socket.on('connect', () => {
+      socket.emit('ventes:rejoindre', evenementId, (reponse) => {
+        if (reponse?.ok) {
+          setSocketConnecte(true);
+        } else {
+          setSocketConnecte(false);
+          setErreur(reponse?.error || 'Impossible de suivre les ventes en direct.');
+        }
+      });
+    });
+    socket.on('disconnect', () => setSocketConnecte(false));
+    socket.on('ventes:maj', (donnees) => {
+      setVentes(donnees);
+      setErreur('');
+      setMiseAJour(new Date());
+    });
+
+    return () => {
+      socket.disconnect();
+      setSocketConnecte(false);
     };
   }, [id, token]);
 
@@ -155,11 +181,18 @@ export default function VentesEvenementScreen() {
             {formatDateHeure(evenement.dateHeure)} · {salle.nom}
           </ThemedText>
           <View style={styles.direct}>
-            <View style={[styles.pointDirect, { backgroundColor: erreur ? '#DC2626' : COULEURS.libre }]} />
+            <View
+              style={[
+                styles.pointDirect,
+                { backgroundColor: erreur ? '#DC2626' : socketConnecte ? COULEURS.libre : '#f59e0b' },
+              ]}
+            />
             <ThemedText type="small" themeColor="textSecondary">
               {erreur
                 ? `Connexion perdue, nouvel essai dans quelques secondes (${erreur})`
-                : `En direct · mis à jour à ${formatHeure(miseAJour)}`}
+                : socketConnecte
+                  ? `En direct · mis à jour à ${formatHeure(miseAJour)}`
+                  : 'Connexion en direct en cours…'}
             </ThemedText>
           </View>
         </View>
