@@ -22,6 +22,8 @@ docker compose up --build
 
 Puis ouvrir http://localhost:5173 (l'API écoute sur http://localhost:3000/api). Le premier démarrage prend quelques minutes (construction des images). La base de données est créée et migrée automatiquement ; ses données sont conservées dans un volume Docker et survivent à un redémarrage (`docker compose down` puis `docker compose up`). `docker compose down -v` la remet à zéro.
 
+Pour la version en ligne (Render + Supabase, redéployée automatiquement à chaque fusion dans `main`), voir [Déploiement](./docs/07-deploiement.md).
+
 ### Connexion
 - **Avec GitHub** : bouton « Continuer avec GitHub » sur la page de connexion. Un nouveau compte reçoit le rôle `spectateur`.
 - **Comptes de démonstration** (courriel + mot de passe), un par rôle, ci-dessous.
@@ -66,6 +68,7 @@ Les tests du backend (dépôt Seats-Backend) se lancent avec `npm test` dans son
 - [Sprints](./docs/04-sprints.md)
 - [Equipe](./docs/05-equipe.md)
 - [Risques](./docs/06-risques.md)
+- [Déploiement](./docs/07-deploiement.md)
 - [Journal](./docs/journal.md)
 - [Règles de confidentialité](./docs/confidentialite.md)
 - [Conditions d'utilisation](./docs/conditions-utilisation.md)
