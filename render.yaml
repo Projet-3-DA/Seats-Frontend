@@ -1,0 +1,79 @@
+# Blueprint Render (#19) : met Seats en ligne sur deux adresses publiques. Chaque service se
+# redéploie tout seul après chaque commit sur la branche main de son dépôt. Procédure : docs/07-deploiement.md.
+#
+# Les valeurs « sync: false » sont saisies dans Render à la création du Blueprint, jamais commitées.
+# La base de données est le projet Supabase : les données persistent d'un déploiement à l'autre.
+
+services:
+  # API Express + Socket.IO. Au démarrage, l'image applique les migrations Prisma et crée les comptes
+  # de démonstration (docker-entrypoint.sh) : la base suit donc toujours main sans étape manuelle.
+  - type: web
+    name: seats-backend
+    runtime: docker
+    plan: free
+    # Même région que le projet Supabase (us-east-1) ; non modifiable une fois le service créé.
+    region: virginia
+    repo: https://github.com/Projet-3-DA/Seats-Backend
+    branch: main
+    dockerContext: ./backend
+    dockerfilePath: ./backend/Dockerfile
+    healthCheckPath: /
+    autoDeploy: true
+    envVars:
+      - key: NODE_ENV
+        value: production
+      # Supabase > Connect > « Session pooler » (IPv4, port 5432) pour les deux : la connexion directe
+      # db.<ref>.supabase.co n'est joignable qu'en IPv6, que Render ne prend pas en charge.
+      - key: DATABASE_URL
+        sync: false
+      - key: DIRECT_URL
+        sync: false
+      - key: JWT_SECRET
+        generateValue: true
+      # Adresses publiques, pour les redirections de connexion externe. Ex. https://seats-backend.onrender.com
+      # et https://seats-frontend.onrender.com (sans / final).
+      - key: BACKEND_URL
+        sync: false
+      - key: FRONTEND_URL
+        sync: false
+      # Connexion GitHub, Google et Microsoft : facultatives, un fournisseur sans identifiants est désactivé.
+      - key: GITHUB_CLIENT_ID
+        sync: false
+      - key: GITHUB_CLIENT_SECRET
+        sync: false
+      # <BACKEND_URL>/api/auth/github/callback, identique à celle de l'OAuth App GitHub.
+      - key: GITHUB_CALLBACK_URL
+        sync: false
+      - key: GOOGLE_CLIENT_ID
+        sync: false
+      - key: GOOGLE_CLIENT_SECRET
+        sync: false
+      - key: MICROSOFT_CLIENT_ID
+        sync: false
+      - key: MICROSOFT_CLIENT_SECRET
+        sync: false
+      # Affiches (Supabase Storage) : facultatif, l'envoi d'un fichier est refusé si vide.
+      - key: SUPABASE_URL
+        sync: false
+      - key: SUPABASE_SERVICE_ROLE_KEY
+        sync: false
+      - key: SUPABASE_BUCKET
+        value: affiches
+
+  # Application web : export Expo servi par server.js.
+  - type: web
+    name: seats-frontend
+    runtime: docker
+    plan: free
+    region: virginia
+    repo: https://github.com/Projet-3-DA/Seats-Frontend
+    branch: main
+    dockerContext: ./frontend
+    dockerfilePath: ./frontend/Dockerfile
+    healthCheckPath: /
+    autoDeploy: true
+    envVars:
+      # Adresse publique de l'API, figée dans le bundle au build (Render passe les variables
+      # d'environnement au Dockerfile comme build args). Ex. https://seats-backend.onrender.com/api
+      - key: EXPO_PUBLIC_API_URL
+        sync: false
