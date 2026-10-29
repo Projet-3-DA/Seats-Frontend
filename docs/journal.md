@@ -106,3 +106,13 @@
   - Apple est écarté de #114 (compte payant, HTTPS obligatoire, pas de `localhost`) ; Google et Microsoft passent par OpenID Connect (décision 8).
   - **Retour en arrière, le soir même** : sans inscription, un utilisateur ne pouvait plus devenir organisateur (connexion externe = `spectateur`). L'inscription par courriel et mot de passe est remise, avec le choix du rôle, et propose aussi « Continuer avec GitHub / Google / Microsoft » (décision 7 révisée). Ticket #121 créé pour qu'un administrateur puisse changer le rôle d'un compte externe.
   - Le tarif n'est plus affiché sur les cartes de l'onglet Événements ; les prix restent sur le plan de salle et dans les vues organisateur et administrateur.
+
+## Jeudi 29 octobre
+- **Présences** : Delavie, Glodie, Junior, Yanis.
+- **Avancé** :
+  - #34 — Afficher les sections par couleur sur le plan de salle, par Yanis (PR #128, fusionnée) : chaque siège est encadré de la couleur de sa section, avec une légende sous le plan.
+  - Delavie a mis à jour `03-conception.md` pour le sprint 2 (#113, PR #127), compté #36 dans le bilan du sprint 2 (PR #126) et fermé #110 (rétrospective du sprint 2, rédigée les 26 et 28 octobre).
+  - #19 — Accéder à l'application déployée sur un serveur public, par Junior (PR #130 et #131) : Blueprint Render (`render.yaml`) et procédure `docs/07-deploiement.md` ; le backend est en ligne sur Render avec la base Supabase. La construction du frontend dépassait la mémoire de l'offre gratuite : limitée à un seul worker Metro (PR #131).
+  - Junior a aussi corrigé la redirection après la création d'un événement : l'organisateur revient sur « Mes événements » (PR #129), ajouté le lint à la CI du backend (backend PR #40) et retiré du README la description d'origine (films et projections), signalée à la revue du sprint 1.
+  - Glodie a fermé #32 et #35 sur le tableau.
+- **Décisions** : aucune.
