@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import { useLocalSearchParams } from 'expo-router';
 import { ActivityIndicator, Pressable, StyleSheet, View } from 'react-native';
 
+import { LegendeSections, styleSection } from '@/components/legende-sections';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { Spacing } from '@/constants/theme';
@@ -210,7 +211,7 @@ export default function EventSeatMapScreen() {
                 testID={`siege-${s.id}`}
                 onPress={() => basculerSelection(s)}
                 disabled={!reservationOuverte || s.etat !== 'libre' || selectionsAutres.has(s.id) || enConfirmation}
-                style={[styles.siege, styleSiege(s)]}
+                style={[styles.siege, styleSiege(s), styleSection(s, plan.sections)]}
               >
                 <ThemedText type="small" style={styles.siegeTexte}>
                   {s.colonne}
@@ -242,6 +243,7 @@ export default function EventSeatMapScreen() {
           <ThemedText type="small" themeColor="textSecondary">En sélection par un autre</ThemedText>
         </View>
       </View>
+      <LegendeSections sections={plan.sections} />
 
       {estTermine && (
         <ThemedText type="smallBold" style={styles.erreurTexte}>
