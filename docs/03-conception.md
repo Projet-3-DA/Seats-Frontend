@@ -10,17 +10,19 @@
 
 Mis à jour suite à l'ajout des colonnes `tarif` et `affiche_url` sur la table `Evenement`. Ces colonnes auraient dû être présentes dès la conception initiale du diagramme, puisque chaque événement a une affiche et un tarif — elles avaient été oubliées.
 
-### Détails des Entités — Sprint 1
+Ce diagramme ne montre pas encore les ajouts du sprint 2 : la table `SECTIONS` (#11), la table `IDENTITES_EXTERNES` (#114), la colonne `section_id` des sièges, les colonnes de connexion externe et d'annulation. Les détails ci-dessous, eux, suivent le schéma Prisma actuel (`backend/prisma/schema.prisma`).
+
+### Détails des Entités (schéma actuel, fin du sprint 2)
 ### UTILISATEURS (Connexion)
 id : Entier, clé primaire
 email : Chaîne, unique (index pour login)
-mot_de_passe : Hash bcrypt (jamais stocké en clair), **facultatif depuis le sprint 2** : null pour un compte créé par la connexion GitHub ; seuls les comptes de démonstration en ont un
+mot_de_passe : Hash bcrypt (jamais stocké en clair), **facultatif depuis le sprint 2** : null pour un compte créé par une connexion externe (GitHub, Google, Microsoft). Les comptes de démonstration et les comptes inscrits par courriel en ont un.
 github_id : Chaîne, unique, facultatif — identifiant du compte GitHub relié (sprint 2, #101)
 nom, prenom : Chaînes obligatoires
-role : ENUM('spectateur', 'organisateur', 'admin')
+role : ENUM('spectateur', 'organisateur', 'administrateur')
 spectateur : Consulte événements, réserve sièges, annule ses réservations
 organisateur : Crée salles/événements, voit stats de vente, annule toute réservation
-admin : Accès complet
+administrateur : Supervise toute la plateforme (tous les événements et leurs ventes, #36)
 created_at : Timestamp création
 
 **Rôle par défaut** : un compte créé à sa première connexion GitHub, Google ou Microsoft reçoit le rôle `spectateur`. Le rôle `organisateur` se choisit à l'inscription par courriel et mot de passe ; `administrateur` ne vient que des comptes de démonstration.
@@ -41,6 +43,17 @@ nombre_rangees : Entier (ex: 10 rangées)
 sieges_par_rangee : Entier (ex: 15 sièges par rangée)
 created_at : Timestamp
 Contrainte : UNIQUE(organisateur_id, nom) — un organisateur a une salle unique par nom
+Modifiable (nom, rangées, sièges par rangée) tant qu'aucun événement ne l'utilise (#10) ; les sièges sont alors régénérés.
+
+### SECTIONS (Sections tarifaires d'une salle, #11)
+id : Entier, clé primaire
+salle_id : FK → SALLES (non nul, suppression en cascade)
+nom : Chaîne (ex. "Parterre", "Balcon")
+prix : Décimal(8,2) — prix d'un siège de cette section
+couleur : Chaîne `#RRGGBB` — couleur d'affichage sur les plans (#34)
+created_at : Timestamp
+Contrainte : UNIQUE(salle_id, nom)
+Modifiables tant qu'aucun événement n'utilise la salle, comme la salle elle-même.
 
 ### SIEGES (Générés à partir de SALLES)
 id : Entier, clé primaire
@@ -48,6 +61,7 @@ salle_id : FK → SALLES (non nul)
 numero_rangee : Entier (1 à nombre_rangees)
 numero_colonne : Entier (1 à sieges_par_rangee)
 created_at : Timestamp
+section_id : FK → SECTIONS, facultatif (mis à null si la section est supprimée) — un siège appartient à au plus une section. Sans section, il est vendu au tarif de l'événement.
 Contrainte : UNIQUE(salle_id, numero_rangee, numero_colonne) — pas de siège dupliqué
 Pas de statut ici — le statut est dans RESERVATIONS pour chaque événement (un siège peut être libre pour l'événement A et réservé pour l'événement B)
 
@@ -71,11 +85,14 @@ evenement_id : FK → EVENEMENTS (non nul)
 statut : ENUM('en_selection', 'confirmee', 'annulee')
 en_selection : Siège sélectionné, en attente de confirmation (délai limité)
 confirmee : Siège réservé définitivement
-annulee : Réservation annulée (siège libéré)
+annulee : Réservation annulée (siège libéré), par l'organisateur (#14) ou par le spectateur avant l'événement (#12). La ligne est conservée : le spectateur la voit dans son historique.
 date_selection : Timestamp (quand le siège a été cliqué)
 date_confirmation : Timestamp NULL (rempli seulement quand confirmee)
 delai_expiration : Timestamp (date jusqu'à laquelle en_selection reste valide)
-Contrainte critique : UNIQUE(siege_id, evenement_id) → un siège ne peut être réservé qu'une fois par événement
+motif_annulation : Texte, facultatif (500 caractères max) — motif donné par l'organisateur à l'annulation (#14)
+date_annulation : Timestamp NULL — rempli à l'annulation
+actif : Booléen, `true` par défaut, **NULL une fois la réservation annulée** (#14)
+Contrainte critique : UNIQUE(siege_id, evenement_id, actif) → une seule réservation active par siège et par événement. Postgres considère deux NULL comme différents : les réservations annulées s'accumulent sans bloquer le siège, qui peut être réservé de nouveau (voir décision 10).
 Contrainte : Si statut = 'confirmee', date_confirmation est non nul
 
 
@@ -89,33 +106,53 @@ Contrainte : Si statut = 'confirmee', date_confirmation est non nul
 | GET | `/api/auth/me` | `Authorization: Bearer <token>` | Retourne l'utilisateur courant (déduit du token, sans mot de passe). |
 | GET | `/api/auth/github` | Publique | Redirige vers GitHub (OAuth 2). Un `state` aléatoire est gardé dans un cookie httpOnly (10 min) contre le CSRF. |
 | GET | `/api/auth/github/callback` | Publique (appelée par GitHub) | Vérifie le `state`, échange le code contre un jeton côté serveur, lit le profil et le courriel vérifié, retrouve ou crée l'utilisateur (rôle `spectateur`), puis redirige vers `<frontend>/connexion-externe#token=<JWT>` (ou `#erreur=<message>`). |
-
 | GET | `/api/auth/fournisseurs` | Publique | Liste des fournisseurs de connexion configurés (ex. `["github", "google"]`) : le frontend n'active que ces boutons. |
 | GET | `/api/auth/:fournisseur` | Publique | Connexion OpenID Connect (`google`, `microsoft`) : redirige vers le fournisseur avec `state`, `nonce` et défi PKCE, gardés dans un cookie httpOnly. 404 si fournisseur inconnu. |
 | GET | `/api/auth/:fournisseur/callback` | Publique (appelée par le fournisseur) | Vérifie le `state`, échange le code (avec le `code_verifier` PKCE), vérifie l'ID token (signature, audience, émetteur, nonce), retrouve ou crée l'utilisateur, puis redirige comme pour GitHub. |
 
-*`POST /api/auth/register` (inscription, rôle `spectateur` ou `organisateur`) reste disponible à côté de la connexion externe.*
+*`POST /api/auth/register` (inscription par courriel, rôle `spectateur` ou `organisateur`) a été retiré de `main` avec la connexion GitHub (Seats-Backend PR #34). Sa remise à côté de la connexion externe, décrite dans la décision 7, est en revue (Seats-Backend PR #36, et PR #39 pour le choix du rôle).*
 
 #### Salles — `backend/src/modules/salles`
 | Méthode | Route | Auth | Détails |
 |---------|-------|------|---------|
-| GET | `/api/salles` | Bearer requis | Liste les salles de l'organisateur courant (`req.user.id`). |
-| POST | `/api/salles` | — | Corps : `{ organisateurId, nom, nombreRangees, siegesParRangee }`. Génère les sièges associés. 409 si `(organisateurId, nom)` existe déjà. |
-| GET | `/api/salles/:id` | — | Détail d'une salle. 404 si introuvable. |
+| GET | `/api/salles` | Bearer, rôle `organisateur` | Liste les salles de l'organisateur courant (`req.user.id`). |
+| POST | `/api/salles` | Bearer, rôle `organisateur` | Corps : `{ nom, nombreRangees, siegesParRangee }`, `organisateurId` vient du token. Génère les sièges associés. 409 si le nom existe déjà pour cet organisateur. |
+| GET | `/api/salles/:id` | — | Détail d'une salle avec ses sièges, ses sections et son nombre d'événements. 404 si introuvable. |
+| PUT | `/api/salles/:id` | Bearer, rôle `organisateur` | Modifie nom et dimensions (#10), sièges régénérés. 409 si un événement utilise déjà la salle. |
+| PUT | `/api/salles/:id/sections` | Bearer, rôle `organisateur` | Remplace toutes les sections (#11). Corps : `{ sections: [{ nom, prix, couleur, siegeIds }] }`. 400 si un siège est dans deux sections, 409 si un événement utilise déjà la salle. |
 
 #### Événements — `backend/src/modules/evenements`
 | Méthode | Route | Auth | Détails |
 |---------|-------|------|---------|
 | GET | `/api/evenements` | — | Liste tous les événements. |
-| POST | `/api/evenements` | — | Corps : `{ organisateurId, salleId, titre, description?, dateHeure, afficheUrl?, tarif? }`. 400 si `organisateurId`/`salleId` invalide. |
-| GET | `/api/evenements/:id/plan` | — | Plan de salle de l'événement : sièges avec leur état (`reserve` / libre). 404 si événement introuvable. |
-| POST | `/api/evenements/affiche` | — | Corps : image brute (`Content-Type: image/png`, etc., 5 Mo max). Upload l'affiche, retourne son URL. |
+| POST | `/api/evenements` | Bearer, rôle `organisateur` | Corps : `{ salleId, titre, description?, dateHeure, afficheUrl?, tarif? }`, `organisateurId` vient du token. 400 si `salleId` invalide. |
+| GET | `/api/evenements/:id/plan` | — | Plan de salle de l'événement : sièges avec leur état (`reserve` / `libre`), leur section et leur prix (section, sinon tarif de l'événement), et les sections de la salle. 404 si événement introuvable. |
+| GET | `/api/evenements/:id/ventes` | Bearer, rôle `organisateur` | Tableau de bord des ventes (#13) : chaque siège `vendu` / `en_selection` / `libre` avec le spectateur, les totaux et la recette. 403 si l'événement appartient à un autre organisateur. |
+| POST | `/api/evenements/affiche` | Bearer, rôle `organisateur` | Corps : image brute (`Content-Type: image/png`, etc., 5 Mo max). Upload l'affiche, retourne son URL. |
 
 #### Réservations — `backend/src/modules/reservations`
 | Méthode | Route | Auth | Détails |
 |---------|-------|------|---------|
-| GET | `/api/reservations` | Bearer requis | Liste les réservations de l'utilisateur courant (`req.user.id`), avec événement et siège. |
-| POST | `/api/reservations` | Bearer requis, rôle `spectateur` | Corps : `{ evenementId, siegeIds: [...] }`. `spectateurId` vient toujours du token, jamais du corps (sinon un client pourrait réserver au nom d'un autre utilisateur). |
+| GET | `/api/reservations` | Bearer, rôle `spectateur` | Liste les réservations de l'utilisateur courant (`req.user.id`), avec événement, siège et prix de la place. Les annulées restent dans la liste, avec leur motif. |
+| POST | `/api/reservations` | Bearer requis, rôle `spectateur` | Corps : `{ evenementId, siegeIds: [...] }`. `spectateurId` vient toujours du token, jamais du corps (sinon un client pourrait réserver au nom d'un autre utilisateur). 409 si un siège est déjà pris ou en cours de sélection par un autre spectateur (#31). |
+| POST | `/api/reservations/:id/annulation` | Bearer, rôle `organisateur` | Annulation par l'organisateur (#14). Corps : `{ motif? }`. 403 si la réservation concerne l'événement d'un autre organisateur, 409 si déjà annulée. |
+| POST | `/api/reservations/:id/annuler` | Bearer, rôle `spectateur` | Annulation par le spectateur (#12). 403 si la réservation ne lui appartient pas, 400 si l'événement est passé, 409 si déjà annulée. |
+
+#### Administration — `backend/src/modules/admin`
+| Méthode | Route | Auth | Détails |
+|---------|-------|------|---------|
+| GET | `/api/admin/evenements` | Bearer, rôle `administrateur` | Tous les événements de la plateforme (#36), à venir d'abord puis passés, avec organisateur, salle et nombre de places vendues. |
+| GET | `/api/admin/evenements/:id` | Bearer, rôle `administrateur` | Détail d'un événement et de ses ventes siège par siège, quel que soit son organisateur. |
+
+#### Temps réel — Socket.IO (`backend/src/realtime.js`)
+Même serveur et même port que l'API. Chaque événement a son salon (`evenement:<id>`). Le client envoie le JWT dans `handshake.auth.token` : sans token valide, il voit le plan bouger mais ne peut rien sélectionner.
+
+| Sens | Message | Détails |
+|------|---------|---------|
+| client → serveur | `plan:rejoindre` / `plan:quitter` | Entre dans le salon d'un événement ou le quitte. À l'entrée, le serveur répond `plan:selections` avec les sièges déjà en sélection. |
+| client → serveur | `siege:selectionner` / `siege:deselectionner` | Spectateur connecté seulement. Refusé si le siège est déjà en sélection par quelqu'un d'autre (#31). Une sélection expire après 60 s. |
+| serveur → clients | `siege:selectionne` / `siege:libere` | Un siège passe « en sélection » ou redevient libre (désélection, expiration, déconnexion). |
+| serveur → clients | `sieges:reserves` | Après une réservation confirmée, les sièges passent à « réservé » chez tout le monde. |
 
 
 ## 3. Maquettes
@@ -300,6 +337,7 @@ Contrainte : Si statut = 'confirmee', date_confirmation est non nul
 - Le compte est retrouvé par `githubId`, sinon relié à un compte existant **uniquement par courriel vérifié par GitHub**, sinon créé avec le rôle `spectateur`.
 - Le backend émet le **même JWT** que la connexion par mot de passe : rôles et permissions sont vérifiés de la même façon.
 - Le JWT revient au frontend dans le fragment de l'URL (`#token=`), jamais envoyé à un serveur ni gardé dans les journaux, et effacé dès sa lecture.
+- Les **comptes de démonstration** (un par rôle, mot de passe `Demo1234!`) sont conservés et recréés au démarrage : ils se connectent toujours par courriel et mot de passe, ce qui permet de tester chaque rôle sans compte GitHub.
 - L'inscription reste le seul endroit où l'on choisit d'être organisateur. Ses boutons de connexion externe envoient le rôle sélectionné (`?role=spectateur|organisateur`) : il est gardé dans le cookie de la tentative et appliqué **uniquement à un compte créé à cette connexion**. Sans ce paramètre (page de connexion), le rôle par défaut `spectateur` s'applique ; `administrateur` est refusé.
 
 **Raison** :
@@ -340,3 +378,115 @@ Contrainte : Si statut = 'confirmee', date_confirmation est non nul
 - Google exige des pages publiques (accueil, confidentialité) pour publier l'application ; sans publication, seuls les utilisateurs de test peuvent se connecter.
 - Le secret Microsoft expire (180 jours) et doit être renouvelé.
 - Un compte Microsoft sans courriel vérifié reçoit une adresse technique (`<sujet>@microsoft.invalid`).
+
+---
+
+### Décision 9 : Temps réel avec Socket.IO (WebSocket) (#8, #31)
+
+**Question** : Comment montrer à tous les spectateurs d'un même plan, sans recharger la page, qu'un siège vient d'être sélectionné ou réservé par quelqu'un d'autre ?
+
+**Options envisagées** :
+1. **Sondage (polling)** : chaque client redemande le plan toutes les quelques secondes.
+2. **Server-Sent Events** : flux du serveur vers le client seulement.
+3. **WebSocket avec Socket.IO** : connexion bidirectionnelle, salons et reconnexion automatique.
+4. **Service géré** (Supabase Realtime, Pusher).
+
+**Choix** : **Option 3, Socket.IO**
+- Le serveur Socket.IO partage le serveur HTTP de l'API (même port, même déploiement).
+- Un salon par événement : seuls les clients qui regardent ce plan reçoivent ses messages.
+- Le JWT de l'API sert aussi à authentifier la connexion WebSocket. Un visiteur anonyme voit le plan bouger, mais seul un spectateur connecté peut sélectionner.
+- Les sélections en cours sont gardées en mémoire par le serveur, avec un délai de 60 s. Un siège redevient libre à l'expiration, à la désélection ou à la déconnexion du spectateur.
+- `POST /api/reservations` vérifie aussi ces sélections (409), pour qu'une requête directe ne puisse pas prendre un siège qu'un autre est en train de choisir.
+
+**Raison** :
+- La sélection d'un siège doit apparaître chez les autres en moins d'une seconde ; un sondage assez rapide pour ça chargerait inutilement le serveur.
+- Socket.IO gère les salons, la reconnexion et le repli si le WebSocket est bloqué, ce que les Server-Sent Events n'offrent pas dans les deux sens.
+- Pas de service tiers de plus à configurer.
+
+**Coût** :
+- Les sélections en mémoire sont perdues au redémarrage du serveur et ne fonctionnent qu'avec une seule instance. Pour plusieurs instances, il faudrait les garder en base (réservations `en_selection`) ou ajouter un adaptateur Redis.
+- L'hébergeur doit accepter les WebSocket.
+- Le CORS du serveur Socket.IO est ouvert à toutes les origines, à restreindre en production.
+
+---
+
+### Décision 10 : Annuler une réservation sans l'effacer (#14, #12)
+
+**Question** : Comment annuler une réservation en libérant le siège, tout en la gardant dans l'historique du spectateur, alors que la contrainte UNIQUE(siege_id, evenement_id) interdit une deuxième réservation du même siège ?
+
+**Options envisagées** :
+1. **Supprimer la ligne** : le siège est libéré, mais l'historique et le motif sont perdus.
+2. **Index unique partiel** (`WHERE statut <> 'annulee'`) : Prisma ne sait pas le déclarer dans le schéma ; il faudrait l'écrire à la main dans une migration, et le schéma ne serait plus la source de vérité (décision 4).
+3. **Colonne `actif` dans la contrainte** : `true` pour une réservation active, NULL une fois annulée, et UNIQUE(siege_id, evenement_id, actif).
+
+**Choix** : **Option 3**
+- L'annulation passe le statut à `annulee`, met `actif` à NULL et enregistre la date et le motif, en une seule requête conditionnelle (`statut <> 'annulee'`) : deux annulations simultanées ne peuvent pas réussir toutes les deux (409 pour la seconde).
+- Le spectateur garde la réservation dans « Mes réservations », avec le motif de l'organisateur.
+
+**Raison** :
+- Postgres considère deux NULL comme différents dans une contrainte unique : les réservations annulées s'accumulent sans bloquer le siège, et il ne peut toujours y avoir qu'une seule réservation active.
+- La garantie contre les doubles réservations reste dans la base (décision 6). Des tests d'intégration le vérifient : un siège annulé peut être réservé de nouveau, et de deux réservations simultanées une seule passe.
+
+**Coût** :
+- La contrainte repose sur un comportement de Postgres qui n'est pas évident à la lecture : il est expliqué en commentaire dans le schéma.
+- `actif` et `statut` doivent rester cohérents ; seul le service d'annulation les modifie.
+
+---
+
+### Décision 11 : Sections tarifaires dans la salle, prix calculé par siège (#11)
+
+**Question** : Où ranger les tarifs différents (parterre, balcon) et comment calculer le prix de chaque place ?
+
+**Options envisagées** :
+1. Tarifs par **événement** (une grille de prix par événement).
+2. Sections dans la **salle**, chaque siège rattaché à au plus une section.
+
+**Choix** : **Option 2**
+- Une table `SECTIONS` liée à la salle, et une colonne `section_id` facultative sur chaque siège : un siège ne peut pas appartenir à deux sections.
+- Le prix d'une place est celui de sa section, sinon le tarif de l'événement. Il est calculé par le backend (plan, réservations, recette du tableau de bord) : le frontend ne fait que l'afficher.
+- Les sections se remplacent en bloc (`PUT /api/salles/:id/sections`), et ne sont plus modifiables dès qu'un événement utilise la salle, comme la salle elle-même (#10).
+
+**Raison** :
+- Le découpage en parterre et balcon dépend du lieu, pas de l'événement : on le configure une fois par salle.
+- Verrouiller les sections une fois la salle utilisée évite qu'un prix change après la vente des billets.
+
+**Coût** :
+- Pas de prix différent par événement pour une même section : il faut une autre salle, ou le tarif de l'événement pour les sièges hors section.
+- Modifier la disposition d'une salle (#10) régénère les sièges, qui repartent sans section.
+
+---
+
+### Décision 12 : Rôles vérifiés côté serveur sur chaque route (#9, #33)
+
+**Question** : Comment empêcher qu'une requête directe à l'API (par exemple avec `curl`) contourne les restrictions de l'interface ?
+
+**Choix** : **Middlewares sur chaque route + vérification de propriété dans les services**
+- `authMiddleware` vérifie le JWT, `roleMiddleware('<rôle>')` refuse (403) tout autre rôle. Les deux sont déclarés route par route.
+- L'identité vient toujours du token (`organisateurId`, `spectateurId`), jamais du corps de la requête.
+- La propriété est vérifiée dans le service : un organisateur ne voit et n'annule que les réservations de ses propres événements, un spectateur n'annule que les siennes.
+- Un test automatisé (`acces-par-role.test.js`) appelle chaque route protégée avec chaque rôle et vérifie le refus.
+
+**Raison** :
+- Masquer un bouton ne protège rien : la règle doit vivre dans le serveur.
+- Un test qui parcourt toutes les routes attrape la route ajoutée sans protection.
+
+**Coût** :
+- Chaque nouvelle route doit déclarer ses middlewares et être ajoutée au test ; un oubli n'est détecté que si le test est mis à jour.
+
+---
+
+### Décision 13 : Tableau de bord des ventes rafraîchi par sondage (#13)
+
+**Question** : Le tableau de bord de l'organisateur doit-il utiliser le WebSocket de la décision 9 pour se mettre à jour en direct ?
+
+**Choix** : **Sondage toutes les 5 s pendant que l'écran est ouvert**
+- L'écran redemande `GET /api/evenements/:id/ventes` toutes les 5 secondes, et s'arrête quand on le quitte.
+
+**Raison** :
+- Les ventes dépendent de la base (réservations confirmées, annulations), pas seulement des sélections gardées en mémoire par le serveur Socket.IO.
+- Un délai de quelques secondes est acceptable pour un organisateur, contrairement à la sélection d'un siège par un spectateur.
+- Le tableau de bord a été livré avant le serveur Socket.IO, sans dépendre de lui.
+
+**Coût** :
+- Une requête toutes les 5 s par écran ouvert, même sans changement.
+- La mise à jour par WebSocket (#35) reste possible au sprint 3.
