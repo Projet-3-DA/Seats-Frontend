@@ -52,20 +52,19 @@
 
 ### Bilan (à la remise du 29 octobre)
 
-1. **Points engagés** : 37.
-2. **Points livrés** : 29. Un récit à moitié fait vaut zéro point. Onze récits ont tout leur code fusionné
-   dans `main` : #8 (3), #31 (2), #9 (3), #33 (2), #10 (3), #11 (3), #34 (2), #12 (3), #13 (3), #14 (3)
-   et #36 (2).
-3. **Vélocité réelle** : 29 points (39 au sprint 1).
-4. **Récits abandonnés** : #32 (3), #35 (2) et la liste globale des organisateurs, #19 du backlog (3),
-   soit 8 points reportés au sprint 3.
-5. **Pourquoi** : #32 et #35 dépendaient de récits fusionnés trop tard pour être finis avant la remise :
-   #32 dépend de #8 (version finale fusionnée les 25 et 26 octobre), #35 de #13 et #8. #34, qui dépendait
-   de #11 (fusionné le 26 octobre), a pu être fusionné le 28 octobre, à temps pour la remise. Sept PR ouvertes le 19 octobre ont attendu 6 à 7 jours leur revue,
-   ce qui a repoussé d'autant les récits qui en dépendaient (voir la
-   [rétrospective du sprint 2](retrospectives/sprint-2.md)). La liste des organisateurs n'avait
-   pas d'issue GitHub correspondante (l'issue #19 de GitHub est le déploiement), et donc ni
-   responsable ni PR.
+1. **Points engagés** : 42 (37 au départ, plus #101 ajouté le 26 octobre).
+2. **Points livrés** : 39. Un récit à moitié fait vaut zéro point. Quatorze récits ont tout leur code
+   fusionné dans `main` : #8 (3), #31 (2), #32 (3), #9 (3), #33 (2), #10 (3), #11 (3), #34 (2), #12 (3),
+   #13 (3), #35 (2), #14 (3), #36 (2) et #101 (5).
+3. **Vélocité réelle** : 39 points (39 au sprint 1).
+4. **Récits abandonnés** : la liste globale des organisateurs, #19 du backlog (3), reportée au sprint 3.
+5. **Pourquoi** : ce récit n'avait pas d'issue GitHub correspondante (l'issue #19 de GitHub est le
+   déploiement), donc ni responsable ni PR. Les autres récits en retard au 26 octobre ont été finis
+   avant la remise : #34 fusionné le 28 octobre, #35 le 29 octobre. Le critère de #32 (un siège non
+   confirmé redevient libre pour tout le monde) est rempli par le code de #8, fusionné les 25 et
+   26 octobre, et l'issue a été fermée le 29 octobre après vérification. Le retard venait surtout de
+   sept PR ouvertes le 19 octobre qui ont attendu 6 à 7 jours leur revue (voir la
+   [rétrospective du sprint 2](retrospectives/sprint-2.md)).
 
 ## Sprint 3 — Version finale (~5 semaines)
 

@@ -38,7 +38,7 @@ Les constats ci-dessous s'appuient sur l'historique des deux dépôts : PR fusio
 
 Ces récits totalisaient 10 points au 26 octobre. #36 est compté : son backend (backend PR #31) a été fusionné le 26 octobre, après sept jours d'attente. Vélocité du sprint 2 au 26 octobre : **27 points** (39 au sprint 1).
 
-**Mise à jour du 29 octobre (remise) :** #34 a été fusionné le 28 octobre (frontend PR #128, par Yanis). Le sprint 2 livre donc **29 points**. #32, #35 et la liste des organisateurs, soit 8 points, passent au sprint 3.
+**Mise à jour du 29 octobre (remise) :** après la rétrospective, #34 a été fusionné le 28 octobre (frontend PR #128, par Yanis) et #35 le 29 octobre (backend PR #41, frontend PR #132, par Glodie). Le critère de #32 est rempli par le code de #8, et l'issue a été fermée le 29 octobre. Avec #101 (connexion GitHub, 5 points), ajouté à l'engagement le 26 octobre, le sprint 2 livre **39 points sur 42**. Seule la liste des organisateurs (3 points) passe au sprint 3.
 
 ## Les changements décidés au sprint 1 : appliqués ?
 
