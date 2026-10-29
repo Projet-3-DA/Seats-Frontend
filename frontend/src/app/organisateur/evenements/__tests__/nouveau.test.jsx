@@ -1,5 +1,5 @@
-const mockBack = jest.fn();
-jest.mock('expo-router', () => ({ Link: ({ children }) => children, useRouter: () => ({ back: mockBack }) }));
+const mockReplace = jest.fn();
+jest.mock('expo-router', () => ({ Link: ({ children }) => children, useRouter: () => ({ replace: mockReplace }) }));
 jest.mock('expo-image-picker', () => ({ launchImageLibraryAsync: jest.fn() }));
 jest.mock('@/lib/auth-context', () => ({ useAuth: jest.fn() }));
 
@@ -87,7 +87,8 @@ describe('NouvelEvenementScreen', () => {
     await fireEvent.press(screen.getByText('Grande salle (50 pl.)'));
     await fireEvent.press(screen.getByText("Publier l'événement"));
 
-    await attendreQue(() => mockBack.mock.calls.length > 0);
+    await attendreQue(() => mockReplace.mock.calls.length > 0);
+    expect(mockReplace).toHaveBeenCalledWith('/(tabs)/organisateur');
 
     const [, options] = global.fetch.mock.calls.find(([, o]) => o?.method === 'POST');
     // L'organisateur est déduit du token par le backend : il n'est plus envoyé dans le corps.
