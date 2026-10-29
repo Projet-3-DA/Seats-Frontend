@@ -36,7 +36,9 @@ Les constats ci-dessous s'appuient sur l'historique des deux dépôts : PR fusio
 | #35 Mettre à jour les statistiques de vente en direct | 2 | Glodie | Pas de PR fusionnée. Le tableau de bord de #13 se rafraîchit déjà toutes les 5 s, il faut vérifier ce qu'il reste à faire |
 | Liste globale des organisateurs (admin), #19 du backlog | 3 | — | Pas de PR fusionnée |
 
-Ces récits totalisent 10 points et passent au sprint 3. #36 est compté : son backend (backend PR #31) a été fusionné le 26 octobre, après sept jours d'attente. Vélocité du sprint 2 : **27 points** (39 au sprint 1).
+Ces récits totalisaient 10 points au 26 octobre. #36 est compté : son backend (backend PR #31) a été fusionné le 26 octobre, après sept jours d'attente. Vélocité du sprint 2 au 26 octobre : **27 points** (39 au sprint 1).
+
+**Mise à jour du 29 octobre (remise) :** #34 a été fusionné le 28 octobre (frontend PR #128, par Yanis). Le sprint 2 livre donc **29 points**. #32, #35 et la liste des organisateurs, soit 8 points, passent au sprint 3.
 
 ## Les changements décidés au sprint 1 : appliqués ?
 
