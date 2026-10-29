@@ -183,7 +183,9 @@ export default function NouvelEvenementScreen() {
       if (!res.ok || !json.success) {
         throw new Error(json.error || "Échec de la création de l'événement.");
       }
-      router.back();
+      // replace plutôt que back : sans historique (page rechargée ou ouverte par lien), back ne mène
+      // nulle part, et le formulaire ne doit pas rester accessible par le bouton retour.
+      router.replace('/(tabs)/organisateur');
     } catch (err) {
       setApiError(err.message || "Échec de la création de l'événement.");
     } finally {
