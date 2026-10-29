@@ -1,5 +1,5 @@
 # Seats
-C'est une app web de réservation de places pour des projections de films. Un utilisateur peut créer un compte pour voir les films disponibles et réserver une place pour la projection de ce film. Un admin peut ajouter des films dans la base de données et ajouter des projections.
+Seats permet à un organisateur (troupe, ciné-club, salle communautaire) de vendre les places d'un événement sur un plan de salle interactif, et à un spectateur de réserver ses sièges en temps réel, sans risque de double réservation. Un administrateur supervise tous les événements de la plateforme.
 ## Démarrer l'application
 Seul Docker est nécessaire. Depuis un clone neuf de ce dépôt :
 
