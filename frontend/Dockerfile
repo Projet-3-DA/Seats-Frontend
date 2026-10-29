@@ -13,7 +13,10 @@ COPY . .
 ARG EXPO_PUBLIC_API_URL
 ENV EXPO_PUBLIC_API_URL=$EXPO_PUBLIC_API_URL
 # CI=1 empêche `expo export` de tenter des prompts interactifs.
-RUN CI=1 npm run build:web
+# Metro lance par défaut un worker par cœur, chacun avec sa copie du bundler : avec les 512 Mo de
+# l'offre gratuite Render, la construction s'enlisait jusqu'au délai de 45 min. Un seul worker et un
+# tas plafonné tiennent dans cette mémoire (~40 s en local, sans cache).
+RUN CI=1 NODE_OPTIONS=--max-old-space-size=384 npm run build:web -- --max-workers 1
 
 ENV PORT=3000
 EXPOSE 3000
