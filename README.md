@@ -25,9 +25,8 @@ Puis ouvrir http://localhost:5173 (l'API écoute sur http://localhost:3000/api).
 Pour la version en ligne (Render + Supabase, redéployée automatiquement à chaque fusion dans `main`), voir [Déploiement](./docs/07-deploiement.md).
 
 ### Connexion
-- **Avec GitHub** : bouton « Continuer avec GitHub » sur la page de connexion. Un nouveau compte reçoit le rôle `spectateur`.
+- **Avec GitHub, Google ou Microsoft** : boutons « Continuer avec … » sur les pages de connexion et d'inscription (rôle attribué : voir ci-dessous).
 - **Comptes de démonstration** (courriel + mot de passe), un par rôle, ci-dessous.
-
 - **Inscription** (courriel + mot de passe) : on y choisit le rôle spectateur ou organisateur.
 
 Un compte créé avec GitHub, Google ou Microsoft depuis la page **de connexion** reçoit le rôle `spectateur`. Depuis la page **d'inscription**, il reçoit le rôle sélectionné (spectateur ou organisateur). Un compte existant garde toujours son rôle.
@@ -51,7 +50,7 @@ cd frontend && npm install && npm test
 ```
 Les tests du backend (dépôt Seats-Backend) se lancent avec `npm test` dans son dossier `backend/`.
 
-### Éléments simulés dans cette version alpha
+### Éléments simulés dans cette version bêta
 - Les **salles, événements et réservations ci-dessus** sont des données de démonstration.
 - Sans affiche fournie, un événement reçoit une **image aléatoire de démonstration** (picsum.photos).
 - Le **téléversement d'un fichier** d'affiche demande un stockage Supabase non configuré dans Docker : utiliser un lien d'image.
