@@ -116,3 +116,14 @@
   - Junior a aussi corrigé la redirection après la création d'un événement : l'organisateur revient sur « Mes événements » (PR #129), ajouté le lint à la CI du backend (backend PR #40) et retiré du README la description d'origine (films et projections), signalée à la revue du sprint 1.
   - Glodie a fermé #32 et #35 sur le tableau.
 - **Décisions** : aucune.
+
+# Journal de sprint 3
+
+## Lundi 2 novembre
+- **Rencontre** : en ligne.
+- **Présences** : Glodie, Delavie, Yanis, Junior.
+- **Avancé** :
+  - Début du sprint 3.
+  - Choix des premières issues, avant la décision ci-dessous : #15, #18 et #20 pour Delavie ; #16, #17, #21 et #22 pour Glodie.
+- **Décisions** :
+  - Rappel de la règle d'une issue à la fois, pour éviter d'accumuler du travail à moitié fait et parce que les issues restantes dépendent de celles choisies.
