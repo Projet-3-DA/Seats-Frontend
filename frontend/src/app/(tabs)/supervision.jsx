@@ -10,6 +10,12 @@ import { useTheme } from '@/hooks/use-theme';
 import { useAuth } from '@/lib/auth-context';
 import { formatDateHeure } from '@/utils/dates';
 
+// Deux vues : tous les événements (#36) ou tous les organisateurs inscrits (#19 du backlog).
+export const VUES = [
+  { cle: 'evenements', label: 'Événements', route: 'evenements' },
+  { cle: 'organisateurs', label: 'Organisateurs', route: 'organisateurs' },
+];
+
 export const FILTRES = [
   { cle: 'tous', label: 'Tous' },
   { cle: 'a_venir', label: 'À venir' },
@@ -78,12 +84,90 @@ function EvenementCard({ item, theme }) {
   );
 }
 
-// Supervision (#36) : l'administrateur voit tous les événements de la plateforme, passés compris,
-// quel que soit l'organisateur, et ouvre le détail de chacun.
+function OrganisateurCard({ item, theme }) {
+  const nom = `${item.prenom} ${item.nom}`;
+  return (
+    <Link href={`/admin/organisateurs/${item.id}`} asChild>
+      <Pressable
+        accessibilityLabel={`Voir le détail de ${nom}`}
+        style={StyleSheet.flatten([
+          styles.card,
+          { backgroundColor: theme.backgroundElement, borderColor: theme.border },
+        ])}
+      >
+        <View style={styles.cardContenu}>
+          <ThemedText type="smallBold" style={styles.cardTitle}>
+            {nom}
+          </ThemedText>
+          <View style={styles.metaRow}>
+            <Feather name="mail" size={14} color={theme.textSecondary} />
+            <ThemedText type="small" themeColor="textSecondary">
+              {item.email}
+            </ThemedText>
+          </View>
+          <View style={styles.metaRow}>
+            <Feather name="calendar" size={14} color={theme.textSecondary} />
+            <ThemedText type="small" themeColor="textSecondary">
+              {`${item.nombreEvenements} événement(s) · ${item.nombreSalles} salle(s)`}
+            </ThemedText>
+          </View>
+        </View>
+      </Pressable>
+    </Link>
+  );
+}
+
+// Pastilles de choix, pour la vue comme pour le filtre des événements.
+function Pastilles({ options, valeur, onChange, theme }) {
+  return (
+    <View style={styles.filtres}>
+      {options.map(({ cle, label }) => {
+        const actif = cle === valeur;
+        return (
+          <Pressable
+            key={cle}
+            accessibilityRole="button"
+            accessibilityState={{ selected: actif }}
+            onPress={() => onChange(cle)}
+            style={[
+              styles.filtre,
+              { borderColor: actif ? theme.primary : theme.border },
+              actif && { backgroundColor: theme.primary },
+            ]}
+          >
+            <ThemedText type="small" style={actif ? styles.filtreActifTexte : undefined}>
+              {label}
+            </ThemedText>
+          </Pressable>
+        );
+      })}
+    </View>
+  );
+}
+
+const TEXTES = {
+  evenements: {
+    titre: 'Tous les événements',
+    chargement: 'Les événements de la plateforme, tous organisateurs confondus.',
+    compte: (n) => `${n} événement(s) sur la plateforme, tous organisateurs confondus.`,
+    erreur: 'Échec du chargement des événements.',
+  },
+  organisateurs: {
+    titre: 'Tous les organisateurs',
+    chargement: 'Les organisateurs inscrits sur la plateforme.',
+    compte: (n) => `${n} organisateur(s) inscrit(s) sur la plateforme.`,
+    erreur: 'Échec du chargement des organisateurs.',
+  },
+};
+
+// Supervision : l'administrateur voit tous les événements de la plateforme, passés compris, quel que
+// soit l'organisateur (#36), ou tous les organisateurs inscrits avec leur nombre d'événements (#19 du
+// backlog), et ouvre le détail de chacun.
 export default function SupervisionScreen() {
   const theme = useTheme();
   const { token } = useAuth();
-  const [evenements, setEvenements] = useState([]);
+  const [vue, setVue] = useState('evenements');
+  const [donnees, setDonnees] = useState({ evenements: [], organisateurs: [] });
   const [filtre, setFiltre] = useState('tous');
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -95,13 +179,14 @@ export default function SupervisionScreen() {
       let cancelled = false;
       async function load() {
         setError('');
+        setLoading(true);
         try {
-          const res = await fetch(`${API_URL}/admin/evenements`, { headers: { Authorization: `Bearer ${token}` } });
+          const res = await fetch(`${API_URL}/admin/${vue}`, { headers: { Authorization: `Bearer ${token}` } });
           const json = await res.json();
-          if (!res.ok || !json.success) throw new Error(json.error || 'Échec du chargement des événements.');
-          if (!cancelled) setEvenements(json.data);
+          if (!res.ok || !json.success) throw new Error(json.error || TEXTES[vue].erreur);
+          if (!cancelled) setDonnees((d) => ({ ...d, [vue]: json.data }));
         } catch (err) {
-          if (!cancelled) setError(err.message || 'Échec du chargement des événements.');
+          if (!cancelled) setError(err.message || TEXTES[vue].erreur);
         } finally {
           if (!cancelled) setLoading(false);
         }
@@ -110,48 +195,33 @@ export default function SupervisionScreen() {
       return () => {
         cancelled = true;
       };
-    }, [token]),
+    }, [token, vue]),
   );
 
-  const visibles = evenements.filter(garder(filtre));
+  const { evenements, organisateurs } = donnees;
+  const textes = TEXTES[vue];
+  const liste = vue === 'evenements' ? evenements : organisateurs;
+  const visibles = vue === 'evenements' ? evenements.filter(garder(filtre)) : organisateurs;
 
   return (
     <FlatList
       data={visibles}
-      keyExtractor={(item) => String(item.id)}
-      renderItem={({ item }) => <EvenementCard item={item} theme={theme} />}
+      keyExtractor={(item) => `${vue}-${item.id}`}
+      renderItem={({ item }) =>
+        vue === 'evenements' ? <EvenementCard item={item} theme={theme} /> : <OrganisateurCard item={item} theme={theme} />
+      }
       contentContainerStyle={styles.list}
       style={{ backgroundColor: theme.background }}
       ListHeaderComponent={
         <View style={styles.header}>
+          <Pastilles options={VUES} valeur={vue} onChange={setVue} theme={theme} />
           <View style={styles.headerText}>
-            <ThemedText style={styles.heading}>Tous les événements</ThemedText>
+            <ThemedText style={styles.heading}>{textes.titre}</ThemedText>
             <ThemedText themeColor="textSecondary">
-              {loading ? 'Les événements de la plateforme, tous organisateurs confondus.' : `${evenements.length} événement(s) sur la plateforme, tous organisateurs confondus.`}
+              {loading ? textes.chargement : textes.compte(liste.length)}
             </ThemedText>
           </View>
-          <View style={styles.filtres}>
-            {FILTRES.map(({ cle, label }) => {
-              const actif = cle === filtre;
-              return (
-                <Pressable
-                  key={cle}
-                  accessibilityRole="button"
-                  accessibilityState={{ selected: actif }}
-                  onPress={() => setFiltre(cle)}
-                  style={[
-                    styles.filtre,
-                    { borderColor: actif ? theme.primary : theme.border },
-                    actif && { backgroundColor: theme.primary },
-                  ]}
-                >
-                  <ThemedText type="small" style={actif ? styles.filtreActifTexte : undefined}>
-                    {label}
-                  </ThemedText>
-                </Pressable>
-              );
-            })}
-          </View>
+          {vue === 'evenements' && <Pastilles options={FILTRES} valeur={filtre} onChange={setFiltre} theme={theme} />}
           {loading && <ActivityIndicator style={styles.spinner} color={theme.primary} />}
           {error.length > 0 && (
             <ThemedText type="small" style={styles.error}>
@@ -163,7 +233,11 @@ export default function SupervisionScreen() {
       ListEmptyComponent={
         !loading && !error ? (
           <ThemedText themeColor="textSecondary" style={styles.empty}>
-            {evenements.length === 0 ? "Aucun événement n'a encore été créé." : 'Aucun événement pour ce filtre.'}
+            {vue === 'organisateurs'
+              ? "Aucun organisateur n'est encore inscrit."
+              : evenements.length === 0
+                ? "Aucun événement n'a encore été créé."
+                : 'Aucun événement pour ce filtre.'}
           </ThemedText>
         ) : null
       }

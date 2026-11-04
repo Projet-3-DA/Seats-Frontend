@@ -1,5 +1,5 @@
 import { Feather } from '@expo/vector-icons';
-import { Stack, useLocalSearchParams } from 'expo-router';
+import { Link, Stack, useLocalSearchParams } from 'expo-router';
 import { useEffect, useState } from 'react';
 import { ActivityIndicator, ScrollView, StyleSheet, View } from 'react-native';
 
@@ -120,7 +120,13 @@ export default function DetailEvenementAdminScreen() {
             {salle.nom}
           </Info>
           <Info icone="user" theme={theme}>
-            {`Organisé par ${organisateur.prenom} ${organisateur.nom} (${organisateur.email})`}
+            {'Organisé par '}
+            <Link href={`/admin/organisateurs/${organisateur.id}`}>
+              <ThemedText type="link" style={{ color: theme.primary }}>
+                {`${organisateur.prenom} ${organisateur.nom}`}
+              </ThemedText>
+            </Link>
+            {` (${organisateur.email})`}
           </Info>
           <Info icone="tag" theme={theme}>
             {formatTarif(evenement.tarif)}

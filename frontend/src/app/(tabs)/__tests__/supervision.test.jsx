@@ -137,3 +137,70 @@ describe('SupervisionScreen (#36)', () => {
     await attendreQue(() => screen.queryByText('Accès interdit. Permissions insuffisantes.') !== null);
   });
 });
+
+const ORGANISATEURS = [
+  { id: 7, prenom: 'Ana', nom: 'Roy', email: 'ana@test.ca', createdAt: '2026-09-01T12:00:00Z', nombreEvenements: 3, nombreSalles: 2 },
+  { id: 8, prenom: 'Léo', nom: 'Gagnon', email: 'leo@test.ca', createdAt: '2026-09-02T12:00:00Z', nombreEvenements: 0, nombreSalles: 0 },
+];
+
+describe('SupervisionScreen : organisateurs (#19 du backlog)', () => {
+  const fetchOriginal = global.fetch;
+
+  beforeEach(() => {
+    useAuth.mockReturnValue({ token: 'jeton-admin', user: { id: 1, role: 'administrateur' } });
+  });
+  afterEach(() => {
+    global.fetch = fetchOriginal;
+    jest.clearAllMocks();
+  });
+
+  it("passe à la liste des organisateurs, chargée avec le jeton de l'administrateur", async () => {
+    global.fetch = jest
+      .fn()
+      .mockResolvedValueOnce(reponse({ success: true, data: EVENEMENTS }))
+      .mockResolvedValueOnce(reponse({ success: true, data: ORGANISATEURS }));
+
+    await render(<SupervisionScreen />);
+    await attendreQue(() => screen.queryByText('Festival à venir') !== null);
+
+    await act(async () => fireEvent.press(screen.getByText('Organisateurs')));
+    await attendreQue(() => screen.queryByText('ana@test.ca') !== null);
+
+    expect(global.fetch).toHaveBeenLastCalledWith(expect.stringContaining('/admin/organisateurs'), {
+      headers: { Authorization: 'Bearer jeton-admin' },
+    });
+    expect(screen.getByText('Tous les organisateurs')).toBeTruthy();
+    expect(screen.getByText('2 organisateur(s) inscrit(s) sur la plateforme.')).toBeTruthy();
+  });
+
+  it("affiche le nom, le courriel et le nombre d'événements de chaque organisateur, sans les filtres", async () => {
+    global.fetch = jest
+      .fn()
+      .mockResolvedValueOnce(reponse({ success: true, data: EVENEMENTS }))
+      .mockResolvedValueOnce(reponse({ success: true, data: ORGANISATEURS }));
+
+    await render(<SupervisionScreen />);
+    await attendreQue(() => screen.queryByText('Festival à venir') !== null);
+    await act(async () => fireEvent.press(screen.getByText('Organisateurs')));
+    await attendreQue(() => screen.queryByText('ana@test.ca') !== null);
+
+    expect(screen.getByText('Ana Roy')).toBeTruthy();
+    expect(screen.getByText('3 événement(s) · 2 salle(s)')).toBeTruthy();
+    expect(screen.getByText('leo@test.ca')).toBeTruthy();
+    expect(screen.getByText('0 événement(s) · 0 salle(s)')).toBeTruthy();
+    expect(screen.getByLabelText('Voir le détail de Ana Roy')).toBeTruthy();
+    expect(screen.queryByText('Terminés')).toBeNull();
+  });
+
+  it("affiche un message quand aucun organisateur n'est inscrit", async () => {
+    global.fetch = jest
+      .fn()
+      .mockResolvedValueOnce(reponse({ success: true, data: EVENEMENTS }))
+      .mockResolvedValueOnce(reponse({ success: true, data: [] }));
+
+    await render(<SupervisionScreen />);
+    await attendreQue(() => screen.queryByText('Festival à venir') !== null);
+    await act(async () => fireEvent.press(screen.getByText('Organisateurs')));
+    await attendreQue(() => screen.queryByText("Aucun organisateur n'est encore inscrit.") !== null);
+  });
+});
