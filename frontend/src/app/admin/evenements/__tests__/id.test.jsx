@@ -1,4 +1,8 @@
-jest.mock('expo-router', () => ({ Stack: { Screen: () => null }, useLocalSearchParams: () => ({ id: '1' }) }));
+jest.mock('expo-router', () => ({
+  Link: ({ children }) => children,
+  Stack: { Screen: () => null },
+  useLocalSearchParams: () => ({ id: '1' }),
+}));
 jest.mock('@/lib/auth-context', () => ({ useAuth: jest.fn() }));
 
 import { render, screen, act } from '@testing-library/react-native';
