@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { useLocalSearchParams } from 'expo-router';
-import { ActivityIndicator, Pressable, StyleSheet, View } from 'react-native';
+import { ActivityIndicator, Pressable, ScrollView, StyleSheet, View } from 'react-native';
 
 import { LegendeSections, styleSection } from '@/components/legende-sections';
 import { ThemedText } from '@/components/themed-text';
@@ -195,11 +195,17 @@ export default function EventSeatMapScreen() {
     return styles.dispo;
   }
 
+  // Le plan d'une grande salle dépasse l'écran : la page défile verticalement, et la grille seule
+  // horizontalement quand elle est plus large que l'écran.
   return (
-    <ThemedView style={styles.container}>
+    <ScrollView
+      style={{ backgroundColor: theme.background }}
+      contentContainerStyle={styles.container}
+      showsVerticalScrollIndicator
+    >
       <ThemedText type="title">{plan.salle.nom}</ThemedText>
 
-      <View style={styles.grille}>
+      <ScrollView horizontal showsHorizontalScrollIndicator contentContainerStyle={styles.grille}>
         {numerosRangees.map((rangee) => (
           <View key={rangee} style={styles.rangee}>
             <ThemedText type="small" themeColor="textSecondary" style={styles.lettreRangee}>
@@ -223,7 +229,7 @@ export default function EventSeatMapScreen() {
             </ThemedText>
           </View>
         ))}
-      </View>
+      </ScrollView>
 
       <View style={styles.legende}>
         <View style={styles.legendeItem}>
@@ -328,15 +334,15 @@ export default function EventSeatMapScreen() {
           </ThemedText>
         </Pressable>
       )}
-    </ThemedView>
+    </ScrollView>
   );
 }
 
 const styles = StyleSheet.create({
   ligneRecap: { flexDirection: 'row', justifyContent: 'space-between', gap: 12 },
-  container: { flex: 1, padding: Spacing.four, gap: Spacing.four },
+  container: { flexGrow: 1, padding: Spacing.four, gap: Spacing.four },
   center: { flex: 1, alignItems: 'center', justifyContent: 'center' },
-  grille: { gap: Spacing.two },
+  grille: { flexDirection: 'column', gap: Spacing.two },
   rangee: { flexDirection: 'row', alignItems: 'center', gap: Spacing.two },
   lettreRangee: { width: 16, textAlign: 'center' },
   siege: { width: 32, height: 32, borderRadius: 6, alignItems: 'center', justifyContent: 'center' },
