@@ -13,6 +13,12 @@ export function parseDateHeure(dateTexte, heureTexte) {
   return inchangee ? date : null;
 }
 
+// Durée restante en m:ss, arrondie à la seconde supérieure pour n'afficher 0:00 qu'une fois le délai écoulé.
+export function formatDelai(ms) {
+  const secondes = Math.max(0, Math.ceil(ms / 1000));
+  return `${Math.floor(secondes / 60)}:${String(secondes % 60).padStart(2, '0')}`;
+}
+
 export function formatDateHeure(iso) {
   const d = new Date(iso);
   const date = d.toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' });

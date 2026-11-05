@@ -307,6 +307,101 @@ describe('EventSeatMapScreen', () => {
   });
 });
 
+describe('EventSeatMapScreen : compte à rebours de la sélection (#37)', () => {
+  const fetchOriginal = global.fetch;
+  const messageDelai = 'Le délai de sélection est écoulé : veuillez resélectionner vos sièges.';
+
+  async function ouvrirPlan(planAffiche = plan) {
+    useAuth.mockReturnValue({ token: 'jeton', user: { id: 5, role: 'spectateur' } });
+    global.fetch = jest.fn().mockResolvedValue(reponse({ success: true, data: planAffiche }));
+    await render(<EventSeatMapScreen />);
+    await attendreQue(() => screen.queryByText('Salle A') !== null);
+  }
+
+  afterEach(() => {
+    global.fetch = fetchOriginal;
+    globalThis.reponseSelection = undefined;
+    jest.clearAllMocks();
+  });
+
+  it('affiche le temps restant, le fait défiler, et le retire avec la sélection', async () => {
+    await ouvrirPlan();
+    expect(screen.queryByText(/^Temps restant/)).toBeNull();
+
+    globalThis.reponseSelection = { ok: true, delaiMs: 3000 };
+    await fireEvent.press(screen.getByTestId('siege-101'));
+    expect(screen.getByText('Temps restant pour confirmer : 0:03')).toBeTruthy();
+
+    await attendreQue(() => screen.queryByText('Temps restant pour confirmer : 0:02') !== null);
+
+    await fireEvent.press(screen.getByTestId('siege-101'));
+    expect(screen.queryByText(/^Temps restant/)).toBeNull();
+  });
+
+  it('reste affiché dans le récapitulatif de confirmation', async () => {
+    await ouvrirPlan();
+    globalThis.reponseSelection = { ok: true, delaiMs: 60_000 };
+    await fireEvent.press(screen.getByTestId('siege-101'));
+    await fireEvent.press(screen.getByText('Réserver (1)'));
+
+    expect(screen.getByText('Confirmer')).toBeTruthy();
+    expect(screen.getByText('Temps restant pour confirmer : 1:00')).toBeTruthy();
+  });
+
+  it('suit le siège qui expire en premier', async () => {
+    await ouvrirPlan({ ...plan, sieges: [plan.sieges[0], { id: 104, rangee: 1, colonne: 4, etat: 'libre' }] });
+
+    globalThis.reponseSelection = { ok: true, delaiMs: 30_000 };
+    await fireEvent.press(screen.getByTestId('siege-101'));
+    globalThis.reponseSelection = { ok: true, delaiMs: 60_000 };
+    await fireEvent.press(screen.getByTestId('siege-104'));
+    expect(screen.getByText('Temps restant pour confirmer : 0:30')).toBeTruthy();
+
+    await fireEvent.press(screen.getByTestId('siege-101'));
+    expect(screen.getByText('Temps restant pour confirmer : 1:00')).toBeTruthy();
+  });
+
+  it("avertit le spectateur quand son délai expire, et retire le message s'il resélectionne", async () => {
+    await ouvrirPlan();
+    globalThis.reponseSelection = { ok: true, delaiMs: 60_000 };
+    await fireEvent.press(screen.getByTestId('siege-101'));
+
+    await act(async () => {
+      globalThis.socketTest.recevoir('selection:expiree', { siegeId: 101 });
+      globalThis.socketTest.recevoir('siege:libere', { siegeId: 101 });
+    });
+
+    expect(screen.getByText(messageDelai)).toBeTruthy();
+    expect(screen.queryByText(/^Temps restant/)).toBeNull();
+    expect(screen.getByText('Réserver')).toBeTruthy();
+
+    await fireEvent.press(screen.getByTestId('siege-101'));
+    expect(screen.queryByText(messageDelai)).toBeNull();
+    expect(screen.getByText('Temps restant pour confirmer : 1:00')).toBeTruthy();
+  });
+
+  it('exige de tout resélectionner si le serveur refuse la confirmation (410)', async () => {
+    await ouvrirPlan({ ...plan, sieges: [plan.sieges[0], { id: 104, rangee: 1, colonne: 4, etat: 'libre' }] });
+    await fireEvent.press(screen.getByTestId('siege-101'));
+    await fireEvent.press(screen.getByTestId('siege-104'));
+    await fireEvent.press(screen.getByText('Réserver (2)'));
+
+    global.fetch = jest
+      .fn()
+      .mockResolvedValueOnce({ ok: false, status: 410, json: async () => ({ success: false, error: messageDelai }) })
+      .mockResolvedValueOnce(
+        reponse({ success: true, data: { ...plan, sieges: [plan.sieges[0], { id: 104, rangee: 1, colonne: 4, etat: 'libre' }] } }),
+      );
+    await fireEvent.press(screen.getByText('Confirmer'));
+    await attendreQue(() => screen.queryByText(messageDelai) !== null);
+
+    expect(screen.getByText('Réserver')).toBeTruthy();
+    expect(screen.queryByText('Confirmer')).toBeNull();
+    expect(globalThis.socketTest.socket.emit).toHaveBeenCalledWith('siege:deselectionner', { evenementId: 1, siegeId: 101 });
+    expect(globalThis.socketTest.socket.emit).toHaveBeenCalledWith('siege:deselectionner', { evenementId: 1, siegeId: 104 });
+  });
+});
+
 describe('EventSeatMapScreen : prix par section dans le récapitulatif (#11)', () => {
   const fetchOriginal = global.fetch;
   afterEach(() => {

@@ -1,4 +1,18 @@
-import { formatDateHeure, parseDateHeure } from './dates';
+import { formatDateHeure, formatDelai, parseDateHeure } from './dates';
+
+describe('formatDelai (#37)', () => {
+  it.each([
+    [60_000, '1:00'],
+    [59_001, '1:00'],
+    [59_000, '0:59'],
+    [5_000, '0:05'],
+    [1, '0:01'],
+    [0, '0:00'],
+    [-3_000, '0:00'],
+  ])('%d ms donne %s', (ms, attendu) => {
+    expect(formatDelai(ms)).toBe(attendu);
+  });
+});
 
 describe('parseDateHeure', () => {
   it.each([
