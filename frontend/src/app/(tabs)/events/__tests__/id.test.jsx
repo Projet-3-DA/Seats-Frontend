@@ -307,6 +307,41 @@ describe('EventSeatMapScreen', () => {
   });
 });
 
+describe('EventSeatMapScreen : expiration pendant la confirmation (#37)', () => {
+  const fetchOriginal = global.fetch;
+
+  afterEach(() => {
+    global.fetch = fetchOriginal;
+    jest.clearAllMocks();
+  });
+
+  it("affiche un message clair si le délai expire pendant la confirmation, sans tout réinitialiser", async () => {
+    useAuth.mockReturnValue({ token: 'jeton', user: { id: 5, role: 'spectateur' } });
+    const planDeuxLibres = {
+      ...plan,
+      sieges: [plan.sieges[0], { id: 104, rangee: 1, colonne: 4, etat: 'libre' }, plan.sieges[1]],
+    };
+    global.fetch = jest.fn().mockResolvedValue(reponse({ success: true, data: planDeuxLibres }));
+
+    await render(<EventSeatMapScreen />);
+    await attendreQue(() => screen.queryByText('Salle A') !== null);
+    await fireEvent.press(screen.getByTestId('siege-101'));
+    await fireEvent.press(screen.getByTestId('siege-104'));
+    await fireEvent.press(screen.getByText('Réserver (2)'));
+    expect(screen.getByText('Confirmer votre réservation')).toBeTruthy();
+
+    // Seul le 101 expire : le 104 reste sélectionné, le récapitulatif reste ouvert (#37).
+    await act(async () => globalThis.socketTest.recevoir('siege:libere', { siegeId: 101 }));
+
+    expect(
+      screen.getByText('Le délai de sélection a expiré pour un siège : sélectionnez-le à nouveau.'),
+    ).toBeTruthy();
+    expect(screen.getByText('Confirmer votre réservation')).toBeTruthy();
+    expect(screen.getByText('Rangée A, siège 4')).toBeTruthy();
+    expect(screen.queryByText('Rangée A, siège 1')).toBeNull();
+  });
+});
+
 describe('EventSeatMapScreen : prix par section dans le récapitulatif (#11)', () => {
   const fetchOriginal = global.fetch;
   afterEach(() => {

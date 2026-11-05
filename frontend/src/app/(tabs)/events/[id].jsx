@@ -80,10 +80,15 @@ export default function EventSeatMapScreen() {
     socket.on('connect', () => socket.emit('plan:rejoindre', evenementId));
     socket.on('plan:selections', ({ siegeIds }) => setSelectionsAutres(new Set(siegeIds)));
     socket.on('siege:selectionne', ({ siegeId }) => setSelectionsAutres((p) => new Set(p).add(siegeId)));
-    // Libéré par l'autre, ou délai d'une minute écoulé (y compris pour notre propre sélection).
+    // Libéré par l'autre, ou délai d'une minute écoulé (y compris pour notre propre sélection) : si
+    // c'était un des miens, le spectateur doit comprendre pourquoi et le resélectionner (#37).
     socket.on('siege:libere', ({ siegeId }) => {
       setSelectionsAutres((p) => retirer(p, [siegeId]));
-      setSelection((p) => retirer(p, [siegeId]));
+      setSelection((p) => {
+        if (!p.has(siegeId)) return p;
+        setErreurReservation('Le délai de sélection a expiré pour un siège : sélectionnez-le à nouveau.');
+        return retirer(p, [siegeId]);
+      });
     });
     socket.on('sieges:reserves', ({ siegeIds }) => {
       setSelectionsAutres((p) => retirer(p, siegeIds));
