@@ -204,3 +204,72 @@ describe('SupervisionScreen : organisateurs (#19 du backlog)', () => {
     await attendreQue(() => screen.queryByText("Aucun organisateur n'est encore inscrit.") !== null);
   });
 });
+
+const COMPTES = [
+  { id: 5, prenom: 'Sam', nom: 'Spectateur', email: 'sam@test.ca', role: 'spectateur', statut: 'actif' },
+  {
+    id: 7,
+    prenom: 'Ana',
+    nom: 'Roy',
+    email: 'ana@test.ca',
+    role: 'organisateur',
+    statut: 'suspendu',
+    raisonSuspension: 'Abus signalé',
+    suspenduLe: '2026-11-05T12:00:00Z',
+  },
+];
+
+describe('SupervisionScreen : comptes (#20)', () => {
+  const fetchOriginal = global.fetch;
+
+  beforeEach(() => {
+    useAuth.mockReturnValue({ token: 'jeton-admin', user: { id: 1, role: 'administrateur' } });
+  });
+  afterEach(() => {
+    global.fetch = fetchOriginal;
+    jest.clearAllMocks();
+  });
+
+  async function ouvrirComptes(fetchMock) {
+    global.fetch = fetchMock;
+    await render(<SupervisionScreen />);
+    await attendreQue(() => screen.queryByText('Festival à venir') !== null);
+    await act(async () => fireEvent.press(screen.getByText('Comptes')));
+    await attendreQue(() => screen.queryByText('sam@test.ca') !== null);
+  }
+
+  it('liste les comptes avec leur statut, chargés avec le jeton de l’administrateur', async () => {
+    await ouvrirComptes(
+      jest
+        .fn()
+        .mockResolvedValueOnce(reponse({ success: true, data: EVENEMENTS }))
+        .mockResolvedValueOnce(reponse({ success: true, data: COMPTES })),
+    );
+
+    expect(global.fetch).toHaveBeenLastCalledWith(expect.stringContaining('/admin/comptes'), {
+      headers: { Authorization: 'Bearer jeton-admin' },
+    });
+    expect(screen.getByText('Actif')).toBeTruthy();
+    expect(screen.getByText('Suspendu')).toBeTruthy();
+    expect(screen.getByText('Raison : Abus signalé')).toBeTruthy();
+    expect(screen.queryByText('Terminés')).toBeNull();
+  });
+
+  it('met à jour la carte après une suspension', async () => {
+    await ouvrirComptes(
+      jest
+        .fn()
+        .mockResolvedValueOnce(reponse({ success: true, data: EVENEMENTS }))
+        .mockResolvedValueOnce(reponse({ success: true, data: COMPTES }))
+        .mockResolvedValueOnce(
+          reponse({ success: true, data: { ...COMPTES[0], statut: 'suspendu', raisonSuspension: null, suspenduLe: null } }),
+        ),
+    );
+
+    await act(async () => fireEvent.press(screen.getByText('Suspendre le compte')));
+    await act(async () => fireEvent.press(screen.getByText('Confirmer la suspension')));
+    await attendreQue(() => screen.queryAllByText('Suspendu').length === 2);
+
+    expect(screen.getAllByText('Réactiver le compte')).toHaveLength(2);
+  });
+});
