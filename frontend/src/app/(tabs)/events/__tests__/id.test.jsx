@@ -5,7 +5,7 @@ jest.mock('socket.io-client', () => {
   const ecouteurs = {};
   const socket = {
     on: (evt, fn) => (ecouteurs[evt] = fn),
-    emit: jest.fn((evt, data, ack) => ack?.(globalThis.reponseSelection ?? { ok: true })),
+    emit: jest.fn((evt, data, ack) => ack?.(globalThis.reponseSelection ?? { ok: true, delaiMs: 60_000 })),
     disconnect: jest.fn(),
   };
   globalThis.socketTest = { socket, recevoir: (evt, data) => ecouteurs[evt]?.(data) };
@@ -304,6 +304,72 @@ describe('EventSeatMapScreen', () => {
     expect(screen.getByText("Ce siège est en cours de sélection par quelqu'un d'autre.")).toBeTruthy();
     expect(screen.queryByText('Réserver (1)')).toBeNull();
     globalThis.reponseSelection = undefined;
+  });
+});
+
+describe('EventSeatMapScreen : compte à rebours et expiration pendant la confirmation (#37)', () => {
+  const fetchOriginal = global.fetch;
+
+  afterEach(() => {
+    global.fetch = fetchOriginal;
+    jest.clearAllMocks();
+    jest.useRealTimers();
+  });
+
+  it('affiche le temps restant dès qu’un siège est sélectionné', async () => {
+    useAuth.mockReturnValue({ token: 'jeton', user: { id: 5, role: 'spectateur' } });
+    global.fetch = jest.fn().mockResolvedValue(reponse({ success: true, data: plan }));
+
+    await render(<EventSeatMapScreen />);
+    await attendreQue(() => screen.queryByText('Salle A') !== null);
+
+    expect(screen.queryByText(/Temps restant pour confirmer/)).toBeNull();
+    await fireEvent.press(screen.getByTestId('siege-101'));
+
+    await attendreQue(() => screen.queryByText('Temps restant pour confirmer : 60s') !== null);
+  });
+
+  it('fait diminuer le compte à rebours chaque seconde', async () => {
+    useAuth.mockReturnValue({ token: 'jeton', user: { id: 5, role: 'spectateur' } });
+    global.fetch = jest.fn().mockResolvedValue(reponse({ success: true, data: plan }));
+
+    await render(<EventSeatMapScreen />);
+    await attendreQue(() => screen.queryByText('Salle A') !== null);
+    await fireEvent.press(screen.getByTestId('siege-101'));
+    await attendreQue(() => screen.queryByText('Temps restant pour confirmer : 60s') !== null);
+
+    await act(async () => {
+      jest.useFakeTimers({ advanceTimers: true });
+      jest.advanceTimersByTime(5000);
+    });
+
+    await attendreQue(() => screen.queryByText('Temps restant pour confirmer : 55s') !== null);
+  });
+
+  it("affiche un message clair si le délai expire pendant la confirmation, sans tout réinitialiser", async () => {
+    useAuth.mockReturnValue({ token: 'jeton', user: { id: 5, role: 'spectateur' } });
+    const planDeuxLibres = {
+      ...plan,
+      sieges: [plan.sieges[0], { id: 104, rangee: 1, colonne: 4, etat: 'libre' }, plan.sieges[1]],
+    };
+    global.fetch = jest.fn().mockResolvedValue(reponse({ success: true, data: planDeuxLibres }));
+
+    await render(<EventSeatMapScreen />);
+    await attendreQue(() => screen.queryByText('Salle A') !== null);
+    await fireEvent.press(screen.getByTestId('siege-101'));
+    await fireEvent.press(screen.getByTestId('siege-104'));
+    await fireEvent.press(screen.getByText('Réserver (2)'));
+    expect(screen.getByText('Confirmer votre réservation')).toBeTruthy();
+
+    // Seul le 101 expire : le 104 reste sélectionné, le récapitulatif reste ouvert (#37).
+    await act(async () => globalThis.socketTest.recevoir('siege:libere', { siegeId: 101 }));
+
+    expect(
+      screen.getByText('Le délai de sélection a expiré pour un siège : sélectionnez-le à nouveau.'),
+    ).toBeTruthy();
+    expect(screen.getByText('Confirmer votre réservation')).toBeTruthy();
+    expect(screen.getByText('Rangée A, siège 4')).toBeTruthy();
+    expect(screen.queryByText('Rangée A, siège 1')).toBeNull();
   });
 });
 
