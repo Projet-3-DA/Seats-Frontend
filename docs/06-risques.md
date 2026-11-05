@@ -39,7 +39,7 @@ Aucun risque n'a disparu. Le risque 7 est résolu, mais reste suivi jusqu'à l'�
 - **Ce qui s'est produit (sprint 2)** : 39 points livrés sur 42 engagés (37, plus #101 ajouté le 26 octobre). Le risque s'est encore manifesté en fin de sprint :
   - Sept PR ouvertes le 19 octobre ont attendu 6 à 7 jours leur revue, puis ont été fusionnées les 25 et 26 octobre, avec des conflits à résoudre.
   - #34 et #35 n'ont été fusionnés que les 28 et 29 octobre, la veille et le jour de la remise.
-  - Seule la liste des organisateurs (3 points) est reportée : elle n'avait pas d'issue GitHub, donc pas de responsable.
+  - Seule la liste des organisateurs (3 points) est reportée : son issue GitHub, la #15, n'a eu de responsable que le 29 octobre au soir, jour de la remise, et son numéro n'est pas celui du backlog (#19).
 - **Ajustement pour le sprint 3** : règle de protection de `main` avec approbation obligatoire, et relance au début de chaque bloc des PR qui attendent depuis plus de 24 h (voir la [rétrospective du sprint 2](retrospectives/sprint-2.md)). Vérifier en début de sprint que chaque récit engagé a son issue GitHub et un responsable.
 
 # Risque 3 - Mécanisme de concurrence mal implémenté, doubles réservations possibles
