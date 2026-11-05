@@ -94,7 +94,7 @@ indique un responsable proposé, à confirmer à la prochaine mêlée.
 | [#18](../../../issues/18) | Resynchroniser mon affichage après une coupure de connexion | 3 | Must | Junior | #17 |
 | [#37](../../../issues/37) | Afficher le compte à rebours et gérer l'expiration | 2 | Must | Junior | |
 | [#40](../../../issues/40) | Indicateur de connexion perdue/rétablie + blocage des actions | 2 | Must | Junior* | |
-| Issue à créer | Présence : voir qui est connecté, retirer une personne qui part | 3 | Must | Yanis* | Nouveau |
+| [#145](../../../issues/145) | Présence : voir qui est connecté, retirer une personne qui part | 3 | Must | Yanis* | Nouveau |
 | [#38](../../../issues/38) | Test automatisé de confirmation concurrente | 3 | Must | Yanis* | |
 | [#39](../../../issues/39) | Resynchroniser l'affichage du client dont la confirmation échoue | 2 | Must | Yanis* | |
 | **Total** | 13 récits (Must : 29 points, Should : 6 points) | **35** | | | |
@@ -110,7 +110,7 @@ une estimation à confirmer en équipe.
 - La connexion Google et Microsoft (#114 du backlog) a été fusionnée au
   sprint 2, hors engagement.
 - Dupliquer un événement ([#23](../../../issues/23), `Could`) et changer le
-  rôle d'un utilisateur ([#106](../../../issues/106)) ne seront pris que s'il
+  rôle d'un utilisateur ([#106](../../../issues/106), fermée, à rouvrir au besoin) ne seront pris que s'il
   reste de la capacité.
 
 ### Capacité
