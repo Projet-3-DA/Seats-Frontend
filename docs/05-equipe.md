@@ -12,6 +12,7 @@
 - **Planification** : pendant le premier bloc de cours de chaque sprint
 - **Revue** : au dernier bloc de chaque sprint, incrément démontré au professeur.
 - **Rétrospective** : après la revue, pendant 30 minutes; on en sort avec un changement précis, assigné à quelqu'un, vérifié à la rétrospective suivante.
+- **Sprint 3** : ni revue ni rétrospective. Un point de contrôle noté chaque jeudi (12, 19 et 26 novembre, 3 décembre), avec toute l'équipe présente, et une entrée de journal à la fin de chaque bloc.
 
 # Définition de « terminé »
 
@@ -68,7 +69,7 @@ Les règles :
 ### Règles de revue de code
 
 Avant d'ouvrir la PR :
-- La branche est à jour avec develop (rebase ou merge)
+- La branche est à jour avec main (rebase ou merge)
 - Les tests passent localement
 - Pas de console.log oubliés
 - Le titre de la PR reprend le nom de l'issue + Closes #N dans la description
@@ -89,6 +90,7 @@ Les règles de l'équipe à décider ensemble :
 - L'auteur de la PR ne merge jamais lui-même sans approbation
 - Un commentaire de review doit être résolu avant le merge — pas ignoré
 - Délai max pour reviewer : 24h pour ne pas bloquer l'avancement des autres
+- Une seule issue en cours à la fois par personne, pour éviter d'accumuler du travail à moitié fait
 
 # Journal
 
@@ -128,3 +130,15 @@ Le journal est tenu dans [journal.md](journal.md) une entrée par bloc de cours
 | Delavie | #13 Voir en direct l'état de vente d'un événement (3) — [B#24](https://github.com/Projet-3-DA/Seats-Backend/pull/24), [F#93](https://github.com/Projet-3-DA/Seats-Frontend/pull/93)<br>#14 Annuler une réservation en tant qu'organisateur (3) — [B#25](https://github.com/Projet-3-DA/Seats-Backend/pull/25), [F#95](https://github.com/Projet-3-DA/Seats-Frontend/pull/95)<br>#11 Configurer des sections à tarifs différents (3) — [B#33](https://github.com/Projet-3-DA/Seats-Backend/pull/33), [F#100](https://github.com/Projet-3-DA/Seats-Frontend/pull/100) | 9 | Résolution des conflits de fusion de #11 avec #8, #9 et #12 ; rétrospective du sprint 2 ([F#115](https://github.com/Projet-3-DA/Seats-Frontend/pull/115)), bilan du sprint 2 dans [sprints.md](04-sprints.md) ([F#116](https://github.com/Projet-3-DA/Seats-Frontend/pull/116), [F#126](https://github.com/Projet-3-DA/Seats-Frontend/pull/126)) et ce tableau ([F#118](https://github.com/Projet-3-DA/Seats-Frontend/pull/118)) ; mise à jour de [conception.md](03-conception.md) pour le sprint 2, #113 ([F#127](https://github.com/Projet-3-DA/Seats-Frontend/pull/127)) ; fusion de [F#123](https://github.com/Projet-3-DA/Seats-Frontend/pull/123), [F#128](https://github.com/Projet-3-DA/Seats-Frontend/pull/128), [F#129](https://github.com/Projet-3-DA/Seats-Frontend/pull/129), [F#130](https://github.com/Projet-3-DA/Seats-Frontend/pull/130) et [B#37](https://github.com/Projet-3-DA/Seats-Backend/pull/37). |
 | Oladé | #9 Restreindre les actions selon mon rôle, vérifié côté serveur (3) et #33 Tester le contournement direct des restrictions par rôle (2) — [B#27](https://github.com/Projet-3-DA/Seats-Backend/pull/27)<br>#36 Liste globale des événements + détail au clic (2) — [B#31](https://github.com/Projet-3-DA/Seats-Backend/pull/31), [F#98](https://github.com/Projet-3-DA/Seats-Frontend/pull/98)<br>#101 Se connecter avec GitHub (5), ajouté le 26 octobre — [B#34](https://github.com/Projet-3-DA/Seats-Backend/pull/34), [F#119](https://github.com/Projet-3-DA/Seats-Frontend/pull/119) | 12 | Fusion de 13 des 18 PR de récits du sprint ; correctif des tests de la supervision après #11 ([B#38](https://github.com/Projet-3-DA/Seats-Backend/pull/38)). Inscription remise à côté de la connexion externe, avec choix du rôle ([B#36](https://github.com/Projet-3-DA/Seats-Backend/pull/36), [F#123](https://github.com/Projet-3-DA/Seats-Frontend/pull/123)) ; lint du backend dans la CI ([B#40](https://github.com/Projet-3-DA/Seats-Backend/pull/40)). Hors engagement du sprint : connexion Google et Microsoft (#114 : [B#35](https://github.com/Projet-3-DA/Seats-Backend/pull/35), [F#120](https://github.com/Projet-3-DA/Seats-Frontend/pull/120)), règles de confidentialité et conditions d'utilisation ([F#117](https://github.com/Projet-3-DA/Seats-Frontend/pull/117)), retrait du tarif de la liste des événements ([F#124](https://github.com/Projet-3-DA/Seats-Frontend/pull/124)), retour à la liste après publication ([F#129](https://github.com/Projet-3-DA/Seats-Frontend/pull/129)), déploiement sur Render (#19 : [F#130](https://github.com/Projet-3-DA/Seats-Frontend/pull/130), [F#131](https://github.com/Projet-3-DA/Seats-Frontend/pull/131)). |
 | **Total** | 14 récits | **39** | |
+
+## Sprint 3
+
+Engagement au 5 novembre 2026, à mettre à jour à la remise. Les récits et les points viennent de [sprints.md](04-sprints.md), où les numéros sont ceux des issues GitHub. Comme aux sprints précédents, un récit n'est compté comme livré que si tout son code (backend et frontend) est fusionné dans `main`. Un astérisque indique un responsable proposé, à confirmer à la prochaine mêlée.
+
+| Membre | Récits engagés (points) | Points engagés | Réalisé au 5 novembre |
+|---|---|:---:|---|
+| Yanis | Présence, issue à créer (3)*<br>#38 Test automatisé de confirmation concurrente (3)*<br>#39 Resynchroniser le client dont la confirmation échoue (2)* | 8 | Image Docker construite aussi sur le tag `beta-v1` ([B#42](https://github.com/Projet-3-DA/Seats-Backend/pull/42), [F#138](https://github.com/Projet-3-DA/Seats-Frontend/pull/138)). |
+| Glodie | #16 Voir mon siège redevenir libre après le délai (3)<br>#17 Empêcher deux confirmations simultanées (3)<br>#21 Filtrer les événements (3)<br>#22 Statistiques de vente par section (3) | 12 | Responsable de la mêlée du sprint 3. |
+| Delavie | #15 Vue globale des organisateurs (3)<br>#20 Suspendre un compte (3)<br>#41 Bloquer la connexion d'un compte suspendu (2)* | 8 | #15 : [F#140](https://github.com/Projet-3-DA/Seats-Frontend/pull/140) fusionnée ; [B#43](https://github.com/Projet-3-DA/Seats-Backend/pull/43) et [F#141](https://github.com/Projet-3-DA/Seats-Frontend/pull/141) en revue. |
+| Junior (Oladé) | #18 Resynchroniser mon affichage après une coupure (3)<br>#37 Compte à rebours et expiration (2)<br>#40 Indicateur de connexion et blocage des actions (2)* | 7 | #37 : [B#44](https://github.com/Projet-3-DA/Seats-Backend/pull/44) et [F#142](https://github.com/Projet-3-DA/Seats-Frontend/pull/142) en revue ; journal du 2 novembre ([F#139](https://github.com/Projet-3-DA/Seats-Frontend/pull/139)) ; planification du sprint 3. |
+| **Total** | 13 récits | **35** | Aucun récit livré pour l'instant. |
