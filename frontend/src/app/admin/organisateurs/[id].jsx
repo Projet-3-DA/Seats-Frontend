@@ -111,9 +111,11 @@ export default function DetailOrganisateurAdminScreen() {
           ) : (
             evenements.map((e) => (
               <Link key={e.id} href={`/admin/evenements/${e.id}`} asChild>
+                {/* Sous Link asChild, le style doit être un objet : un tableau fait planter la page sur le
+                    web (« Failed to set an indexed property [0] on 'CSSStyleDeclaration' »). */}
                 <Pressable
                   accessibilityLabel={`Voir le détail de ${e.titre}`}
-                  style={[styles.ligne, { borderColor: theme.border }]}
+                  style={StyleSheet.flatten([styles.ligne, { borderColor: theme.border }])}
                 >
                   <View style={styles.ligneTexte}>
                     <View style={styles.titreRow}>
