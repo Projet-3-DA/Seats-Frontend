@@ -1,5 +1,12 @@
+// Sur le web, Link asChild recopie le style de son enfant dans le DOM : un tableau de styles y fait
+// planter la page. Le faux Link le refuse donc, comme le vrai navigateur.
 jest.mock('expo-router', () => ({
-  Link: ({ children }) => children,
+  Link: ({ children, asChild }) => {
+    if (asChild && Array.isArray(children.props.style)) {
+      throw new Error('Link asChild : le style de son enfant doit être un objet, pas un tableau.');
+    }
+    return children;
+  },
   Stack: { Screen: () => null },
   useLocalSearchParams: () => ({ id: '7' }),
 }));
@@ -101,5 +108,27 @@ describe('DetailOrganisateurAdminScreen (#15)', () => {
 
     await render(<DetailOrganisateurAdminScreen />);
     await attendreQue(() => screen.queryByText('Organisateur introuvable.') !== null);
+  });
+});
+
+describe('DetailOrganisateurAdminScreen : affichage sur le web', () => {
+  const fetchOriginal = global.fetch;
+
+  beforeEach(() => {
+    useAuth.mockReturnValue({ token: 'jeton-admin', user: { id: 1, role: 'administrateur' } });
+  });
+  afterEach(() => {
+    global.fetch = fetchOriginal;
+    jest.clearAllMocks();
+  });
+
+  it('passe un style aplati (objet) à chaque lien vers un événement', async () => {
+    global.fetch = jest.fn().mockResolvedValue(reponse({ success: true, data: organisateur() }));
+
+    await render(<DetailOrganisateurAdminScreen />);
+    await attendreQue(() => screen.queryByText('Ana Roy') !== null);
+
+    const style = screen.getByLabelText('Voir le détail de Festival à venir').props.style;
+    expect(Array.isArray(style)).toBe(false);
   });
 });
