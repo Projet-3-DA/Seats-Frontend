@@ -79,27 +79,27 @@
 ### Récits engagés
 
 Les numéros sont ceux des **issues GitHub**. La dernière colonne donne le
-numéro du même récit dans `02-backlog.md` quand il diffère. Un astérisque
-indique un responsable proposé, à confirmer à la prochaine mêlée.
+numéro du même récit dans `02-backlog.md` quand il diffère. Les responsables
+sont ceux assignés sur GitHub au 5 novembre.
 
 | Issue | Récit | Points | MoSCoW | Responsable | Backlog |
 |---|---|:---:|---|---|---|
 | [#15](../../../issues/15) | Vue globale des organisateurs (reportée du sprint 2) | 3 | Must | Delavie | #19 |
 | [#20](../../../issues/20) | Suspendre un compte | 3 | Must | Delavie | |
-| [#41](../../../issues/41) | Bloquer la connexion d'un compte suspendu + règle de visibilité | 2 | Must | Delavie* | |
+| [#41](../../../issues/41) | Bloquer la connexion d'un compte suspendu + règle de visibilité | 2 | Must | Delavie | |
 | [#16](../../../issues/16) | Voir mon siège redevenir libre si je ne confirme pas dans le délai | 3 | Must | Glodie | #15 |
 | [#17](../../../issues/17) | Empêcher deux confirmations simultanées sur le même siège | 3 | Must | Glodie | #16 |
-| [#21](../../../issues/21) | Filtrer les événements par date ou lieu | 3 | Should | Glodie | |
-| [#22](../../../issues/22) | Statistiques simples de vente par section | 3 | Should | Glodie | |
+| [#21](../../../issues/21) | Filtrer les événements par date ou lieu | 3 | Should | Yanis | |
+| [#22](../../../issues/22) | Statistiques simples de vente par section | 3 | Should | Yanis | |
 | [#18](../../../issues/18) | Resynchroniser mon affichage après une coupure de connexion | 3 | Must | Junior | #17 |
 | [#37](../../../issues/37) | Afficher le compte à rebours et gérer l'expiration | 2 | Must | Junior | |
-| [#40](../../../issues/40) | Indicateur de connexion perdue/rétablie + blocage des actions | 2 | Must | Junior* | |
-| [#145](../../../issues/145) | Présence : voir qui est connecté, retirer une personne qui part | 3 | Must | Yanis* | Nouveau |
-| [#38](../../../issues/38) | Test automatisé de confirmation concurrente | 3 | Must | Yanis* | |
-| [#39](../../../issues/39) | Resynchroniser l'affichage du client dont la confirmation échoue | 2 | Must | Yanis* | |
+| [#40](../../../issues/40) | Indicateur de connexion perdue/rétablie + blocage des actions | 2 | Must | À assigner | |
+| [#145](../../../issues/145) | Présence : voir qui est connecté, retirer une personne qui part | 3 | Must | À assigner | Nouveau |
+| [#38](../../../issues/38) | Test automatisé de confirmation concurrente | 3 | Must | Delavie | |
+| [#39](../../../issues/39) | Resynchroniser l'affichage du client dont la confirmation échoue | 2 | Must | À assigner | |
 | **Total** | 13 récits (Must : 29 points, Should : 6 points) | **35** | | | |
 
-Répartition : Glodie 12, Delavie 8, Yanis 8, Junior 7. La présence est une
+Répartition : Delavie 11, Glodie 6, Yanis 6, Junior 5, à assigner 7. La présence est une
 exigence de la version finale qu'aucun récit ne couvrait ; ses 3 points sont
 une estimation à confirmer en équipe.
 
