@@ -10,7 +10,7 @@ import { useTheme } from '@/hooks/use-theme';
 import { useAuth } from '@/lib/auth-context';
 import { formatDateHeure } from '@/utils/dates';
 
-// Deux vues : tous les événements (#36) ou tous les organisateurs inscrits (#19 du backlog).
+// Deux vues : tous les événements (#36) ou tous les organisateurs inscrits (#15).
 export const VUES = [
   { cle: 'evenements', label: 'Événements', route: 'evenements' },
   { cle: 'organisateurs', label: 'Organisateurs', route: 'organisateurs' },
@@ -161,8 +161,8 @@ const TEXTES = {
 };
 
 // Supervision : l'administrateur voit tous les événements de la plateforme, passés compris, quel que
-// soit l'organisateur (#36), ou tous les organisateurs inscrits avec leur nombre d'événements (#19 du
-// backlog), et ouvre le détail de chacun.
+// soit l'organisateur (#36), ou tous les organisateurs inscrits avec leur nombre d'événements (#15),
+// et ouvre le détail de chacun.
 export default function SupervisionScreen() {
   const theme = useTheme();
   const { token } = useAuth();
