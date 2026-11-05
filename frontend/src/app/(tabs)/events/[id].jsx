@@ -28,9 +28,6 @@ export default function EventSeatMapScreen() {
   const [succes, setSucces] = useState(false);
   // Sièges en cours de sélection par d'autres spectateurs, diffusés en temps réel (#8).
   const [selectionsAutres, setSelectionsAutres] = useState(new Set());
-  // Échéance (Date.now() + delaiMs) de chacun de mes sièges sélectionnés, pour le compte à rebours (#37).
-  const [expirations, setExpirations] = useState(new Map());
-  const [maintenant, setMaintenant] = useState(() => Date.now());
   const socketRef = useRef(null);
 
   const peutReserver = user?.role === 'spectateur';
@@ -73,27 +70,12 @@ export default function EventSeatMapScreen() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [id]);
 
-  // Fait avancer le compte à rebours (#37) toutes les secondes, seulement pendant qu'il y a quelque
-  // chose à afficher : inutile de faire tourner un minuteur une fois la sélection vide.
-  useEffect(() => {
-    if (selection.size === 0) return undefined;
-    const minuterie = setInterval(() => setMaintenant(Date.now()), 1000);
-    return () => clearInterval(minuterie);
-  }, [selection.size]);
-
   // La déconnexion (départ de la page) libère côté serveur les sièges qu'on tenait encore.
   useEffect(() => {
     const evenementId = Number(id);
     const socket = io(SOCKET_URL, { auth: { token }, transports: ['websocket'] });
     socketRef.current = socket;
     const retirer = (ensemble, ids) => new Set([...ensemble].filter((s) => !ids.includes(s)));
-
-    const retirerExpiration = (carte, siegeId) => {
-      if (!carte.has(siegeId)) return carte;
-      const suivante = new Map(carte);
-      suivante.delete(siegeId);
-      return suivante;
-    };
 
     socket.on('connect', () => socket.emit('plan:rejoindre', evenementId));
     socket.on('plan:selections', ({ siegeIds }) => setSelectionsAutres(new Set(siegeIds)));
@@ -102,7 +84,6 @@ export default function EventSeatMapScreen() {
     // c'était un des miens, le spectateur doit comprendre pourquoi et le resélectionner (#37).
     socket.on('siege:libere', ({ siegeId }) => {
       setSelectionsAutres((p) => retirer(p, [siegeId]));
-      setExpirations((p) => retirerExpiration(p, siegeId));
       setSelection((p) => {
         if (!p.has(siegeId)) return p;
         setErreurReservation('Le délai de sélection a expiré pour un siège : sélectionnez-le à nouveau.');
@@ -130,11 +111,6 @@ export default function EventSeatMapScreen() {
         suivante.delete(siege.id);
         return suivante;
       });
-      setExpirations((p) => {
-        const suivante = new Map(p);
-        suivante.delete(siege.id);
-        return suivante;
-      });
       return;
     }
     // Le serveur arbitre : si quelqu'un l'a pris une fraction de seconde avant nous, il refuse (#31).
@@ -145,13 +121,6 @@ export default function EventSeatMapScreen() {
       }
       setErreurReservation('');
       setSelection((p) => new Set(p).add(siege.id));
-      // delaiMs vient du serveur (#37) : si absent (vieux client/serveur désynchronisés), pas de
-      // compte à rebours affiché plutôt que d'en inventer un.
-      if (reponse.delaiMs) {
-        const echeance = Date.now() + reponse.delaiMs;
-        setMaintenant(Date.now());
-        setExpirations((p) => new Map(p).set(siege.id, echeance));
-      }
     });
   }
 
@@ -223,11 +192,6 @@ export default function EventSeatMapScreen() {
   // Prix de chaque siège : celui de sa section, ou le tarif de l'événement (#11). null si inconnu.
   const prixConnus = siegesChoisis.every((s) => s.prix !== null && s.prix !== undefined);
   const total = siegesChoisis.reduce((somme, s) => somme + (s.prix ?? 0), 0);
-
-  // Temps restant avant expiration (#37) : celui du siège choisi le plus proche d'expirer, puisque
-  // c'est lui qui déterminera en premier quand la confirmation commence à échouer.
-  const echeances = siegesChoisis.map((s) => expirations.get(s.id)).filter((e) => e !== undefined);
-  const secondesRestantes = echeances.length > 0 ? Math.max(0, Math.ceil((Math.min(...echeances) - maintenant) / 1000)) : null;
 
   function styleSiege(siege) {
     if (siege.etat === 'reserve') return styles.occupe;
@@ -313,12 +277,6 @@ export default function EventSeatMapScreen() {
       {succes && selection.size === 0 && !erreurReservation && (
         <ThemedText type="small" style={styles.succesTexte}>
           Réservation confirmée !
-        </ThemedText>
-      )}
-
-      {reservationOuverte && secondesRestantes !== null && (
-        <ThemedText type="small" themeColor="textSecondary">
-          Temps restant pour confirmer : {secondesRestantes}s
         </ThemedText>
       )}
 

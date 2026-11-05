@@ -5,7 +5,7 @@ jest.mock('socket.io-client', () => {
   const ecouteurs = {};
   const socket = {
     on: (evt, fn) => (ecouteurs[evt] = fn),
-    emit: jest.fn((evt, data, ack) => ack?.(globalThis.reponseSelection ?? { ok: true, delaiMs: 60_000 })),
+    emit: jest.fn((evt, data, ack) => ack?.(globalThis.reponseSelection ?? { ok: true })),
     disconnect: jest.fn(),
   };
   globalThis.socketTest = { socket, recevoir: (evt, data) => ecouteurs[evt]?.(data) };
@@ -307,43 +307,12 @@ describe('EventSeatMapScreen', () => {
   });
 });
 
-describe('EventSeatMapScreen : compte à rebours et expiration pendant la confirmation (#37)', () => {
+describe('EventSeatMapScreen : expiration pendant la confirmation (#37)', () => {
   const fetchOriginal = global.fetch;
 
   afterEach(() => {
     global.fetch = fetchOriginal;
     jest.clearAllMocks();
-    jest.useRealTimers();
-  });
-
-  it('affiche le temps restant dès qu’un siège est sélectionné', async () => {
-    useAuth.mockReturnValue({ token: 'jeton', user: { id: 5, role: 'spectateur' } });
-    global.fetch = jest.fn().mockResolvedValue(reponse({ success: true, data: plan }));
-
-    await render(<EventSeatMapScreen />);
-    await attendreQue(() => screen.queryByText('Salle A') !== null);
-
-    expect(screen.queryByText(/Temps restant pour confirmer/)).toBeNull();
-    await fireEvent.press(screen.getByTestId('siege-101'));
-
-    await attendreQue(() => screen.queryByText('Temps restant pour confirmer : 60s') !== null);
-  });
-
-  it('fait diminuer le compte à rebours chaque seconde', async () => {
-    useAuth.mockReturnValue({ token: 'jeton', user: { id: 5, role: 'spectateur' } });
-    global.fetch = jest.fn().mockResolvedValue(reponse({ success: true, data: plan }));
-
-    await render(<EventSeatMapScreen />);
-    await attendreQue(() => screen.queryByText('Salle A') !== null);
-    await fireEvent.press(screen.getByTestId('siege-101'));
-    await attendreQue(() => screen.queryByText('Temps restant pour confirmer : 60s') !== null);
-
-    await act(async () => {
-      jest.useFakeTimers({ advanceTimers: true });
-      jest.advanceTimersByTime(5000);
-    });
-
-    await attendreQue(() => screen.queryByText('Temps restant pour confirmer : 55s') !== null);
   });
 
   it("affiche un message clair si le délai expire pendant la confirmation, sans tout réinitialiser", async () => {
