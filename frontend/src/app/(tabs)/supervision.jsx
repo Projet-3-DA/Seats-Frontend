@@ -4,6 +4,7 @@ import { useCallback, useState } from 'react';
 import { ActivityIndicator, FlatList, Pressable, StyleSheet, View } from 'react-native';
 
 import { Affiche } from '@/components/affiche';
+import { CompteCard } from '@/components/compte-card';
 import { ThemedText } from '@/components/themed-text';
 import { API_URL } from '@/constants/api';
 import { useTheme } from '@/hooks/use-theme';
@@ -14,6 +15,8 @@ import { formatDateHeure } from '@/utils/dates';
 export const VUES = [
   { cle: 'evenements', label: 'Événements', route: 'evenements' },
   { cle: 'organisateurs', label: 'Organisateurs', route: 'organisateurs' },
+  // Comptes organisateurs et spectateurs, à suspendre ou réactiver (#20).
+  { cle: 'comptes', label: 'Comptes', route: 'comptes' },
 ];
 
 export const FILTRES = [
@@ -158,6 +161,12 @@ const TEXTES = {
     compte: (n) => `${n} organisateur(s) inscrit(s) sur la plateforme.`,
     erreur: 'Échec du chargement des organisateurs.',
   },
+  comptes: {
+    titre: 'Comptes',
+    chargement: 'Les comptes organisateurs et spectateurs de la plateforme.',
+    compte: (n) => `${n} compte(s). Un compte suspendu est conservé et peut être réactivé.`,
+    erreur: 'Échec du chargement des comptes.',
+  },
 };
 
 // Supervision : l'administrateur voit tous les événements de la plateforme, passés compris, quel que
@@ -167,7 +176,7 @@ export default function SupervisionScreen() {
   const theme = useTheme();
   const { token } = useAuth();
   const [vue, setVue] = useState('evenements');
-  const [donnees, setDonnees] = useState({ evenements: [], organisateurs: [] });
+  const [donnees, setDonnees] = useState({ evenements: [], organisateurs: [], comptes: [] });
   const [filtre, setFiltre] = useState('tous');
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -198,18 +207,29 @@ export default function SupervisionScreen() {
     }, [token, vue]),
   );
 
-  const { evenements, organisateurs } = donnees;
+  const { evenements } = donnees;
   const textes = TEXTES[vue];
-  const liste = vue === 'evenements' ? evenements : organisateurs;
-  const visibles = vue === 'evenements' ? evenements.filter(garder(filtre)) : organisateurs;
+  const liste = donnees[vue];
+  const visibles = vue === 'evenements' ? evenements.filter(garder(filtre)) : liste;
+
+  // Après une suspension ou une réactivation, la carte affiche tout de suite le nouveau statut.
+  const majCompte = useCallback(
+    (compte) =>
+      setDonnees((d) => ({ ...d, comptes: d.comptes.map((c) => (c.id === compte.id ? { ...c, ...compte } : c)) })),
+    [],
+  );
+
+  function renderItem({ item }) {
+    if (vue === 'evenements') return <EvenementCard item={item} theme={theme} />;
+    if (vue === 'comptes') return <CompteCard compte={item} token={token} onMaj={majCompte} />;
+    return <OrganisateurCard item={item} theme={theme} />;
+  }
 
   return (
     <FlatList
       data={visibles}
       keyExtractor={(item) => `${vue}-${item.id}`}
-      renderItem={({ item }) =>
-        vue === 'evenements' ? <EvenementCard item={item} theme={theme} /> : <OrganisateurCard item={item} theme={theme} />
-      }
+      renderItem={renderItem}
       contentContainerStyle={styles.list}
       style={{ backgroundColor: theme.background }}
       ListHeaderComponent={
@@ -233,7 +253,9 @@ export default function SupervisionScreen() {
       ListEmptyComponent={
         !loading && !error ? (
           <ThemedText themeColor="textSecondary" style={styles.empty}>
-            {vue === 'organisateurs'
+            {vue === 'comptes'
+              ? "Aucun compte organisateur ou spectateur n'existe encore."
+              : vue === 'organisateurs'
               ? "Aucun organisateur n'est encore inscrit."
               : evenements.length === 0
                 ? "Aucun événement n'a encore été créé."
