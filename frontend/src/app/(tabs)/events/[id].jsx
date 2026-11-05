@@ -30,7 +30,7 @@ export default function EventSeatMapScreen() {
   const [selectionsAutres, setSelectionsAutres] = useState(new Set());
   // Échéance (Date.now() + delaiMs) de chacun de mes sièges sélectionnés, pour le compte à rebours (#37).
   const [expirations, setExpirations] = useState(new Map());
-  const [maintenant, setMaintenant] = useState(Date.now());
+  const [maintenant, setMaintenant] = useState(() => Date.now());
   const socketRef = useRef(null);
 
   const peutReserver = user?.role === 'spectateur';
