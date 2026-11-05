@@ -373,3 +373,81 @@ describe('EventSeatMapScreen : sections par couleur sur le plan (#34)', () => {
     expect(screen.queryByText(/ · /)).toBeNull();
   });
 });
+
+describe('EventSeatMapScreen : plan qui dépasse l’écran', () => {
+  const fetchOriginal = global.fetch;
+
+  afterEach(() => {
+    global.fetch = fetchOriginal;
+    jest.clearAllMocks();
+  });
+
+  it('la grille ne s’étire pas en hauteur : pas de vide entre une petite salle et la légende', async () => {
+    useAuth.mockReturnValue({ token: 'jeton', user: { id: 5, role: 'spectateur' } });
+    global.fetch = jest.fn().mockResolvedValue(reponse({ success: true, data: plan }));
+
+    await render(<EventSeatMapScreen />);
+    await attendreQue(() => screen.queryByText('Salle A') !== null);
+
+    expect(screen.getByTestId('grille-sieges').props.style).toEqual(expect.objectContaining({ flexGrow: 0 }));
+  });
+
+  it('garde le plan affiché pendant le rechargement après « Confirmer », avec le message du résultat', async () => {
+    useAuth.mockReturnValue({ token: 'jeton-valide', user: { id: 5, role: 'spectateur' } });
+    global.fetch = jest.fn().mockResolvedValue(reponse({ success: true, data: plan }));
+
+    await render(<EventSeatMapScreen />);
+    await attendreQue(() => screen.queryByText('Salle A') !== null);
+    await fireEvent.press(screen.getByTestId('siege-101'));
+    await attendreQue(() => screen.queryByText('Réserver (1)') !== null);
+
+    // Le rechargement du plan reste en cours tant qu'on ne le libère pas : on regarde l'écran pendant ce temps.
+    let terminerRechargement;
+    global.fetch = jest
+      .fn()
+      .mockResolvedValueOnce(reponse({ success: true, data: [{ id: 1, siegeId: 101, statut: 'confirmee' }] }))
+      .mockReturnValueOnce(new Promise((resolve) => (terminerRechargement = resolve)));
+    await fireEvent.press(screen.getByText('Réserver (1)'));
+    // L'appui reste en cours tant que le rechargement n'est pas libéré : on ne l'attend qu'à la fin, et on
+    // laisse passer le temps sans act() pour ne pas chevaucher le sien.
+    const appui = fireEvent.press(screen.getByText('Confirmer'));
+    await new Promise((resolve) => setTimeout(resolve, 100));
+    expect(global.fetch).toHaveBeenCalledTimes(2);
+
+    // Le plan n'a pas été remplacé par le spinner : la page ne remonte pas en haut.
+    expect(screen.getByTestId('siege-101')).toBeTruthy();
+    expect(screen.getByText('Salle A')).toBeTruthy();
+    expect(screen.getByText('Réservation confirmée !')).toBeTruthy();
+
+    terminerRechargement(reponse({ success: true, data: plan }));
+    await appui;
+  });
+
+  it("garde aussi le plan affiché avec le message d'erreur quand la réservation échoue", async () => {
+    useAuth.mockReturnValue({ token: 'jeton-valide', user: { id: 5, role: 'spectateur' } });
+    global.fetch = jest.fn().mockResolvedValue(reponse({ success: true, data: plan }));
+
+    await render(<EventSeatMapScreen />);
+    await attendreQue(() => screen.queryByText('Salle A') !== null);
+    await fireEvent.press(screen.getByTestId('siege-101'));
+    await attendreQue(() => screen.queryByText('Réserver (1)') !== null);
+
+    let terminerRechargement;
+    global.fetch = jest
+      .fn()
+      .mockResolvedValueOnce(reponse({ success: false, error: 'Un siège vient d’être pris.' }, false))
+      .mockReturnValueOnce(new Promise((resolve) => (terminerRechargement = resolve)));
+    await fireEvent.press(screen.getByText('Réserver (1)'));
+    // L'appui reste en cours tant que le rechargement n'est pas libéré : on ne l'attend qu'à la fin, et on
+    // laisse passer le temps sans act() pour ne pas chevaucher le sien.
+    const appui = fireEvent.press(screen.getByText('Confirmer'));
+    await new Promise((resolve) => setTimeout(resolve, 100));
+    expect(global.fetch).toHaveBeenCalledTimes(2);
+
+    expect(screen.getByTestId('siege-101')).toBeTruthy();
+    expect(screen.getByText('Un siège vient d’être pris.')).toBeTruthy();
+
+    terminerRechargement(reponse({ success: true, data: plan }));
+    await appui;
+  });
+});
