@@ -23,6 +23,9 @@ role : ENUM('spectateur', 'organisateur', 'administrateur')
 spectateur : Consulte événements, réserve sièges, annule ses réservations
 organisateur : Crée salles/événements, voit stats de vente, annule toute réservation
 administrateur : Supervise toute la plateforme (tous les événements et leurs ventes, #36)
+statut : ENUM('actif', 'suspendu'), `actif` par défaut (sprint 3, #20). Un compte suspendu par l'administrateur est conservé, mais ne peut plus se connecter (#41, décision 14)
+raison_suspension : Texte, facultatif, 500 caractères au plus — raison donnée par l'administrateur, effacée à la réactivation
+suspendu_le : Timestamp, facultatif — date de la suspension
 created_at : Timestamp création
 
 **Rôle par défaut** : un compte créé à sa première connexion GitHub, Google ou Microsoft reçoit le rôle `spectateur`. Le rôle `organisateur` se choisit à l'inscription par courriel et mot de passe ; `administrateur` ne vient que des comptes de démonstration.
@@ -103,7 +106,7 @@ Contrainte : Si statut = 'confirmee', date_confirmation est non nul
 | Méthode | Route | Auth | Détails |
 |---------|-------|------|---------|
 | POST | `/api/auth/register` | Publique | Inscription par courriel. Corps : `{ email, motDePasse, nom, prenom, role }`, avec `role` = `spectateur` ou `organisateur` (`administrateur` refusé, 400). 409 si le courriel est déjà utilisé. |
-| POST | `/api/auth/login` | Publique | Corps : `{ email, password }`. Réponse : `{ token, user }`. 401 (message générique) si email ou mot de passe invalide, ou si le compte n'a pas de mot de passe (compte GitHub). |
+| POST | `/api/auth/login` | Publique | Corps : `{ email, password }`. Réponse : `{ token, user }`. 401 (message générique) si email ou mot de passe invalide, ou si le compte n'a pas de mot de passe (compte GitHub). 403 si le compte est suspendu (#41), vérifié après le mot de passe. |
 | GET | `/api/auth/me` | `Authorization: Bearer <token>` | Retourne l'utilisateur courant (déduit du token, sans mot de passe). |
 | GET | `/api/auth/github` | Publique | Redirige vers GitHub (OAuth 2). Un `state` aléatoire est gardé dans un cookie httpOnly (10 min) contre le CSRF. |
 | GET | `/api/auth/github/callback` | Publique (appelée par GitHub) | Vérifie le `state`, échange le code contre un jeton côté serveur, lit le profil et le courriel vérifié, retrouve ou crée l'utilisateur (rôle `spectateur`), puis redirige vers `<frontend>/connexion-externe#token=<JWT>` (ou `#erreur=<message>`). |
@@ -118,16 +121,16 @@ Contrainte : Si statut = 'confirmee', date_confirmation est non nul
 |---------|-------|------|---------|
 | GET | `/api/salles` | Bearer, rôle `organisateur` | Liste les salles de l'organisateur courant (`req.user.id`). |
 | POST | `/api/salles` | Bearer, rôle `organisateur` | Corps : `{ nom, nombreRangees, siegesParRangee }`, `organisateurId` vient du token. Génère les sièges associés. 409 si le nom existe déjà pour cet organisateur. |
-| GET | `/api/salles/:id` | — | Détail d'une salle avec ses sièges, ses sections et son nombre d'événements. 404 si introuvable. |
+| GET | `/api/salles/:id` | — | Détail d'une salle avec ses sièges, ses sections et son nombre d'événements. 404 si introuvable, ou si son organisateur est suspendu (#41). |
 | PUT | `/api/salles/:id` | Bearer, rôle `organisateur` | Modifie nom et dimensions (#10), sièges régénérés. 409 si un événement utilise déjà la salle. |
 | PUT | `/api/salles/:id/sections` | Bearer, rôle `organisateur` | Remplace toutes les sections (#11). Corps : `{ sections: [{ nom, prix, couleur, siegeIds }] }`. 400 si un siège est dans deux sections, 409 si un événement utilise déjà la salle. |
 
 #### Événements — `backend/src/modules/evenements`
 | Méthode | Route | Auth | Détails |
 |---------|-------|------|---------|
-| GET | `/api/evenements` | — | Liste tous les événements. |
+| GET | `/api/evenements` | — | Liste les événements à venir, sauf ceux d'un organisateur suspendu (#41). |
 | POST | `/api/evenements` | Bearer, rôle `organisateur` | Corps : `{ salleId, titre, description?, dateHeure, afficheUrl?, tarif? }`, `organisateurId` vient du token. 400 si `salleId` invalide. |
-| GET | `/api/evenements/:id/plan` | — | Plan de salle de l'événement : sièges avec leur état (`reserve` / `libre`), leur section et leur prix (section, sinon tarif de l'événement), et les sections de la salle. 404 si événement introuvable. |
+| GET | `/api/evenements/:id/plan` | — | Plan de salle de l'événement : sièges avec leur état (`reserve` / `libre`), leur section et leur prix (section, sinon tarif de l'événement), et les sections de la salle. 404 si événement introuvable, ou si son organisateur est suspendu (#41). |
 | GET | `/api/evenements/:id/ventes` | Bearer, rôle `organisateur` | Tableau de bord des ventes (#13) : chaque siège `vendu` / `en_selection` / `libre` avec le spectateur, les totaux et la recette. 403 si l'événement appartient à un autre organisateur. |
 | POST | `/api/evenements/affiche` | Bearer, rôle `organisateur` | Corps : image brute (`Content-Type: image/png`, etc., 5 Mo max). Upload l'affiche, retourne son URL. |
 
@@ -144,6 +147,8 @@ Contrainte : Si statut = 'confirmee', date_confirmation est non nul
 |---------|-------|------|---------|
 | GET | `/api/admin/evenements` | Bearer, rôle `administrateur` | Tous les événements de la plateforme (#36), à venir d'abord puis passés, avec organisateur, salle et nombre de places vendues. |
 | GET | `/api/admin/evenements/:id` | Bearer, rôle `administrateur` | Détail d'un événement et de ses ventes siège par siège, quel que soit son organisateur. |
+| GET | `/api/admin/comptes` | Bearer, rôle `administrateur` | Comptes organisateurs et spectateurs (#20), avec leur statut et la raison d'une suspension. |
+| PATCH | `/api/admin/comptes/:id/statut` | Bearer, rôle `administrateur` | Corps : `{ statut: "suspendu" \| "actif", raison? }` (#20). 403 pour un compte administrateur, 404 si introuvable, 400 si statut ou raison invalides. |
 
 #### Temps réel — Socket.IO (`backend/src/realtime.js`)
 Même serveur et même port que l'API. Chaque événement a son salon (`evenement:<id>`). Le client envoie le JWT dans `handshake.auth.token` : sans token valide, il voit le plan bouger mais ne peut rien sélectionner.
@@ -500,3 +505,27 @@ Même serveur et même port que l'API. Chaque événement a son salon (`evenemen
 **Coût** :
 - La diffusion est faite au mieux : si elle échoue, la réservation reste valide, mais le tableau de bord n'est à jour qu'au prochain chargement de la page.
 - Les ventes ne sont poussées qu'après une réservation ou une annulation en base. Une sélection en cours (en mémoire, décision 9) ne les déclenche pas.
+
+---
+
+### Décision 14 : Effet de la suspension d'un compte (#20, #41)
+
+**Question** : Que devient un compte suspendu par l'administrateur, et que deviennent les événements et les salles d'un organisateur suspendu ?
+
+**Options envisagées pour ses événements et ses salles** :
+1. **Visibles** : les spectateurs les voient et y réservent toujours ; seule la connexion de l'organisateur est bloquée.
+2. **Masqués aux spectateurs** : ils disparaissent de la liste publique, leur plan et leur salle répondent 404, et on ne peut plus y réserver. Ils restent en base.
+
+**Choix** : **Option 2**, et connexion refusée pour tout compte suspendu
+- La connexion est refusée (403, message « Ce compte est suspendu… ») par courriel et mot de passe comme par GitHub, Google ou Microsoft. Le mot de passe est vérifié d'abord : sans lui, on n'apprend pas que le compte est suspendu. La raison de la suspension n'est pas montrée : c'est une note de l'administrateur.
+- Les événements et les salles d'un organisateur suspendu sont masqués aux spectateurs et aux visiteurs. L'administrateur les voit toujours dans la supervision.
+- Les réservations déjà faites ne sont pas annulées : le spectateur les retrouve dans « Mes réservations ».
+- À la réactivation, tout redevient visible et le compte peut se reconnecter. Rien n'a été supprimé.
+
+**Raison** :
+- On suspend un compte pour réagir à un abus : laisser vendre les places d'un organisateur suspendu prolongerait le problème.
+- Masquer sans supprimer permet de revenir en arrière, ce qui est le but de la suspension (#20).
+
+**Coût** :
+- Un jeton déjà délivré reste valable jusqu'à son expiration (1 h) : le serveur ne relit pas le statut à chaque requête (décision 1, JWT sans état). Une session ouverte au moment de la suspension n'est donc coupée qu'au bout d'une heure au plus.
+- Les spectateurs qui ont réservé pour un événement masqué gardent leur réservation, sans être prévenus de la suspension.
