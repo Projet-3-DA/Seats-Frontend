@@ -129,5 +129,19 @@
   - Rappel de la règle d'une issue à la fois, pour éviter d'accumuler du travail à moitié fait et parce que les issues restantes dépendent de celles choisies.
 
 ## Jeudi 5 novembre
+- **Présences** : Glodie, Delavie, Yanis, Junior.
+- **Avancé** :
+  - Terminé (fusionné dans `main`) :
+    - #15 — Vue globale des organisateurs, par Delavie (backend PR #43, frontend PR #140 et #141).
+  - En révision :
+    - #20 — Suspendre un compte, par Delavie (backend PR #46, frontend PR #149).
+    - #37 — Compte à rebours et expiration de la sélection, par Junior (backend PR #44, frontend PR #142).
+    - Message à l'expiration de la sélection, par Glodie (backend PR #47, frontend PR #148).
+    - Défilement du plan d'une grande salle, par Delavie (frontend PR #144).
+    - Planification du sprint 3 dans `04-sprints.md`, par Junior (PR #143).
+  - Yanis a pris #21 — Filtrer les événements par date ou lieu.
+- **Blocage** :
+  - Les PR #142 et #148 touchent toutes deux au message d'expiration de #37 : fusionnées ensemble, un test de #142 échoue. Il reste à décider laquelle garder.
+  - En testant #15 dans le navigateur, la fiche d'un organisateur (`/admin/organisateurs/:id`) s'affiche blanche, alors que l'API répond correctement. À corriger.
 - **Décisions** :
   - Retirer des dépôts les fichiers de configuration des assistants de code (`.claude`, `.cursor`, `.devin`, `.agents`, `skills-lock.json`, `AGENTS.md`) et les ignorer dans Git : ils peuvent causer de petites incohérences chez les autres membres et, sur un dépôt public, faire fuiter certaines informations.
