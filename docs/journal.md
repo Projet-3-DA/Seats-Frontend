@@ -127,3 +127,7 @@
   - Choix des premières issues, avant la décision ci-dessous : #15, #18 et #20 pour Delavie ; #16, #17, #21 et #22 pour Glodie.
 - **Décisions** :
   - Rappel de la règle d'une issue à la fois, pour éviter d'accumuler du travail à moitié fait et parce que les issues restantes dépendent de celles choisies.
+
+## Jeudi 5 novembre
+- **Décisions** :
+  - Retirer des dépôts les fichiers de configuration des assistants de code (`.claude`, `.cursor`, `.devin`, `.agents`, `skills-lock.json`, `AGENTS.md`) et les ignorer dans Git : ils peuvent causer de petites incohérences chez les autres membres et, sur un dépôt public, faire fuiter certaines informations.

@@ -141,3 +141,11 @@ dist
 vite.config.js.timestamp-*
 vite.config.ts.timestamp-*
 .vite/
+
+# Configuration locale des assistants de code
+.claude/
+.cursor/
+.devin/
+.agents/
+skills-lock.json
+AGENTS.md
