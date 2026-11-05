@@ -58,8 +58,9 @@
    #13 (3), #35 (2), #14 (3), #36 (2) et #101 (5).
 3. **Vélocité réelle** : 39 points (39 au sprint 1).
 4. **Récits abandonnés** : la liste globale des organisateurs, #19 du backlog (3), reportée au sprint 3.
-5. **Pourquoi** : ce récit n'avait pas d'issue GitHub correspondante (l'issue #19 de GitHub est le
-   déploiement), donc ni responsable ni PR. Les autres récits en retard au 26 octobre ont été finis
+5. **Pourquoi** : ce récit a bien une issue GitHub, la #15 (assignée à Delavie), mais son numéro
+   n'est pas celui du backlog (#19, qui est le déploiement sur GitHub). Elle n'a pas été repérée
+   pendant le sprint et aucune PR n'a été ouverte avant la remise. Les autres récits en retard au 26 octobre ont été finis
    avant la remise : #34 fusionné le 28 octobre, #35 le 29 octobre. Le critère de #32 (un siège non
    confirmé redevient libre pour tout le monde) est rempli par le code de #8, fusionné les 25 et
    26 octobre, et l'issue a été fermée le 29 octobre après vérification. Le retard venait surtout de
