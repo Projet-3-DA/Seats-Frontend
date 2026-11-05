@@ -135,7 +135,7 @@ Contrainte : Si statut = 'confirmee', date_confirmation est non nul
 | Méthode | Route | Auth | Détails |
 |---------|-------|------|---------|
 | GET | `/api/reservations` | Bearer, rôle `spectateur` | Liste les réservations de l'utilisateur courant (`req.user.id`), avec événement, siège et prix de la place. Les annulées restent dans la liste, avec leur motif. |
-| POST | `/api/reservations` | Bearer requis, rôle `spectateur` | Corps : `{ evenementId, siegeIds: [...] }`. `spectateurId` vient toujours du token, jamais du corps (sinon un client pourrait réserver au nom d'un autre utilisateur). 409 si un siège est déjà pris ou en cours de sélection par un autre spectateur (#31). |
+| POST | `/api/reservations` | Bearer requis, rôle `spectateur` | Corps : `{ evenementId, siegeIds: [...] }`. `spectateurId` vient toujours du token, jamais du corps (sinon un client pourrait réserver au nom d'un autre utilisateur). 409 si un siège est déjà pris ou en cours de sélection par un autre spectateur (#31). 410 si le spectateur ne détient plus une sélection en cours sur tous ces sièges (#37). |
 | POST | `/api/reservations/:id/annulation` | Bearer, rôle `organisateur` | Annulation par l'organisateur (#14). Corps : `{ motif? }`. 403 si la réservation concerne l'événement d'un autre organisateur, 409 si déjà annulée. |
 | POST | `/api/reservations/:id/annuler` | Bearer, rôle `spectateur` | Annulation par le spectateur (#12). 403 si la réservation ne lui appartient pas, 400 si l'événement est passé, 409 si déjà annulée. |
 
@@ -151,7 +151,8 @@ Même serveur et même port que l'API. Chaque événement a son salon (`evenemen
 | Sens | Message | Détails |
 |------|---------|---------|
 | client → serveur | `plan:rejoindre` / `plan:quitter` | Entre dans le salon d'un événement ou le quitte. À l'entrée, le serveur répond `plan:selections` avec les sièges déjà en sélection. |
-| client → serveur | `siege:selectionner` / `siege:deselectionner` | Spectateur connecté seulement. Refusé si le siège est déjà en sélection par quelqu'un d'autre (#31). Une sélection expire après 60 s. |
+| client → serveur | `siege:selectionner` / `siege:deselectionner` | Spectateur connecté seulement. Refusé si le siège est déjà en sélection par quelqu'un d'autre (#31). Une sélection expire après 60 s ; l'accusé de `siege:selectionner` renvoie `delaiMs` pour le compte à rebours (#37). |
+| serveur → détenteur | `selection:expiree` | Le délai de sa sélection est écoulé (#37). Envoyé juste avant le `siege:libere` diffusé à tout le salon. |
 | serveur → clients | `siege:selectionne` / `siege:libere` | Un siège passe « en sélection » ou redevient libre (désélection, expiration, déconnexion). |
 | serveur → clients | `sieges:reserves` | Après une réservation confirmée, les sièges passent à « réservé » chez tout le monde. |
 | client → serveur | `ventes:rejoindre` / `ventes:quitter` | Abonnement aux ventes d'un événement (#35), dans un salon séparé `ventes:<id>`. Refusé si le client n'est pas l'organisateur de cet événement (vérifié par le serveur). |

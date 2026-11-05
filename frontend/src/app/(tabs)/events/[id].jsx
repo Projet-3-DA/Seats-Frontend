@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import { useLocalSearchParams } from 'expo-router';
 import { ActivityIndicator, Pressable, StyleSheet, View } from 'react-native';
 
+import { CompteARebours } from '@/components/compte-a-rebours';
 import { LegendeSections, styleSection } from '@/components/legende-sections';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
@@ -28,6 +29,8 @@ export default function EventSeatMapScreen() {
   const [succes, setSucces] = useState(false);
   // Sièges en cours de sélection par d'autres spectateurs, diffusés en temps réel (#8).
   const [selectionsAutres, setSelectionsAutres] = useState(new Set());
+  // Échéance de chaque siège qu'on a sélectionné, calculée à partir du délai donné par le serveur (#37).
+  const [echeances, setEcheances] = useState({});
   const socketRef = useRef(null);
 
   const peutReserver = user?.role === 'spectateur';
@@ -85,6 +88,10 @@ export default function EventSeatMapScreen() {
       setSelectionsAutres((p) => retirer(p, [siegeId]));
       setSelection((p) => retirer(p, [siegeId]));
     });
+    // Envoyé à nous seuls, juste avant le `siege:libere` qui retire le siège de la sélection (#37).
+    socket.on('selection:expiree', () => {
+      setErreurReservation('Le délai de sélection est écoulé : veuillez resélectionner vos sièges.');
+    });
     socket.on('sieges:reserves', ({ siegeIds }) => {
       setSelectionsAutres((p) => retirer(p, siegeIds));
       setPlan((p) => p && { ...p, sieges: p.sieges.map((s) => (siegeIds.includes(s.id) ? { ...s, etat: 'reserve' } : s)) });
@@ -115,6 +122,7 @@ export default function EventSeatMapScreen() {
         return;
       }
       setErreurReservation('');
+      if (reponse.delaiMs) setEcheances((p) => ({ ...p, [siege.id]: Date.now() + reponse.delaiMs }));
       setSelection((p) => new Set(p).add(siege.id));
     });
   }
@@ -140,6 +148,12 @@ export default function EventSeatMapScreen() {
       });
       const json = await res.json();
       if (!res.ok || !json.success) {
+        // Délai écoulé : il faut tout resélectionner. On rend aussi les sièges encore tenus, sinon le
+        // serveur refuserait de nous les redonner tant que leur propre délai n'est pas écoulé (#37).
+        if (res.status === 410) {
+          selection.forEach((siegeId) => socketRef.current?.emit('siege:deselectionner', { evenementId: Number(id), siegeId }));
+          setSelection(new Set());
+        }
         throw new Error(json.error || 'Échec de la réservation.');
       }
       setSelection(new Set());
@@ -187,6 +201,9 @@ export default function EventSeatMapScreen() {
   // Prix de chaque siège : celui de sa section, ou le tarif de l'événement (#11). null si inconnu.
   const prixConnus = siegesChoisis.every((s) => s.prix !== null && s.prix !== undefined);
   const total = siegesChoisis.reduce((somme, s) => somme + (s.prix ?? 0), 0);
+  // Chaque siège a son propre délai : le compte à rebours suit celui qui expirera en premier (#37).
+  const delais = [...selection].map((siegeId) => echeances[siegeId]).filter(Boolean);
+  const prochaineEcheance = delais.length > 0 ? Math.min(...delais) : null;
 
   function styleSiege(siege) {
     if (siege.etat === 'reserve') return styles.occupe;
@@ -273,6 +290,10 @@ export default function EventSeatMapScreen() {
         <ThemedText type="small" style={styles.succesTexte}>
           Réservation confirmée !
         </ThemedText>
+      )}
+
+      {reservationOuverte && prochaineEcheance !== null && (
+        <CompteARebours key={prochaineEcheance} echeance={prochaineEcheance} />
       )}
 
       {reservationOuverte && enConfirmation && (
