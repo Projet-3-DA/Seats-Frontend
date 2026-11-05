@@ -149,3 +149,4 @@ vite.config.ts.timestamp-*
 .agents/
 skills-lock.json
 AGENTS.md
+CLAUDE.md
