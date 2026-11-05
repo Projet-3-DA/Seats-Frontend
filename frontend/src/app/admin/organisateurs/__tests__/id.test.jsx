@@ -47,7 +47,7 @@ function organisateur(overrides = {}) {
   };
 }
 
-describe('DetailOrganisateurAdminScreen (#19 du backlog)', () => {
+describe('DetailOrganisateurAdminScreen (#15)', () => {
   const fetchOriginal = global.fetch;
 
   beforeEach(() => {

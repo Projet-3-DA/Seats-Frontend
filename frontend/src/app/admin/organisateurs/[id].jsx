@@ -36,7 +36,7 @@ function Chiffre({ label, valeur, theme }) {
   );
 }
 
-// Détail d'un organisateur pour l'administrateur (#19 du backlog) : ses salles et ses événements,
+// Détail d'un organisateur pour l'administrateur (#15) : ses salles et ses événements,
 // chaque événement menant à son propre détail (#36).
 export default function DetailOrganisateurAdminScreen() {
   const { id } = useLocalSearchParams();

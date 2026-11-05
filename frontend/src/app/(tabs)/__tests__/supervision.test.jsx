@@ -143,7 +143,7 @@ const ORGANISATEURS = [
   { id: 8, prenom: 'Léo', nom: 'Gagnon', email: 'leo@test.ca', createdAt: '2026-09-02T12:00:00Z', nombreEvenements: 0, nombreSalles: 0 },
 ];
 
-describe('SupervisionScreen : organisateurs (#19 du backlog)', () => {
+describe('SupervisionScreen : organisateurs (#15)', () => {
   const fetchOriginal = global.fetch;
 
   beforeEach(() => {
