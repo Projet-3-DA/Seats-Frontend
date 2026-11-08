@@ -92,14 +92,16 @@ sont ceux assignés sur GitHub au 5 novembre.
 | [#21](../../../issues/21) | Filtrer les événements par date ou lieu | 3 | Should | Yanis | |
 | [#22](../../../issues/22) | Statistiques simples de vente par section | 3 | Should | Yanis | |
 | [#18](../../../issues/18) | Resynchroniser mon affichage après une coupure de connexion | 3 | Must | Junior | #17 |
-| [#37](../../../issues/37) | Afficher le compte à rebours et gérer l'expiration | 2 | Must | Junior | |
+| [#37](../../../issues/37) | Afficher le compte à rebours et gérer l'expiration | 2 | Must | Glodie | |
 | [#40](../../../issues/40) | Indicateur de connexion perdue/rétablie + blocage des actions | 2 | Must | À assigner | |
-| [#145](../../../issues/145) | Présence : voir qui est connecté, retirer une personne qui part | 3 | Must | À assigner | Nouveau |
-| [#38](../../../issues/38) | Test automatisé de confirmation concurrente | 3 | Must | Delavie | |
+| [#145](../../../issues/145) | Présence : voir qui est connecté, retirer une personne qui part | 3 | Must | Delavie | Nouveau |
+| [#38](../../../issues/38) | Test automatisé de confirmation concurrente | 3 | Must | À assigner | |
 | [#39](../../../issues/39) | Resynchroniser l'affichage du client dont la confirmation échoue | 2 | Must | À assigner | |
 | **Total** | 13 récits (Must : 29 points, Should : 6 points) | **35** | | | |
 
-Répartition : Delavie 11, Glodie 6, Yanis 6, Junior 5, à assigner 7. La présence est une
+Répartition : Delavie 11, Glodie 8, Yanis 6, Junior 3, à assigner 7. Le 7 novembre,
+Glodie a repris #37, déjà en cours dans [B#47](https://github.com/Projet-3-DA/Seats-Backend/pull/47) et [F#148](https://github.com/Projet-3-DA/Seats-Frontend/pull/148) ;
+les PR de Junior sur le même récit ([B#44](https://github.com/Projet-3-DA/Seats-Backend/pull/44), [F#142](https://github.com/Projet-3-DA/Seats-Frontend/pull/142)) ont été fermées sans fusion. La présence est une
 exigence de la version finale qu'aucun récit ne couvrait ; ses 3 points sont
 une estimation à confirmer en équipe.
 
