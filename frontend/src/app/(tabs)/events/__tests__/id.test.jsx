@@ -263,8 +263,10 @@ describe('EventSeatMapScreen', () => {
 
     await act(async () => globalThis.socketTest.recevoir('siege:selectionne', { siegeId: 101 }));
     expect(screen.getByTestId('siege-101')).toHaveStyle({ backgroundColor: '#eab308' });
+    // Au lieu de ne rien faire, le clic explique pourquoi ce siège reste bloqué (#16/#17).
     await fireEvent.press(screen.getByTestId('siege-101'));
     expect(screen.queryByText('Réserver (1)')).toBeNull();
+    expect(screen.getByText("Ce siège est en cours de sélection par quelqu'un d'autre.")).toBeTruthy();
 
     await act(async () => globalThis.socketTest.recevoir('siege:libere', { siegeId: 101 }));
     await fireEvent.press(screen.getByTestId('siege-101'));
