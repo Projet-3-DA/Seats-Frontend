@@ -28,13 +28,23 @@ export default function EventSeatMapScreen() {
   const [succes, setSucces] = useState(false);
   // Sièges en cours de sélection par d'autres spectateurs, diffusés en temps réel (#8).
   const [selectionsAutres, setSelectionsAutres] = useState(new Set());
+  // Sièges que le spectateur avait choisis mais qui ont été pris pendant sa confirmation (#39) : on les
+  // signale sur le plan et dans le message, jusqu'à sa prochaine action.
+  const [siegesPerdus, setSiegesPerdus] = useState(new Set());
   const socketRef = useRef(null);
+  // Copie de la sélection lisible depuis les écouteurs du socket et après un `await`.
+  const selectionRef = useRef(selection);
+  useEffect(() => {
+    selectionRef.current = selection;
+  }, [selection]);
 
   const peutReserver = user?.role === 'spectateur';
 
   // Renvoie le plan fraîchement chargé (ou null en cas d'erreur), pour que l'appelant puisse purger la
   // sélection des sièges qui viennent de changer d'état sans dépendre du re-render de `plan`.
-  function chargerPlan() {
+  // `enArrierePlan` : rechargement d'un plan déjà affiché ; un échec ne doit pas remplacer toute la page
+  // par un message d'erreur, le spectateur garde le dernier plan connu.
+  function chargerPlan({ enArrierePlan = false } = {}) {
     setChargement(true);
     return fetch(`${API_URL}/evenements/${id}/plan`)
       .then((res) => {
@@ -46,7 +56,7 @@ export default function EventSeatMapScreen() {
         return json.data;
       })
       .catch((err) => {
-        setErreur(err.message);
+        if (!enArrierePlan) setErreur(err.message);
         return null;
       })
       .finally(() => setChargement(false));
@@ -58,7 +68,16 @@ export default function EventSeatMapScreen() {
   function purgerSelectionIndisponible(planFrais) {
     if (!planFrais) return;
     const siegesLibres = new Set(planFrais.sieges.filter((s) => s.etat === 'libre').map((s) => s.id));
-    setSelection((precedente) => new Set([...precedente].filter((id) => siegesLibres.has(id))));
+    retirerSiegesPerdus([...selectionRef.current].filter((id) => !siegesLibres.has(id)));
+  }
+
+  // Retire de ma sélection les sièges qu'un autre a pris, et les garde en mémoire pour les signaler.
+  function retirerSiegesPerdus(ids) {
+    const perdus = ids.filter((id) => selectionRef.current.has(id));
+    if (perdus.length === 0) return;
+    selectionRef.current = new Set([...selectionRef.current].filter((id) => !perdus.includes(id)));
+    setSelection((p) => new Set([...p].filter((id) => !perdus.includes(id))));
+    setSiegesPerdus((p) => new Set([...p, ...perdus]));
   }
 
   useEffect(() => {
@@ -79,7 +98,12 @@ export default function EventSeatMapScreen() {
     const retirer = (ensemble, ids) => new Set([...ensemble].filter((s) => !ids.includes(s)));
 
     socket.on('connect', () => socket.emit('plan:rejoindre', evenementId));
-    socket.on('plan:selections', ({ siegeIds }) => setSelectionsAutres(new Set(siegeIds)));
+    // Liste complète des sièges tenus par les autres : envoyée en rejoignant le plan, et de nouveau
+    // après un échec de confirmation (#39). Un siège qu'un autre tient ne peut plus être dans ma sélection.
+    socket.on('plan:selections', ({ siegeIds }) => {
+      setSelectionsAutres(new Set(siegeIds));
+      retirerSiegesPerdus(siegeIds);
+    });
     socket.on('siege:selectionne', ({ siegeId }) => setSelectionsAutres((p) => new Set(p).add(siegeId)));
     // Libéré par l'autre, ou délai d'une minute écoulé (y compris pour notre propre sélection).
     socket.on('siege:libere', ({ siegeId }) => {
@@ -105,6 +129,7 @@ export default function EventSeatMapScreen() {
       setErreurReservation("Ce siège est en cours de sélection par quelqu'un d'autre.");
       return;
     }
+    setSiegesPerdus(new Set());
     const evenementId = Number(id);
     if (selection.has(siege.id)) {
       socketRef.current?.emit('siege:deselectionner', { evenementId, siegeId: siege.id });
@@ -130,6 +155,7 @@ export default function EventSeatMapScreen() {
   function demanderConfirmation() {
     if (selection.size === 0) return;
     setErreurReservation('');
+    setSiegesPerdus(new Set());
     setSucces(false);
     setEnConfirmation(true);
   }
@@ -151,13 +177,20 @@ export default function EventSeatMapScreen() {
       }
       setSelection(new Set());
       setSucces(true);
-      await chargerPlan();
+      await chargerPlan({ enArrierePlan: true });
     } catch (err) {
-      setErreurReservation(err.message || 'Échec de la réservation.');
-      // Un ou plusieurs sièges visés ont été pris entretemps : on remet le plan à jour et on retire de
-      // la sélection ceux qui ne sont plus libres (les autres restent sélectionnés pour une nouvelle
-      // tentative immédiate).
-      purgerSelectionIndisponible(await chargerPlan());
+      // fetch lui-même échoue (TypeError) quand le serveur est injoignable : son message est technique.
+      setErreurReservation(
+        err instanceof TypeError
+          ? 'Connexion au serveur impossible : votre réservation n’a pas été enregistrée. Réessayez.'
+          : err.message || 'Échec de la réservation.',
+      );
+      // Un ou plusieurs sièges visés ont été pris entretemps (#39) : on remet le plan à jour sans que le
+      // spectateur recharge la page, et on retire de la sélection ceux qui ne sont plus libres (les autres
+      // restent sélectionnés pour une nouvelle tentative immédiate). Les sièges tenus par un autre ne
+      // figurent pas dans le plan : on redemande aussi leur liste au serveur temps réel.
+      socketRef.current?.emit('plan:rejoindre', Number(id));
+      purgerSelectionIndisponible(await chargerPlan({ enArrierePlan: true }));
     } finally {
       setEnvoiEnCours(false);
       setEnConfirmation(false);
@@ -196,6 +229,11 @@ export default function EventSeatMapScreen() {
     .sort((a, b) => a.rangee - b.rangee || a.colonne - b.colonne);
   // Prix de chaque siège : celui de sa section, ou le tarif de l'événement (#11). null si inconnu.
   const prixConnus = siegesChoisis.every((s) => s.prix !== null && s.prix !== undefined);
+  const nomSiege = (s) => `rangée ${lettreRangee(s.rangee)}, siège ${s.colonne}`;
+  const nomsPerdus = plan.sieges
+    .filter((s) => siegesPerdus.has(s.id))
+    .sort((a, b) => a.rangee - b.rangee || a.colonne - b.colonne)
+    .map(nomSiege);
   const total = siegesChoisis.reduce((somme, s) => somme + (s.prix ?? 0), 0);
 
   function styleSiege(siege) {
@@ -233,7 +271,13 @@ export default function EventSeatMapScreen() {
                 testID={`siege-${s.id}`}
                 onPress={() => basculerSelection(s)}
                 disabled={!reservationOuverte || s.etat !== 'libre' || enConfirmation}
-                style={[styles.siege, styleSiege(s), styleSection(s, plan.sections)]}
+                accessibilityLabel={siegesPerdus.has(s.id) ? `${nomSiege(s)}, pris par quelqu'un d'autre` : undefined}
+                style={[
+                  styles.siege,
+                  styleSiege(s),
+                  styleSection(s, plan.sections),
+                  siegesPerdus.has(s.id) && [styles.perdu, { borderColor: theme.text }],
+                ]}
               >
                 <ThemedText type="small" style={styles.siegeTexte}>
                   {s.colonne}
@@ -289,6 +333,22 @@ export default function EventSeatMapScreen() {
         <ThemedText type="small" style={styles.erreurTexte}>
           {erreurReservation}
         </ThemedText>
+      )}
+
+      {nomsPerdus.length > 0 && (
+        <View testID="sieges-perdus" style={styles.perdus}>
+          <ThemedText type="small" style={styles.erreurTexte}>
+            {nomsPerdus.length === 1 ? 'Ce siège a été pris' : 'Ces sièges ont été pris'} par quelqu'un d'autre
+            pendant votre confirmation : {nomsPerdus.join(' ; ')}. {nomsPerdus.length === 1 ? 'Il est encadré' : 'Ils sont encadrés'} sur le plan.
+          </ThemedText>
+          <ThemedText type="small" themeColor="textSecondary">
+            {selection.size === 0
+              ? 'Choisissez d’autres sièges libres.'
+              : selection.size === 1
+                ? 'Votre autre siège reste sélectionné : vous pouvez confirmer à nouveau.'
+                : `Vos ${selection.size} autres sièges restent sélectionnés : vous pouvez confirmer à nouveau.`}
+          </ThemedText>
+        </View>
       )}
 
       {succes && selection.size === 0 && !erreurReservation && (
@@ -370,6 +430,8 @@ const styles = StyleSheet.create({
   occupe: { backgroundColor: '#ef4444' },
   selectionne: { backgroundColor: '#2563eb' },
   enSelection: { backgroundColor: '#eab308' },
+  perdu: { borderWidth: 3 },
+  perdus: { gap: Spacing.one },
   legende: { flexDirection: 'row', flexWrap: 'wrap', gap: Spacing.four, marginTop: Spacing.two },
   legendeItem: { flexDirection: 'row', alignItems: 'center', gap: Spacing.one },
   pastille: { width: 12, height: 12, borderRadius: 3 },
