@@ -68,25 +68,96 @@
    sept PR ouvertes le 19 octobre qui ont attendu 6 à 7 jours leur revue (voir la
    [rétrospective du sprint 2](retrospectives/sprint-2.md)).
 
-## Sprint 3 — Version finale (~5 semaines)
+## Sprint 3 — Version finale (4 semaines, remise le 3 décembre)
 
-- **Objectif** : *la réservation résiste à la concurrence et aux pannes,
-  et l'application est accessible publiquement.*
-- **Récits** : #15 (3), #37 (2), #16 (3), #38 (3), #39 (2), #17 (3), #40 (2),
-  #18 (3), #20 (3), #41 (2), #21 (3), #22 (3) — **32 points**.
-- **Could ajouté** : #114 — Se connecter avec Google et Microsoft (5).
-  Commencé dès le sprint 2 ; il saute en premier si le sprint prend du
-  retard.
-- **Incrément démontrable** : un siège en sélection non confirmé se libère
-  automatiquement après le délai, avec compte à rebours visible ; deux
-  confirmations envoyées au même instant sur le même siège n'en laissent
-  passer qu'une, démontré par un test de concurrence intégré à la CI.
-  Une coupure réseau simulée est suivie d'une resynchronisation correcte
-  du plan, avec indicateur visuel. Un administrateur suspend un compte et
-  le compte suspendu ne peut plus se connecter. L'application est
-  accessible via une URL publique, déployée automatiquement.
+- **Objectif** : *le site en ligne est fiable : la réservation résiste à la
+  concurrence et aux coupures, la présence est visible, et tout ce que
+  l'interface offre fonctionne.*
+- **Responsable de la mêlée** : Glodie.
+- **Dates** : planification commise le 5 novembre ; points de contrôle les
+  12, 19 et 26 novembre et le 3 décembre ; étiquette `finale-v1` sur `main`
+  le 3 décembre à 23 h 59 ; site en ligne jusqu'au 23 décembre.
 
-## Capacité
+### Récits engagés
+
+Les numéros sont ceux des **issues GitHub**. La dernière colonne donne le
+numéro du même récit dans `02-backlog.md` quand il diffère. Les responsables
+sont ceux assignés sur GitHub au 5 novembre.
+
+| Issue | Récit | Points | MoSCoW | Responsable | Backlog |
+|---|---|:---:|---|---|---|
+| [#15](../../../issues/15) | Vue globale des organisateurs (reportée du sprint 2) | 3 | Must | Delavie | #19 |
+| [#20](../../../issues/20) | Suspendre un compte | 3 | Must | Delavie | |
+| [#41](../../../issues/41) | Bloquer la connexion d'un compte suspendu + règle de visibilité | 2 | Must | Delavie | |
+| [#16](../../../issues/16) | Voir mon siège redevenir libre si je ne confirme pas dans le délai | 3 | Must | Glodie | #15 |
+| [#17](../../../issues/17) | Empêcher deux confirmations simultanées sur le même siège | 3 | Must | Glodie | #16 |
+| [#21](../../../issues/21) | Filtrer les événements par date ou lieu | 3 | Should | Yanis | |
+| [#22](../../../issues/22) | Statistiques simples de vente par section | 3 | Should | Yanis | |
+| [#18](../../../issues/18) | Resynchroniser mon affichage après une coupure de connexion | 3 | Must | Junior | #17 |
+| [#37](../../../issues/37) | Afficher le compte à rebours et gérer l'expiration | 2 | Must | Glodie | |
+| [#40](../../../issues/40) | Indicateur de connexion perdue/rétablie + blocage des actions | 2 | Must | À assigner | |
+| [#145](../../../issues/145) | Présence : voir qui est connecté, retirer une personne qui part | 3 | Must | Delavie | Nouveau |
+| [#38](../../../issues/38) | Test automatisé de confirmation concurrente | 3 | Must | À assigner | |
+| [#39](../../../issues/39) | Resynchroniser l'affichage du client dont la confirmation échoue | 2 | Must | À assigner | |
+| **Total** | 13 récits (Must : 29 points, Should : 6 points) | **35** | | | |
+
+Répartition : Delavie 11, Glodie 8, Yanis 6, Junior 3, à assigner 7. Le 7 novembre,
+Glodie a repris #37, déjà en cours dans [B#47](https://github.com/Projet-3-DA/Seats-Backend/pull/47) et [F#148](https://github.com/Projet-3-DA/Seats-Frontend/pull/148) ;
+les PR de Junior sur le même récit ([B#44](https://github.com/Projet-3-DA/Seats-Backend/pull/44), [F#142](https://github.com/Projet-3-DA/Seats-Frontend/pull/142)) ont été fermées sans fusion. La présence est une
+exigence de la version finale qu'aucun récit ne couvrait ; ses 3 points sont
+une estimation à confirmer en équipe.
+
+**Non engagés** :
+
+- Le déploiement ([#19](../../../issues/19), #18 du backlog) a été livré le
+  29 octobre. Son suivi fait partie de la réserve ci-dessous.
+- La connexion Google et Microsoft (#114 du backlog) a été fusionnée au
+  sprint 2, hors engagement.
+- Dupliquer un événement ([#23](../../../issues/23), `Could`) et changer le
+  rôle d'un utilisateur ([#106](../../../issues/106), fermée, à rouvrir au besoin) ne seront pris que s'il
+  reste de la capacité.
+
+### Capacité
+
+| Élément | Calcul |
+|---|---|
+| Vélocité des sprints 1 et 2 | 39 et 39 points |
+| Moyenne | (39 + 39) / 2 = 39 points pour environ 3 semaines |
+| Ramenée à quatre semaines | 39 / 3 × 4 = **52 points** |
+| Récits engagés | 35 points (67 %) |
+| Réserve | 52 − 35 = **17 points** (33 %) |
+
+La réserve sert au travail que le sprint exige sans qu'il corresponde à un
+récit : stabilité du site en ligne, tests sur le site et depuis un clone neuf,
+connexion GitHub avec les deux URL de retour (en ligne et `localhost`),
+correction des bogues, et retrait de ce qui n'est pas prêt (aucun bouton inactif
+à la remise).
+
+### Ordre d'abandon
+
+Ce qui marche passe avant ce qui s'ajoute. En cas de retard, on abandonne dans
+cet ordre, et l'interface correspondante est retirée :
+
+1. [#22](../../../issues/22) — Statistiques par section (`Should`).
+2. [#21](../../../issues/21) — Filtres de la liste des événements (`Should`).
+3. [#20](../../../issues/20) et [#41](../../../issues/41), ensemble — Suspension
+   d'un compte : `Must` du backlog, mais pas une exigence de la version finale.
+
+La concurrence (#17, #38, #39), l'expiration (#16, #37), la resynchronisation
+(#18, #40) et la présence ne sont pas négociables : la version finale les exige.
+
+### Incrément démontrable
+
+Sur le site en ligne, à la version `finale-v1` : un siège en sélection non
+confirmé se libère après le délai, avec compte à rebours visible ; deux
+confirmations envoyées au même instant sur le même siège n'en laissent passer
+qu'une, ce qu'un test de concurrence vérifie dans la CI, et la personne refusée
+en est informée. Une coupure réseau est suivie d'une resynchronisation correcte
+du plan, avec indicateur visuel. La présence montre qui est connecté et retire
+une personne qui part. Un administrateur voit tous les organisateurs et suspend
+un compte, qui ne peut plus se connecter.
+
+## Capacité du sprint 1
 
 | Élément | Calcul |
 |---|---|
