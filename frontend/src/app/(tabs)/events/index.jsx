@@ -1,7 +1,7 @@
 import { Feather } from '@expo/vector-icons';
 import { Link, useFocusEffect } from 'expo-router';
 import { useCallback, useMemo, useState } from 'react';
-import { ActivityIndicator, FlatList, Pressable, StyleSheet, TextInput, View } from 'react-native';
+import { ActivityIndicator, FlatList, Pressable, ScrollView, StyleSheet, TextInput, View } from 'react-native';
 
 import { Affiche } from '@/components/affiche';
 import { ThemedText } from '@/components/themed-text';
@@ -10,6 +10,42 @@ import { MaxContentWidth } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 import { useAuth } from '@/lib/auth-context';
 import { formatDateHeure } from '@/utils/dates';
+import { filtrerEvenements, parseDate, sallesDisponibles } from '@/utils/filtres-evenements';
+
+function ChampDate({ label, value, onChangeText, invalide, theme }) {
+  return (
+    <View style={styles.dateField}>
+      <ThemedText type="small" themeColor="textSecondary">
+        {label}
+      </ThemedText>
+      <TextInput
+        value={value}
+        onChangeText={onChangeText}
+        placeholder="JJ/MM/AAAA"
+        placeholderTextColor={theme.textSecondary}
+        accessibilityLabel={label}
+        style={[styles.dateInput, { color: theme.text, borderColor: invalide ? '#DC2626' : theme.border }]}
+      />
+    </View>
+  );
+}
+
+function Puce({ label, actif, onPress, theme }) {
+  return (
+    <Pressable
+      onPress={onPress}
+      accessibilityRole="button"
+      accessibilityState={{ selected: actif }}
+      style={[
+        styles.puce,
+        { borderColor: actif ? theme.primary : theme.border, backgroundColor: actif ? theme.primary : 'transparent' },
+      ]}>
+      <ThemedText type="small" style={actif ? styles.buttonText : { color: theme.text }}>
+        {label}
+      </ThemedText>
+    </Pressable>
+  );
+}
 
 function EventCard({ item, theme, peutReserver }) {
   return (
@@ -57,6 +93,9 @@ export default function EventsListScreen() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [recherche, setRecherche] = useState('');
+  const [salleId, setSalleId] = useState(null);
+  const [duTexte, setDuTexte] = useState('');
+  const [auTexte, setAuTexte] = useState('');
 
   // Les écrans d'onglets restent montés : un useEffect ne chargerait la liste qu'une fois, et un
   // événement créé entre-temps n'apparaîtrait qu'après un rafraîchissement. On recharge donc à
@@ -86,11 +125,26 @@ export default function EventsListScreen() {
     }, []),
   );
 
-  const evenementsFiltres = useMemo(() => {
-    const q = recherche.trim().toLowerCase();
-    if (!q) return evenements;
-    return evenements.filter((e) => e.titre.toLowerCase().includes(q));
-  }, [evenements, recherche]);
+  const salles = useMemo(() => sallesDisponibles(evenements), [evenements]);
+  // Une date tant qu'elle n'est pas complète ou valide ne filtre pas : on la signale seulement.
+  const du = useMemo(() => parseDate(duTexte), [duTexte]);
+  const au = useMemo(() => parseDate(auTexte), [auTexte]);
+  const duInvalide = duTexte.trim().length > 0 && !du;
+  const auInvalide = auTexte.trim().length > 0 && !au;
+  const plageInversee = du && au && du > au;
+  const filtreActif = recherche.trim().length > 0 || salleId !== null || duTexte.length > 0 || auTexte.length > 0;
+
+  const evenementsFiltres = useMemo(
+    () => filtrerEvenements(evenements, { recherche, salleId, du, au }),
+    [evenements, recherche, salleId, du, au],
+  );
+
+  function reinitialiserFiltres() {
+    setRecherche('');
+    setSalleId(null);
+    setDuTexte('');
+    setAuTexte('');
+  }
 
   return (
     <FlatList
@@ -111,6 +165,28 @@ export default function EventsListScreen() {
               style={[styles.searchInput, { color: theme.text }]}
             />
           </View>
+          {salles.length > 0 && (
+            <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.puces}>
+              <Puce label="Toutes les salles" actif={salleId === null} onPress={() => setSalleId(null)} theme={theme} />
+              {salles.map((s) => (
+                <Puce key={s.id} label={s.nom} actif={salleId === s.id} onPress={() => setSalleId(s.id)} theme={theme} />
+              ))}
+            </ScrollView>
+          )}
+          <View style={styles.dateRow}>
+            <ChampDate label="Du" value={duTexte} onChangeText={setDuTexte} invalide={duInvalide} theme={theme} />
+            <ChampDate label="Au" value={auTexte} onChangeText={setAuTexte} invalide={auInvalide} theme={theme} />
+          </View>
+          {(duInvalide || auInvalide) && (
+            <ThemedText type="small" style={styles.error}>
+              Saisissez une date valide au format JJ/MM/AAAA.
+            </ThemedText>
+          )}
+          {plageInversee && (
+            <ThemedText type="small" style={styles.error}>
+              La date de début est après la date de fin.
+            </ThemedText>
+          )}
           <ThemedText style={styles.heading}>Événements à l'affiche</ThemedText>
           <ThemedText themeColor="textSecondary">
             Découvrez et réservez les meilleures places pour vos spectacles.
@@ -124,11 +200,22 @@ export default function EventsListScreen() {
         </View>
       }
       ListEmptyComponent={
-        !loading && !error ? (
+        loading || error ? null : evenements.length > 0 && filtreActif ? (
+          <View style={styles.emptyFiltres}>
+            <ThemedText themeColor="textSecondary" style={styles.empty}>
+              Aucun événement ne correspond à vos filtres.
+            </ThemedText>
+            <Pressable onPress={reinitialiserFiltres} accessibilityRole="button">
+              <ThemedText type="smallBold" style={{ color: theme.primary }}>
+                Réinitialiser les filtres
+              </ThemedText>
+            </Pressable>
+          </View>
+        ) : (
           <ThemedText themeColor="textSecondary" style={styles.empty}>
             Aucun événement à venir pour le moment.
           </ThemedText>
-        ) : null
+        )
       }
     />
   );
@@ -143,6 +230,12 @@ const styles = StyleSheet.create({
   spinner: { marginTop: 8 },
   error: { color: '#DC2626' },
   empty: { textAlign: 'center', marginTop: 24 },
+  emptyFiltres: { alignItems: 'center', gap: 12 },
+  puces: { gap: 8 },
+  puce: { borderWidth: 1, borderRadius: 999, paddingHorizontal: 12, paddingVertical: 6 },
+  dateRow: { flexDirection: 'row', gap: 12 },
+  dateField: { flex: 1, gap: 4 },
+  dateInput: { borderWidth: 1, borderRadius: 8, paddingHorizontal: 12, paddingVertical: 10, fontSize: 16 },
   card: { flexDirection: 'row', borderWidth: 1, borderRadius: 12, padding: 16, gap: 12 },
   cardContent: { flex: 1, gap: 8 },
   // Taille fixe (comme l'aperçu dans organisateur/evenements/nouveau.jsx) : une largeur en %
