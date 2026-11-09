@@ -263,8 +263,10 @@ describe('EventSeatMapScreen', () => {
 
     await act(async () => globalThis.socketTest.recevoir('siege:selectionne', { siegeId: 101 }));
     expect(screen.getByTestId('siege-101')).toHaveStyle({ backgroundColor: '#eab308' });
+    // Au lieu de ne rien faire, le clic explique pourquoi ce siège reste bloqué (#16/#17).
     await fireEvent.press(screen.getByTestId('siege-101'));
     expect(screen.queryByText('Réserver (1)')).toBeNull();
+    expect(screen.getByText("Ce siège est en cours de sélection par quelqu'un d'autre.")).toBeTruthy();
 
     await act(async () => globalThis.socketTest.recevoir('siege:libere', { siegeId: 101 }));
     await fireEvent.press(screen.getByTestId('siege-101'));
@@ -515,7 +517,8 @@ describe('EventSeatMapScreen : resynchroniser après une confirmation qui échou
 
     expect(screen.getByTestId('sieges-perdus')).toHaveTextContent(/rangée A, siège 4/);
     expect(screen.getByText('Réserver (1)')).toBeTruthy();
-    expect(screen.getByTestId('siege-104').props.accessibilityState?.disabled).toBe(true);
+    // Pas désactivé : un clic doit expliquer pourquoi au lieu de rester muet (#17), au lieu de bloquer le Pressable.
+    expect(screen.getByTestId('siege-104').props.accessibilityState?.disabled).toBe(false);
   });
 
   it('efface le signalement dès que le spectateur choisit un autre siège', async () => {

@@ -122,7 +122,13 @@ export default function EventSeatMapScreen() {
   }, [id, token]);
 
   function basculerSelection(siege) {
-    if (siege.etat !== 'libre' || selectionsAutres.has(siege.id)) return;
+    if (siege.etat !== 'libre') return;
+    // Sans ce message, cliquer sur un siège déjà en cours de sélection par quelqu'un d'autre ne faisait
+    // rien du tout (#16/#17) : on le laisse jaune/bloqué, mais on explique pourquoi au lieu de rester muet.
+    if (selectionsAutres.has(siege.id)) {
+      setErreurReservation("Ce siège est en cours de sélection par quelqu'un d'autre.");
+      return;
+    }
     setSiegesPerdus(new Set());
     const evenementId = Number(id);
     if (selection.has(siege.id)) {
@@ -264,7 +270,7 @@ export default function EventSeatMapScreen() {
                 key={s.id}
                 testID={`siege-${s.id}`}
                 onPress={() => basculerSelection(s)}
-                disabled={!reservationOuverte || s.etat !== 'libre' || selectionsAutres.has(s.id) || enConfirmation}
+                disabled={!reservationOuverte || s.etat !== 'libre' || enConfirmation}
                 accessibilityLabel={siegesPerdus.has(s.id) ? `${nomSiege(s)}, pris par quelqu'un d'autre` : undefined}
                 style={[
                   styles.siege,
