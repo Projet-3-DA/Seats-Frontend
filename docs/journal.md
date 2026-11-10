@@ -145,3 +145,21 @@
   - En testant #15 dans le navigateur, la fiche d'un organisateur (`/admin/organisateurs/:id`) s'affiche blanche, alors que l'API répond correctement. À corriger.
 - **Décisions** :
   - Retirer des dépôts les fichiers de configuration des assistants de code (`.claude`, `.cursor`, `.devin`, `.agents`, `skills-lock.json`, `AGENTS.md`) et les ignorer dans Git : ils peuvent causer de petites incohérences chez les autres membres et, sur un dépôt public, faire fuiter certaines informations.
+
+## Lundi 9 novembre
+- **Rencontre** : en ligne seulement ; pas de rencontre en classe à cause de la grève.
+- **Présences** : Glodie, Delavie, Yanis, Junior.
+- **Avancé** :
+  - Terminé (fusionné dans `main`) :
+    - #39 — Resynchroniser l'affichage du client dont la confirmation échoue, par Junior (frontend PR #155).
+    - #21 — Filtrer les événements par date ou par salle, par Yanis (frontend PR #157).
+    - Message au clic sur un siège en cours de sélection par un autre spectateur, par Glodie (frontend PR #156).
+    - Planification du sprint 3 dans `04-sprints.md`, par Junior (PR #143).
+  - En révision :
+    - #41 — Bloquer la connexion d'un compte suspendu, par Delavie (backend PR #48, frontend PR #154) : changements demandés sur la PR backend.
+    - #37 — Compte à rebours et expiration de la sélection, par Glodie (backend PR #47, frontend PR #148) : changements demandés.
+- **Blocage** :
+  - Backend PR #48 : un compte de démonstration suspendu reste bloqué même après un redémarrage, car le seed ne remet pas son statut à `actif`. Le mot de passe administrateur de démonstration étant public, n'importe qui pourrait bloquer en ligne les comptes utilisés à la correction.
+  - Backend PR #47 : son second commit annule le premier, elle ne change donc plus rien ; il manque encore l'envoi du délai au client et le refus d'une confirmation arrivée après l'expiration.
+- **Décisions** :
+  - Le samedi 7 novembre, entre deux blocs, #37 est passé de Junior à Glodie : Glodie avait déjà commencé le même récit avec les PR #47 et #148, et un seul responsable évite le travail en double et les conflits entre PR. Les PR de Junior sur ce récit (backend #44, frontend #142) ont été fermées sans fusion.
