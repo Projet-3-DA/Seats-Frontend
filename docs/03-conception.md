@@ -148,7 +148,7 @@ Contrainte : Si statut = 'confirmee', date_confirmation est non nul
 | GET | `/api/admin/evenements` | Bearer, rôle `administrateur` | Tous les événements de la plateforme (#36), à venir d'abord puis passés, avec organisateur, salle et nombre de places vendues. |
 | GET | `/api/admin/evenements/:id` | Bearer, rôle `administrateur` | Détail d'un événement et de ses ventes siège par siège, quel que soit son organisateur. |
 | GET | `/api/admin/comptes` | Bearer, rôle `administrateur` | Comptes organisateurs et spectateurs (#20), avec leur statut et la raison d'une suspension. |
-| PATCH | `/api/admin/comptes/:id/statut` | Bearer, rôle `administrateur` | Corps : `{ statut: "suspendu" \| "actif", raison? }` (#20). 403 pour un compte administrateur, 404 si introuvable, 400 si statut ou raison invalides. |
+| PATCH | `/api/admin/comptes/:id/statut` | Bearer, rôle `administrateur` | Corps : `{ statut: "suspendu" \| "actif", raison? }` (#20). 403 pour un compte administrateur, ou pour suspendre un compte de démonstration (`@seats.demo`), 404 si introuvable, 400 si statut ou raison invalides. |
 
 #### Temps réel — Socket.IO (`backend/src/realtime.js`)
 Même serveur et même port que l'API. Chaque événement a son salon (`evenement:<id>`). Le client envoie le JWT dans `handshake.auth.token` : sans token valide, il voit le plan bouger mais ne peut rien sélectionner.
@@ -521,6 +521,7 @@ Même serveur et même port que l'API. Chaque événement a son salon (`evenemen
 - Les événements et les salles d'un organisateur suspendu sont masqués aux spectateurs et aux visiteurs. L'administrateur les voit toujours dans la supervision.
 - Les réservations déjà faites ne sont pas annulées : le spectateur les retrouve dans « Mes réservations ».
 - À la réactivation, tout redevient visible et le compte peut se reconnecter. Rien n'a été supprimé.
+- Les comptes de démonstration (`@seats.demo`) ne peuvent pas être suspendus, et le seed les remet à `actif` à chaque démarrage. Leur mot de passe est public : sans cette règle, n'importe qui pourrait bloquer, sur le site en ligne, les comptes exigés pour la correction. Pour essayer la suspension, on crée un compte par l'inscription.
 
 **Raison** :
 - On suspend un compte pour réagir à un abus : laisser vendre les places d'un organisateur suspendu prolongerait le problème.
