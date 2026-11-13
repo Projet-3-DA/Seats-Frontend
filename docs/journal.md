@@ -163,3 +163,10 @@
   - Backend PR #47 : son second commit annule le premier, elle ne change donc plus rien ; il manque encore l'envoi du délai au client et le refus d'une confirmation arrivée après l'expiration.
 - **Décisions** :
   - Le samedi 7 novembre, entre deux blocs, #37 est passé de Junior à Glodie : Glodie avait déjà commencé le même récit avec les PR #47 et #148, et un seul responsable évite le travail en double et les conflits entre PR. Les PR de Junior sur ce récit (backend #44, frontend #142) ont été fermées sans fusion.
+
+## Jeudi 12 novembre
+- **Rencontre** : en ligne seulement ; pas de rencontre en classe, la grève se poursuit.
+- **Présences** : Glodie, Delavie, Yanis, Junior.
+- **Avancé** : aucune avancée particulière (état à 20 h 15).
+- **Blocage** : aucun.
+- **Décisions** : aucune.
