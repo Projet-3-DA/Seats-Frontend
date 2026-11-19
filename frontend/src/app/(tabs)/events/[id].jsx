@@ -31,6 +31,9 @@ export default function EventSeatMapScreen() {
   // Sièges que le spectateur avait choisis mais qui ont été pris pendant sa confirmation (#39) : on les
   // signale sur le plan et dans le message, jusqu'à sa prochaine action.
   const [siegesPerdus, setSiegesPerdus] = useState(new Set());
+  // Connexion temps réel perdue (#40) : le plan affiché peut être obsolète, on bloque les actions
+  // jusqu'à ce qu'elle soit rétablie et le plan resynchronisé.
+  const [connecte, setConnecte] = useState(true);
   const socketRef = useRef(null);
   // Copie de la sélection lisible depuis les écouteurs du socket et après un `await`.
   const selectionRef = useRef(selection);
@@ -96,8 +99,17 @@ export default function EventSeatMapScreen() {
     const socket = io(SOCKET_URL, { auth: { token }, transports: ['websocket'] });
     socketRef.current = socket;
     const retirer = (ensemble, ids) => new Set([...ensemble].filter((s) => !ids.includes(s)));
+    // Faux au premier connect (page qui s'ouvre, pas une perte) : seule une reconnexion doit
+    // recharger le plan, qui a pu changer pendant la coupure.
+    let reconnexion = false;
 
-    socket.on('connect', () => socket.emit('plan:rejoindre', evenementId));
+    socket.on('connect', () => {
+      socket.emit('plan:rejoindre', evenementId);
+      if (reconnexion) chargerPlan({ enArrierePlan: true });
+      reconnexion = true;
+      setConnecte(true);
+    });
+    socket.on('disconnect', () => setConnecte(false));
     // Liste complète des sièges tenus par les autres : envoyée en rejoignant le plan, et de nouveau
     // après un échec de confirmation (#39). Un siège qu'un autre tient ne peut plus être dans ma sélection.
     socket.on('plan:selections', ({ siegeIds }) => {
@@ -119,6 +131,7 @@ export default function EventSeatMapScreen() {
       socket.disconnect();
       setSelectionsAutres(new Set());
     };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [id, token]);
 
   function basculerSelection(siege) {
@@ -253,6 +266,12 @@ export default function EventSeatMapScreen() {
     >
       <ThemedText type="title">{plan.salle.nom}</ThemedText>
 
+      {!connecte && (
+        <ThemedText testID="connexion-perdue" type="small" style={styles.erreurTexte}>
+          Connexion perdue : resynchronisation en cours, actions bloquées…
+        </ThemedText>
+      )}
+
       <ScrollView
         testID="grille-sieges"
         horizontal
@@ -270,7 +289,7 @@ export default function EventSeatMapScreen() {
                 key={s.id}
                 testID={`siege-${s.id}`}
                 onPress={() => basculerSelection(s)}
-                disabled={!reservationOuverte || s.etat !== 'libre' || enConfirmation}
+                disabled={!reservationOuverte || s.etat !== 'libre' || enConfirmation || !connecte}
                 accessibilityLabel={siegesPerdus.has(s.id) ? `${nomSiege(s)}, pris par quelqu'un d'autre` : undefined}
                 style={[
                   styles.siege,
@@ -382,8 +401,8 @@ export default function EventSeatMapScreen() {
           )}
           <Pressable
             onPress={handleConfirmer}
-            disabled={envoiEnCours}
-            style={[styles.bouton, { backgroundColor: theme.primary, opacity: envoiEnCours ? 0.5 : 1 }]}
+            disabled={envoiEnCours || !connecte}
+            style={[styles.bouton, { backgroundColor: theme.primary, opacity: envoiEnCours || !connecte ? 0.5 : 1 }]}
           >
             <ThemedText type="smallBold" style={styles.boutonTexte}>
               {envoiEnCours ? 'Confirmation…' : 'Confirmer'}
@@ -402,8 +421,8 @@ export default function EventSeatMapScreen() {
       {reservationOuverte && !enConfirmation && (
         <Pressable
           onPress={demanderConfirmation}
-          disabled={selection.size === 0}
-          style={[styles.bouton, { backgroundColor: theme.primary, opacity: selection.size === 0 ? 0.5 : 1 }]}
+          disabled={selection.size === 0 || !connecte}
+          style={[styles.bouton, { backgroundColor: theme.primary, opacity: selection.size === 0 || !connecte ? 0.5 : 1 }]}
         >
           <ThemedText type="smallBold" style={styles.boutonTexte}>
             {`Réserver ${selection.size > 0 ? `(${selection.size})` : ''}`.trim()}
