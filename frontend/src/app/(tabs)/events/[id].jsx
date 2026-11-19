@@ -14,6 +14,9 @@ import { useAuth } from '@/lib/auth-context';
 import { useTheme } from '@/hooks/use-theme';
 import { formatMontant } from '@/utils/tarif';
 
+const MESSAGE_PLAFOND =
+  'Vous avez gardé vos sièges plus de 3 minutes : ils ont tous été libérés. Sélectionnez-les à nouveau pour réserver.';
+
 export default function EventSeatMapScreen() {
   const { id } = useLocalSearchParams();
   const { token, user } = useAuth();
@@ -109,6 +112,14 @@ export default function EventSeatMapScreen() {
     socket.on('siege:libere', ({ siegeId }) => {
       setSelectionsAutres((p) => retirer(p, [siegeId]));
       setSelection((p) => retirer(p, [siegeId]));
+    });
+    // Plafond de 3 minutes atteint (#163) : le serveur libère toute ma sélection d'un coup. Il l'annonce
+    // avant les `siege:libere`, pour qu'on explique pourquoi au lieu de vider la sélection sans un mot.
+    socket.on('selection:plafond', () => {
+      selectionRef.current = new Set();
+      setSelection(new Set());
+      setEnConfirmation(false);
+      setErreurReservation(MESSAGE_PLAFOND);
     });
     socket.on('sieges:reserves', ({ siegeIds }) => {
       setSelectionsAutres((p) => retirer(p, siegeIds));
