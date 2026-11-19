@@ -83,8 +83,8 @@ describe('EventsListScreen', () => {
       reponse({
         success: true,
         data: [
-          { id: 1, titre: 'Festival de Jazz', dateHeure: '2026-10-28T20:00:00', salle: { nom: 'Théâtre A' } },
-          { id: 2, titre: 'Concert Rock', dateHeure: '2026-11-01T21:00:00', salle: { nom: 'Salle B' } },
+          { id: 1, titre: 'Festival de Jazz', dateHeure: '2026-10-28T20:00:00', salleId: 1, salle: { nom: 'Théâtre A' } },
+          { id: 2, titre: 'Concert Rock', dateHeure: '2026-11-01T21:00:00', salleId: 2, salle: { nom: 'Salle B' } },
         ],
       }),
     );
@@ -93,7 +93,8 @@ describe('EventsListScreen', () => {
     await attendreQue(() => screen.queryByText('Festival de Jazz') !== null);
 
     expect(screen.getByText('Concert Rock')).toBeTruthy();
-    expect(screen.getByText('Théâtre A')).toBeTruthy();
+    // Une fois sur la carte, une fois sur la puce du filtre par salle (#21).
+    expect(screen.getAllByText('Théâtre A')).toHaveLength(2);
   });
 
   it("affiche l'affiche de chaque événement, sans le tarif (il apparaît sur le plan de salle)", async () => {
@@ -179,5 +180,73 @@ describe('EventsListScreen', () => {
 
     expect(screen.getByText('Festival de Jazz')).toBeTruthy();
     expect(screen.queryByText('Concert Rock')).toBeNull();
+  });
+
+  describe('filtres par date et par lieu (#21)', () => {
+    const evenements = [
+      { id: 1, titre: 'Festival de Jazz', dateHeure: '2026-10-28T20:00:00', salleId: 1, salle: { nom: 'Théâtre A' } },
+      { id: 2, titre: 'Concert Rock', dateHeure: '2026-11-01T21:00:00', salleId: 2, salle: { nom: 'Salle B' } },
+      { id: 3, titre: 'Opéra', dateHeure: '2026-11-15T19:30:00', salleId: 1, salle: { nom: 'Théâtre A' } },
+    ];
+
+    beforeEach(async () => {
+      global.fetch = jest.fn().mockResolvedValue(reponse({ success: true, data: evenements }));
+      await render(<EventsListScreen />);
+      await attendreQue(() => screen.queryByText('Festival de Jazz') !== null);
+    });
+
+    // Le nom de la salle apparaît aussi sur les cartes : la puce est le bouton qui porte ce nom.
+    function puce(nom) {
+      return screen.getByRole('button', { name: nom });
+    }
+
+    it('filtre par salle, et revient à toutes les salles', async () => {
+      await fireEvent.press(puce('Salle B'));
+      expect(screen.getByText('Concert Rock')).toBeTruthy();
+      expect(screen.queryByText('Festival de Jazz')).toBeNull();
+      expect(screen.queryByText('Opéra')).toBeNull();
+
+      await fireEvent.press(puce('Toutes les salles'));
+      expect(screen.getByText('Festival de Jazz')).toBeTruthy();
+    });
+
+    it('filtre par plage de dates, la date de fin incluse', async () => {
+      await fireEvent.changeText(screen.getByLabelText('Du'), '29/10/2026');
+      await fireEvent.changeText(screen.getByLabelText('Au'), '01/11/2026');
+
+      expect(screen.getByText('Concert Rock')).toBeTruthy();
+      expect(screen.queryByText('Festival de Jazz')).toBeNull();
+      expect(screen.queryByText('Opéra')).toBeNull();
+    });
+
+    it('combine la salle et les dates', async () => {
+      await fireEvent.press(puce('Théâtre A'));
+      await fireEvent.changeText(screen.getByLabelText('Du'), '01/11/2026');
+
+      expect(screen.getByText('Opéra')).toBeTruthy();
+      expect(screen.queryByText('Festival de Jazz')).toBeNull();
+      expect(screen.queryByText('Concert Rock')).toBeNull();
+    });
+
+    it("ne filtre pas sur une date invalide et le signale", async () => {
+      await fireEvent.changeText(screen.getByLabelText('Du'), '31/02/2026');
+
+      expect(screen.getByText('Saisissez une date valide au format JJ/MM/AAAA.')).toBeTruthy();
+      expect(screen.getByText('Festival de Jazz')).toBeTruthy();
+      expect(screen.getByText('Opéra')).toBeTruthy();
+    });
+
+    it('affiche un message clair sans résultat, et permet de réinitialiser les filtres', async () => {
+      await fireEvent.press(puce('Salle B'));
+      await fireEvent.changeText(screen.getByLabelText('Du'), '10/11/2026');
+
+      expect(screen.getByText('Aucun événement ne correspond à vos filtres.')).toBeTruthy();
+      expect(screen.queryByText('Aucun événement à venir pour le moment.')).toBeNull();
+
+      await fireEvent.press(screen.getByText('Réinitialiser les filtres'));
+      expect(screen.getByText('Festival de Jazz')).toBeTruthy();
+      expect(screen.getByText('Concert Rock')).toBeTruthy();
+      expect(screen.getByText('Opéra')).toBeTruthy();
+    });
   });
 });

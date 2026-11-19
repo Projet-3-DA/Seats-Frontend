@@ -36,7 +36,7 @@ function Chiffre({ label, valeur, theme }) {
   );
 }
 
-// Détail d'un organisateur pour l'administrateur (#19 du backlog) : ses salles et ses événements,
+// Détail d'un organisateur pour l'administrateur (#15) : ses salles et ses événements,
 // chaque événement menant à son propre détail (#36).
 export default function DetailOrganisateurAdminScreen() {
   const { id } = useLocalSearchParams();
@@ -111,9 +111,11 @@ export default function DetailOrganisateurAdminScreen() {
           ) : (
             evenements.map((e) => (
               <Link key={e.id} href={`/admin/evenements/${e.id}`} asChild>
+                {/* Sous Link asChild, le style doit être un objet : un tableau fait planter la page sur le
+                    web (« Failed to set an indexed property [0] on 'CSSStyleDeclaration' »). */}
                 <Pressable
                   accessibilityLabel={`Voir le détail de ${e.titre}`}
-                  style={[styles.ligne, { borderColor: theme.border }]}
+                  style={StyleSheet.flatten([styles.ligne, { borderColor: theme.border }])}
                 >
                   <View style={styles.ligneTexte}>
                     <View style={styles.titreRow}>
