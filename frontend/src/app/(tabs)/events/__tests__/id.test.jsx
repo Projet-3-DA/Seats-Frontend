@@ -562,3 +562,43 @@ describe('EventSeatMapScreen : resynchroniser après une confirmation qui échou
     expect(screen.queryByTestId('sieges-perdus')).toBeNull();
   });
 });
+
+describe('EventSeatMapScreen : indicateur de connexion perdue/rétablie (#40)', () => {
+  const fetchOriginal = global.fetch;
+
+  afterEach(() => {
+    global.fetch = fetchOriginal;
+    jest.clearAllMocks();
+  });
+
+  it('affiche un message et bloque la sélection tant que la connexion est perdue', async () => {
+    useAuth.mockReturnValue({ token: 'jeton', user: { id: 5, role: 'spectateur' } });
+    global.fetch = jest.fn().mockResolvedValue(reponse({ success: true, data: plan }));
+    await render(<EventSeatMapScreen />);
+    await attendreQue(() => screen.queryByText('Salle A') !== null);
+    expect(screen.queryByTestId('connexion-perdue')).toBeNull();
+
+    await act(async () => globalThis.socketTest.recevoir('disconnect'));
+
+    expect(screen.getByTestId('connexion-perdue')).toBeTruthy();
+    expect(screen.getByTestId('siege-101').props.accessibilityState?.disabled).toBe(true);
+    await fireEvent.press(screen.getByTestId('siege-101'));
+    expect(screen.queryByText('Réserver (1)')).toBeNull();
+  });
+
+  it('rétablit les actions et recharge le plan dès que la connexion revient', async () => {
+    useAuth.mockReturnValue({ token: 'jeton', user: { id: 5, role: 'spectateur' } });
+    global.fetch = jest.fn().mockResolvedValue(reponse({ success: true, data: plan }));
+    await render(<EventSeatMapScreen />);
+    await attendreQue(() => screen.queryByText('Salle A') !== null);
+    await act(async () => globalThis.socketTest.recevoir('disconnect'));
+    expect(screen.getByTestId('connexion-perdue')).toBeTruthy();
+
+    await act(async () => globalThis.socketTest.recevoir('connect'));
+
+    expect(screen.queryByTestId('connexion-perdue')).toBeNull();
+    expect(screen.getByTestId('siege-101').props.accessibilityState?.disabled).toBe(false);
+    // Le plan a été rechargé (potentiellement obsolète après la coupure), pas juste la liste temps réel.
+    expect(global.fetch).toHaveBeenCalledWith(expect.stringContaining('/evenements/1/plan'));
+  });
+});
