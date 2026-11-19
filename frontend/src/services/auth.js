@@ -1,4 +1,7 @@
-const API_URL = process.env.EXPO_PUBLIC_API_URL ?? 'http://localhost:3000/api';
+// Même adresse que le reste de l'application. L'image Docker définit EXPO_PUBLIC_API_URL vide quand
+// aucune adresse n'est fournie : avec `??`, la chaîne vide était gardée et l'inscription appelait
+// `/auth/register` sur le serveur du frontend, qui répondait « Not found ».
+import { API_URL } from '@/constants/api';
 
 async function post(path, body) {
   const response = await fetch(`${API_URL}${path}`, {
