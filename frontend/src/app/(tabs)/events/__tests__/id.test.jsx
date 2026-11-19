@@ -309,6 +309,64 @@ describe('EventSeatMapScreen', () => {
   });
 });
 
+describe('EventSeatMapScreen : plafond de 3 minutes sur la sélection (#163)', () => {
+  const fetchOriginal = global.fetch;
+  const MESSAGE_PLAFOND =
+    'Vous avez gardé vos sièges plus de 3 minutes : ils ont tous été libérés. Sélectionnez-les à nouveau pour réserver.';
+  const planDeuxLibres = {
+    ...plan,
+    sieges: [plan.sieges[0], { id: 102, rangee: 1, colonne: 2, etat: 'libre' }, plan.sieges[1]],
+  };
+
+  afterEach(() => {
+    global.fetch = fetchOriginal;
+    jest.clearAllMocks();
+  });
+
+  it('vide toute la sélection, ferme le récapitulatif et affiche le message du plafond', async () => {
+    useAuth.mockReturnValue({ token: 'jeton', user: { id: 5, role: 'spectateur' } });
+    global.fetch = jest.fn().mockResolvedValue(reponse({ success: true, data: planDeuxLibres }));
+
+    await render(<EventSeatMapScreen />);
+    await attendreQue(() => screen.queryByText('Salle A') !== null);
+    await fireEvent.press(screen.getByTestId('siege-101'));
+    await fireEvent.press(screen.getByTestId('siege-102'));
+    await fireEvent.press(screen.getByText('Réserver (2)'));
+    expect(screen.getByText('Confirmer')).toBeTruthy();
+
+    // Le serveur annonce le plafond avant de libérer les sièges un à un.
+    await act(async () => globalThis.socketTest.recevoir('selection:plafond', { evenementId: 1, siegeIds: [101, 102] }));
+
+    expect(screen.getByText(MESSAGE_PLAFOND)).toBeTruthy();
+    expect(screen.queryByText('Confirmer')).toBeNull();
+    expect(screen.getByText('Réserver')).toBeTruthy();
+    expect(screen.getByTestId('siege-101')).not.toHaveStyle({ backgroundColor: '#2563eb' });
+    expect(screen.getByTestId('siege-102')).not.toHaveStyle({ backgroundColor: '#2563eb' });
+
+    // Les `siege:libere` qui suivent ne changent plus rien et le message reste affiché.
+    await act(async () => globalThis.socketTest.recevoir('siege:libere', { siegeId: 101 }));
+    await act(async () => globalThis.socketTest.recevoir('siege:libere', { siegeId: 102 }));
+    expect(screen.getByText(MESSAGE_PLAFOND)).toBeTruthy();
+  });
+
+  it('retire le message dès que le spectateur sélectionne de nouveau un siège', async () => {
+    useAuth.mockReturnValue({ token: 'jeton', user: { id: 5, role: 'spectateur' } });
+    global.fetch = jest.fn().mockResolvedValue(reponse({ success: true, data: planDeuxLibres }));
+
+    await render(<EventSeatMapScreen />);
+    await attendreQue(() => screen.queryByText('Salle A') !== null);
+    await fireEvent.press(screen.getByTestId('siege-101'));
+    await act(async () => globalThis.socketTest.recevoir('selection:plafond', { evenementId: 1, siegeIds: [101] }));
+    await act(async () => globalThis.socketTest.recevoir('siege:libere', { siegeId: 101 }));
+    expect(screen.getByText(MESSAGE_PLAFOND)).toBeTruthy();
+
+    await fireEvent.press(screen.getByTestId('siege-102'));
+
+    expect(screen.queryByText(MESSAGE_PLAFOND)).toBeNull();
+    expect(screen.getByText('Réserver (1)')).toBeTruthy();
+  });
+});
+
 describe('EventSeatMapScreen : prix par section dans le récapitulatif (#11)', () => {
   const fetchOriginal = global.fetch;
   afterEach(() => {
