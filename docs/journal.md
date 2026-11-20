@@ -170,3 +170,22 @@
 - **Avancé** : aucune avancée particulière (état à 20 h 15).
 - **Blocage** : aucun.
 - **Décisions** : aucune.
+
+## Jeudi 19 novembre
+- **Rencontre** : en classe.
+- **Présences** : Junior, Delavie, Glodie (Yanis absent, un peu souffrant).
+- **Avancé** :
+  - Terminé (fusionné dans `main`) :
+    - #41 — Bloquer la connexion d'un compte suspendu, par Delavie (backend PR #48, frontend PR #154), fusionné le soir du 12 novembre, après l'entrée précédente.
+  - En révision :
+    - #37 — Compte à rebours et expiration de la sélection, par Glodie (backend PR #47, frontend PR #148) : changements demandés sur la PR frontend. #37 avait été fermée le 12 novembre sans fusion ; elle a été rouverte.
+    - #163 — Plafonner la sélection d'un spectateur à 3 minutes, par Junior (backend PR #49, frontend PR #165).
+    - #40 — Indicateur de connexion perdue/rétablie et blocage des actions, par Glodie (frontend PR #161). L'issue a été fermée avant la fusion de la PR.
+    - Correction de l'inscription, qui appelait le serveur du frontend au lieu de l'API quand `EXPO_PUBLIC_API_URL` est vide (image Docker), par Delavie (frontend PR #160).
+  - #37 a été découpée en trois issues : #162 (délai commun relancé à chaque siège) et #164 (refuser une confirmation arrivée après l'expiration), confiées à Glodie, et #163 (plafond de 3 minutes), prise par Junior.
+  - Junior a fermé #18 — Resynchroniser mon affichage après une coupure de connexion.
+- **Blocage** :
+  - #37 ne reflétait pas assez bien la réalité de la tâche : elle était beaucoup plus complexe qu'elle n'y paraissait, car plusieurs fonctionnalités implicites n'avaient pas été clairement dites (délai commun à toute la sélection, libération groupée, plafond, refus serveur d'une confirmation après expiration). Les clarifier dans d'autres issues (#162, #163, #164) allège le poids de #37 et assure qu'aucune fonctionnalité n'est ratée.
+  - Frontend PR #148 : à l'essai, le compte à rebours suivait seulement le premier siège, les sièges expiraient un par un et le compteur reprenait juste après le message d'expiration. La branche était aussi en conflit avec `main`.
+- **Décisions** :
+  - #37 : un minuteur global de 3 minutes plafonne la sélection d'un spectateur, pour qu'il ne puisse pas garder des sièges indéfiniment en en sélectionnant un nouveau avant chaque expiration. Si ce plafond est atteint, un message s'affiche à l'écran.
