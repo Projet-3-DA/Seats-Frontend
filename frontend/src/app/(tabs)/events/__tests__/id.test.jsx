@@ -374,6 +374,23 @@ describe('EventSeatMapScreen : compte à rebours et expiration pendant la confir
     expect(screen.queryByText(/Temps restant pour confirmer/)).toBeNull();
   });
 
+  it('affiche le message au singulier pour un seul siège libéré à l’expiration', async () => {
+    useAuth.mockReturnValue({ token: 'jeton', user: { id: 5, role: 'spectateur' } });
+    global.fetch = jest.fn().mockResolvedValue(reponse({ success: true, data: plan }));
+
+    await render(<EventSeatMapScreen />);
+    await attendreQue(() => screen.queryByText('Salle A') !== null);
+    await fireEvent.press(screen.getByTestId('siege-101'));
+    await attendreQue(() => screen.queryByText('Temps restant pour confirmer : 60s') !== null);
+
+    await act(async () => globalThis.socketTest.recevoir('sieges:liberes', { siegeIds: [101] }));
+
+    expect(
+      screen.getByText('Le délai de sélection a expiré : votre siège a été libéré, sélectionnez à nouveau.'),
+    ).toBeTruthy();
+    expect(screen.queryByText(/vos sièges ont été libérés/)).toBeNull();
+  });
+
   it('une nouvelle sélection repousse le compte à rebours existant, pour toute la sélection', async () => {
     useAuth.mockReturnValue({ token: 'jeton', user: { id: 5, role: 'spectateur' } });
     const planDeuxLibres = {

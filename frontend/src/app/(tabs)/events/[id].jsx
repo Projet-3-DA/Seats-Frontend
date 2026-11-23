@@ -126,17 +126,17 @@ export default function EventSeatMapScreen() {
     // jamais siège par siège, donc un seul message plutôt qu'un par siège et le compte à rebours disparaît.
     socket.on('sieges:liberes', ({ siegeIds }) => {
       setSelectionsAutres((p) => retirer(p, siegeIds));
-      setSelection((p) => {
-        const miennes = siegeIds.filter((siegeId) => p.has(siegeId));
-        if (miennes.length === 0) return p;
-        setEcheance(null);
-        setErreurReservation(
-          miennes.length === 1
-            ? 'Le délai de sélection a expiré : votre siège a été libéré, sélectionnez à nouveau.'
-            : 'Le délai de sélection a expiré : vos sièges ont été libérés, sélectionnez à nouveau.',
-        );
-        return retirer(p, siegeIds);
-      });
+      // `selectionRef` (pas l'updater de setSelection, qui doit rester pur) détermine si l'échéance
+      // concernait ma sélection, pour le message et pour vider le compte à rebours.
+      const miennes = siegeIds.filter((siegeId) => selectionRef.current.has(siegeId));
+      if (miennes.length === 0) return;
+      setEcheance(null);
+      setErreurReservation(
+        miennes.length === 1
+          ? 'Le délai de sélection a expiré : votre siège a été libéré, sélectionnez à nouveau.'
+          : 'Le délai de sélection a expiré : vos sièges ont été libérés, sélectionnez à nouveau.',
+      );
+      setSelection((p) => retirer(p, siegeIds));
     });
     socket.on('sieges:reserves', ({ siegeIds }) => {
       setSelectionsAutres((p) => retirer(p, siegeIds));
