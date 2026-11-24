@@ -391,6 +391,30 @@ describe('EventSeatMapScreen : compte à rebours et expiration pendant la confir
     expect(screen.queryByText(/vos sièges ont été libérés/)).toBeNull();
   });
 
+  it("n'affiche aucun message quand sieges:liberes ne concerne pas ma sélection", async () => {
+    useAuth.mockReturnValue({ token: 'jeton', user: { id: 5, role: 'spectateur' } });
+    const planDeuxLibres = {
+      ...plan,
+      sieges: [plan.sieges[0], { id: 104, rangee: 1, colonne: 4, etat: 'libre' }, plan.sieges[1]],
+    };
+    global.fetch = jest.fn().mockResolvedValue(reponse({ success: true, data: planDeuxLibres }));
+
+    await render(<EventSeatMapScreen />);
+    await attendreQue(() => screen.queryByText('Salle A') !== null);
+    await fireEvent.press(screen.getByTestId('siege-101'));
+    await attendreQue(() => screen.queryByText('Temps restant pour confirmer : 60s') !== null);
+
+    // Le 104 est tenu par un autre spectateur, pas par moi.
+    await act(async () => globalThis.socketTest.recevoir('siege:selectionne', { siegeId: 104 }));
+    expect(screen.getByTestId('siege-104')).toHaveStyle({ backgroundColor: '#eab308' });
+
+    await act(async () => globalThis.socketTest.recevoir('sieges:liberes', { siegeIds: [104] }));
+
+    expect(screen.queryByText(/Le délai de sélection a expiré/)).toBeNull();
+    expect(screen.getByText('Temps restant pour confirmer : 60s')).toBeTruthy();
+    expect(screen.getByTestId('siege-104')).toHaveStyle({ backgroundColor: '#22c55e' });
+  });
+
   it('une nouvelle sélection repousse le compte à rebours existant, pour toute la sélection', async () => {
     useAuth.mockReturnValue({ token: 'jeton', user: { id: 5, role: 'spectateur' } });
     const planDeuxLibres = {
