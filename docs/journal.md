@@ -170,3 +170,39 @@
 - **Avancé** : aucune avancée particulière (état à 20 h 15).
 - **Blocage** : aucun.
 - **Décisions** : aucune.
+
+## Jeudi 19 novembre
+- **Rencontre** : en classe.
+- **Présences** : Junior, Delavie, Glodie (Yanis absent, un peu souffrant).
+- **Avancé** :
+  - Terminé (fusionné dans `main`) :
+    - #41 — Bloquer la connexion d'un compte suspendu, par Delavie (backend PR #48, frontend PR #154), fusionné le soir du 12 novembre, après l'entrée précédente.
+  - En révision :
+    - #37 — Compte à rebours et expiration de la sélection, par Glodie (backend PR #47, frontend PR #148) : changements demandés sur la PR frontend. #37 avait été fermée le 12 novembre sans fusion ; elle a été rouverte.
+    - #163 — Plafonner la sélection d'un spectateur à 3 minutes, par Junior (backend PR #49, frontend PR #165).
+    - #40 — Indicateur de connexion perdue/rétablie et blocage des actions, par Glodie (frontend PR #161). L'issue a été fermée avant la fusion de la PR.
+    - Correction de l'inscription, qui appelait le serveur du frontend au lieu de l'API quand `EXPO_PUBLIC_API_URL` est vide (image Docker), par Delavie (frontend PR #160).
+  - #37 a été découpée en trois issues : #162 (délai commun relancé à chaque siège) et #164 (refuser une confirmation arrivée après l'expiration), confiées à Glodie, et #163 (plafond de 3 minutes), prise par Junior.
+  - Junior a fermé #18 — Resynchroniser mon affichage après une coupure de connexion.
+- **Blocage** :
+  - #37 ne reflétait pas assez bien la réalité de la tâche : elle était beaucoup plus complexe qu'elle n'y paraissait, car plusieurs fonctionnalités implicites n'avaient pas été clairement dites (délai commun à toute la sélection, libération groupée, plafond, refus serveur d'une confirmation après expiration). Les clarifier dans d'autres issues (#162, #163, #164) allège le poids de #37 et assure qu'aucune fonctionnalité n'est ratée.
+  - Frontend PR #148 : à l'essai, le compte à rebours suivait seulement le premier siège, les sièges expiraient un par un et le compteur reprenait juste après le message d'expiration. La branche était aussi en conflit avec `main`.
+- **Décisions** :
+  - #37 : un minuteur global de 3 minutes plafonne la sélection d'un spectateur, pour qu'il ne puisse pas garder des sièges indéfiniment en en sélectionnant un nouveau avant chaque expiration. Si ce plafond est atteint, un message s'affiche à l'écran.
+
+## Lundi 23 novembre
+- **Présences** : Glodie, Delavie, Yanis, Junior.
+- **Avancé** :
+  - Terminé (fusionné dans `main`) :
+    - Correction de l'inscription, qui appelait le serveur du frontend au lieu de l'API quand `EXPO_PUBLIC_API_URL` est vide (image Docker), par Delavie (frontend PR #160), fusionnée le 22 novembre après l'approbation de Junior.
+    - Journal du jeudi 19 novembre, par Junior (frontend PR #166).
+  - En révision :
+    - #37 et #162 — Compte à rebours et délai commun à toute la sélection, par Glodie (backend PR #47, frontend PR #148). Glodie a corrigé le 23 novembre le minuteur orphelin (backend) et le message au singulier (frontend). La PR frontend a ensuite été approuvée ; la PR backend a encore des changements demandés.
+    - #163 — Plafonner la sélection d'un spectateur à 3 minutes, par Junior (backend PR #49, frontend PR #165). Glodie l'a testée et commentée : le plafond fonctionne, mais les branches partent d'avant #37. Junior a fusionné la branche de #37 dans celle de #163, dans les deux dépôts.
+    - #40 — Indicateur de connexion perdue/rétablie et blocage des actions, par Glodie (frontend PR #161) : changements demandés.
+- **Blocage** :
+  - Les issues ajoutées la dernière fois (#162 à #164) repartaient du travail de #37, encore en révision (frontend PR #148, backend PR #47). Ça cause actuellement des erreurs, entre autres des conflits de fusion entre ces branches et celles de #37.
+  - Backend PR #47 et frontend PR #148 (22 novembre) : un minuteur resté actif après la libération des sièges d'un spectateur libérait ensuite ses nouveaux sièges trop tôt. Corrigé le 23 novembre.
+  - Backend PR #47 (23 novembre) : réserver un siège arrête encore le minuteur partagé, si bien qu'un autre siège du même spectateur, ouvert dans un second onglet, n'expire plus.
+  - Frontend PR #161 : les actions sont débloquées avant la fin de la resynchronisation, la sélection libérée par le serveur reste affichée, l'indicateur « connexion rétablie » manque, et la PR entre en conflit avec la frontend PR #148.
+- **Décisions** : aucune nouvelle décision.
