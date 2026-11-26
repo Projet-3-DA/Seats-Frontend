@@ -7,6 +7,7 @@ import { io } from 'socket.io-client';
 import { LegendeSections, styleSection } from '@/components/legende-sections';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
+import { VentesParSection } from '@/components/ventes-par-section';
 import { API_URL, SOCKET_URL } from '@/constants/api';
 import { MaxContentWidth } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
@@ -167,7 +168,7 @@ export default function VentesEvenementScreen() {
     }
   }
 
-  const { evenement, salle, totaux, recette, sections, sieges } = ventes;
+  const { evenement, salle, totaux, recette, sections, parSection, sieges } = ventes;
   // Le siège choisi peut avoir été libéré entretemps (rafraîchissement) : le panneau disparaît alors.
   const siegeChoisi = sieges.find((s) => s.id === siegeChoisiId && s.reservation);
   const tauxRemplissage = totaux.total > 0 ? Math.round((totaux.vendus / totaux.total) * 100) : 0;
@@ -231,6 +232,8 @@ export default function VentesEvenementScreen() {
             <View style={[styles.barreSegment, { flex: totaux.libres }]} />
           </View>
         </View>
+
+        <VentesParSection parSection={parSection} />
 
         <View style={styles.plan}>
           <ThemedText type="smallBold">Plan de salle</ThemedText>

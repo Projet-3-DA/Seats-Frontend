@@ -151,6 +151,23 @@ describe('VentesEvenementScreen (#13)', () => {
     expect(global.fetch).toHaveBeenCalledTimes(1); // la mise à jour vient du socket, pas d'un second fetch
   });
 
+  it('affiche les ventes par section et les met à jour en direct (#22)', async () => {
+    const ligne = (vendus) => ({ id: 10, nom: 'Balcon', couleur: '#f59e0b', prix: 40, total: 4, vendus, revenu: vendus * 40 });
+    global.fetch = jest.fn().mockResolvedValue(reponse({ success: true, data: { ...ventes(), parSection: [ligne(1)] } }));
+
+    await render(<VentesEvenementScreen />);
+    await attendreQue(() => screen.queryByText('Ventes par section') !== null);
+    await act(async () => fireEvent.press(screen.getByRole('button', { name: 'Ventes par section' })));
+    expect(screen.getByText('1 / 4 sièges vendus (25 %)')).toBeTruthy();
+
+    const socket = io.mock.results[0].value;
+    await act(async () => {
+      socket.declencher('ventes:maj', { ...ventes(), parSection: [ligne(2)] });
+    });
+
+    await attendreQue(() => screen.queryByLabelText(/^Balcon : 2 sur 4 sièges vendus, revenu 80,00/) !== null);
+  });
+
   it('se déconnecte du socket en quittant la page', async () => {
     global.fetch = jest.fn().mockResolvedValue(reponse({ success: true, data: ventes() }));
 
