@@ -766,3 +766,127 @@ describe('EventSeatMapScreen : resynchroniser après une confirmation qui échou
     expect(screen.queryByTestId('sieges-perdus')).toBeNull();
   });
 });
+
+describe('EventSeatMapScreen : indicateur de connexion perdue/rétablie (#40)', () => {
+  const fetchOriginal = global.fetch;
+
+  afterEach(() => {
+    global.fetch = fetchOriginal;
+    jest.clearAllMocks();
+  });
+
+  it('affiche un message et bloque la sélection tant que la connexion est perdue', async () => {
+    useAuth.mockReturnValue({ token: 'jeton', user: { id: 5, role: 'spectateur' } });
+    global.fetch = jest.fn().mockResolvedValue(reponse({ success: true, data: plan }));
+    await render(<EventSeatMapScreen />);
+    await attendreQue(() => screen.queryByText('Salle A') !== null);
+    expect(screen.queryByTestId('connexion-perdue')).toBeNull();
+
+    await act(async () => globalThis.socketTest.recevoir('disconnect'));
+
+    expect(screen.getByTestId('connexion-perdue')).toBeTruthy();
+    expect(screen.getByTestId('siege-101').props.accessibilityState?.disabled).toBe(true);
+    await fireEvent.press(screen.getByTestId('siege-101'));
+    expect(screen.queryByText('Réserver (1)')).toBeNull();
+  });
+
+  it("reste bloqué pendant toute la resynchronisation après une reconnexion, pas juste à l'instant du connect", async () => {
+    useAuth.mockReturnValue({ token: 'jeton', user: { id: 5, role: 'spectateur' } });
+    global.fetch = jest.fn().mockResolvedValue(reponse({ success: true, data: plan }));
+    await render(<EventSeatMapScreen />);
+    await attendreQue(() => screen.queryByText('Salle A') !== null);
+    // Connexion initiale du socket (une vraie reconnexion doit en suivre une première).
+    await act(async () => globalThis.socketTest.recevoir('connect'));
+    await act(async () => globalThis.socketTest.recevoir('disconnect'));
+
+    // Le rechargement du plan après reconnexion ne se termine pas tout de suite.
+    let resoudrePlan;
+    global.fetch = jest.fn(() => new Promise((resolve) => { resoudrePlan = resolve; }));
+    await act(async () => globalThis.socketTest.recevoir('connect'));
+
+    expect(screen.getByTestId('connexion-perdue')).toBeTruthy();
+    expect(screen.getByTestId('siege-101').props.accessibilityState?.disabled).toBe(true);
+
+    await act(async () => resoudrePlan(reponse({ success: true, data: plan })));
+
+    expect(screen.queryByTestId('connexion-perdue')).toBeNull();
+    expect(screen.getByTestId('siege-101').props.accessibilityState?.disabled).toBe(false);
+  });
+
+  it('recharge le plan à la reconnexion, pas seulement au montage', async () => {
+    useAuth.mockReturnValue({ token: 'jeton', user: { id: 5, role: 'spectateur' } });
+    global.fetch = jest.fn().mockResolvedValue(reponse({ success: true, data: plan }));
+    await render(<EventSeatMapScreen />);
+    await attendreQue(() => screen.queryByText('Salle A') !== null);
+    await act(async () => globalThis.socketTest.recevoir('connect'));
+
+    await act(async () => globalThis.socketTest.recevoir('disconnect'));
+    await act(async () => globalThis.socketTest.recevoir('connect'));
+    await attendreQue(() => screen.queryByTestId('connexion-perdue') === null);
+
+    const appelsPlan = global.fetch.mock.calls.filter(([url]) => url.includes('/evenements/1/plan'));
+    expect(appelsPlan).toHaveLength(2); // montage + reconnexion, pas juste le premier
+  });
+
+  it('désactive Réserver et Confirmer tant que la connexion est perdue', async () => {
+    useAuth.mockReturnValue({ token: 'jeton', user: { id: 5, role: 'spectateur' } });
+    global.fetch = jest.fn().mockResolvedValue(reponse({ success: true, data: plan }));
+    await render(<EventSeatMapScreen />);
+    await attendreQue(() => screen.queryByText('Salle A') !== null);
+    await act(async () => globalThis.socketTest.recevoir('connect'));
+    await fireEvent.press(screen.getByTestId('siege-101'));
+    await attendreQue(() => screen.queryByText('Réserver (1)') !== null);
+    await fireEvent.press(screen.getByText('Réserver (1)'));
+    expect(screen.getByText('Confirmer votre réservation')).toBeTruthy();
+
+    // Récapitulatif déjà ouvert : une coupure doit bloquer Confirmer.
+    await act(async () => globalThis.socketTest.recevoir('disconnect'));
+    global.fetch = jest.fn();
+    await fireEvent.press(screen.getByText('Confirmer'));
+    expect(global.fetch).not.toHaveBeenCalled();
+
+    // Et bloquer aussi Réserver si on revient en arrière puis réessaie pendant la coupure.
+    await fireEvent.press(screen.getByText('Modifier ma sélection'));
+    await fireEvent.press(screen.getByText('Réserver (1)'));
+    expect(screen.queryByText('Confirmer votre réservation')).toBeNull();
+  });
+
+  it('vide une sélection perdue pendant la coupure, avec un message, à la reconnexion', async () => {
+    useAuth.mockReturnValue({ token: 'jeton', user: { id: 5, role: 'spectateur' } });
+    global.fetch = jest.fn().mockResolvedValue(reponse({ success: true, data: plan }));
+    await render(<EventSeatMapScreen />);
+    await attendreQue(() => screen.queryByText('Salle A') !== null);
+    await fireEvent.press(screen.getByTestId('siege-101'));
+    await attendreQue(() => screen.queryByText('Réserver (1)') !== null);
+    await act(async () => globalThis.socketTest.recevoir('connect'));
+
+    // À la déconnexion, le serveur libère nos sièges : la sélection locale ne reflète plus rien.
+    await act(async () => globalThis.socketTest.recevoir('disconnect'));
+    await act(async () => globalThis.socketTest.recevoir('connect'));
+    await attendreQue(() => screen.queryByTestId('connexion-perdue') === null);
+
+    expect(
+      screen.getByText('Connexion rétablie : votre sélection a été perdue pendant la coupure, sélectionnez à nouveau.'),
+    ).toBeTruthy();
+    expect(screen.getByText('Réserver')).toBeTruthy();
+    expect(screen.getByTestId('siege-101')).not.toHaveStyle({ backgroundColor: '#2563eb' });
+  });
+
+  it("affiche « Connexion rétablie » à la reconnexion même sans sélection en cours", async () => {
+    useAuth.mockReturnValue({ token: 'jeton', user: { id: 5, role: 'spectateur' } });
+    global.fetch = jest.fn().mockResolvedValue(reponse({ success: true, data: plan }));
+    await render(<EventSeatMapScreen />);
+    await attendreQue(() => screen.queryByText('Salle A') !== null);
+    expect(screen.queryByTestId('connexion-retablie')).toBeNull();
+    await act(async () => globalThis.socketTest.recevoir('connect'));
+
+    await act(async () => globalThis.socketTest.recevoir('disconnect'));
+    await act(async () => globalThis.socketTest.recevoir('connect'));
+    await attendreQue(() => screen.queryByTestId('connexion-perdue') === null);
+
+    expect(screen.getByTestId('connexion-retablie')).toBeTruthy();
+
+    await act(async () => globalThis.socketTest.recevoir('disconnect'));
+    expect(screen.queryByTestId('connexion-retablie')).toBeNull();
+  });
+});
