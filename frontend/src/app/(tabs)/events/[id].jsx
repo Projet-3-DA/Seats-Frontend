@@ -14,8 +14,17 @@ import { useAuth } from '@/lib/auth-context';
 import { useTheme } from '@/hooks/use-theme';
 import { formatMontant } from '@/utils/tarif';
 
-const MESSAGE_PLAFOND =
-  'Vous avez gardé vos sièges plus de 3 minutes : ils ont tous été libérés. Sélectionnez-les à nouveau pour réserver.';
+// Seul message d'expiration (#169) : le plafond de 2 minutes est désormais la seule limite de temps.
+function messagePlafond(nombreSieges) {
+  return nombreSieges === 1
+    ? 'Les 2 minutes pour confirmer sont écoulées : votre siège a été libéré. Sélectionnez-le à nouveau pour réserver.'
+    : 'Les 2 minutes pour confirmer sont écoulées : vos sièges ont été libérés. Sélectionnez-les à nouveau pour réserver.';
+}
+
+// Temps restant affiché en minutes et secondes, ex. « 1:05 ».
+function formatTempsRestant(secondes) {
+  return `${Math.floor(secondes / 60)}:${String(secondes % 60).padStart(2, '0')}`;
+}
 
 export default function EventSeatMapScreen() {
   const { id } = useLocalSearchParams();
@@ -34,8 +43,8 @@ export default function EventSeatMapScreen() {
   // Sièges que le spectateur avait choisis mais qui ont été pris pendant sa confirmation (#39) : on les
   // signale sur le plan et dans le message, jusqu'à sa prochaine action.
   const [siegesPerdus, setSiegesPerdus] = useState(new Set());
-  // Échéance commune à toute la sélection (#37), fournie par le serveur : un seul compte à rebours pour
-  // tous les sièges choisis, repoussé à chaque nouveau siège plutôt que suivi siège par siège.
+  // Échéance du plafond de 2 minutes (#169), fournie par le serveur : un seul compte à rebours pour tous
+  // les sièges choisis, qui part du premier siège et n'est pas relancé par les suivants.
   const [echeance, setEcheance] = useState(null);
   const [maintenant, setMaintenant] = useState(() => Date.now());
   const socketRef = useRef(null);
@@ -125,31 +134,15 @@ export default function EventSeatMapScreen() {
     // Un siège qu'un autre spectateur vient de libérer (ou que j'ai moi-même désélectionné : l'écho de
     // ma propre action, déjà appliquée localement, ne fait alors rien ici).
     socket.on('siege:libere', ({ siegeId }) => setSelectionsAutres((p) => retirer(p, [siegeId])));
-    // Minuteur partagé écoulé (#37) : le serveur libère d'un coup toute ma sélection sur cet événement,
-    // jamais siège par siège, donc un seul message plutôt qu'un par siège et le compte à rebours disparaît.
-    socket.on('sieges:liberes', ({ siegeIds }) => {
-      setSelectionsAutres((p) => retirer(p, siegeIds));
-      // `selectionRef` (pas l'updater de setSelection, qui doit rester pur) détermine si l'échéance
-      // concernait ma sélection, pour le message et pour vider le compte à rebours.
-      const miennes = siegeIds.filter((siegeId) => selectionRef.current.has(siegeId));
-      if (miennes.length === 0) return;
-      setEcheance(null);
-      setErreurReservation(
-        miennes.length === 1
-          ? 'Le délai de sélection a expiré : votre siège a été libéré, sélectionnez à nouveau.'
-          : 'Le délai de sélection a expiré : vos sièges ont été libérés, sélectionnez à nouveau.',
-      );
-      setSelection((p) => retirer(p, siegeIds));
-    });
-    // Plafond de 3 minutes atteint (#163) : le serveur libère toute ma sélection d'un coup. Il l'annonce
-    // avant les `siege:libere`, pour qu'on explique pourquoi au lieu de vider la sélection sans un mot.
-    socket.on('selection:plafond', () => {
+    // Plafond de 2 minutes atteint (#163, #169) : le serveur libère toute ma sélection d'un coup. Il
+    // l'annonce avant les `siege:libere`, pour qu'on explique pourquoi au lieu de vider la sélection sans un mot.
+    socket.on('selection:plafond', ({ siegeIds = [] } = {}) => {
       selectionRef.current = new Set();
       setSelection(new Set());
       setEnConfirmation(false);
-      // Plus aucun siège : le compte à rebours des 60 s (#37) disparaît avec la sélection.
+      // Plus aucun siège : le compte à rebours disparaît avec la sélection.
       setEcheance(null);
-      setErreurReservation(MESSAGE_PLAFOND);
+      setErreurReservation(messagePlafond(siegeIds.length));
     });
     socket.on('sieges:reserves', ({ siegeIds }) => {
       setSelectionsAutres((p) => retirer(p, siegeIds));
@@ -191,9 +184,9 @@ export default function EventSeatMapScreen() {
       }
       setErreurReservation('');
       setSelection((p) => new Set(p).add(siege.id));
-      // delaiMs vient du serveur (#37), déjà repoussé pour toute la sélection existante côté serveur :
-      // une seule échéance pour tous les sièges, pas une par siège. Absent (vieux client/serveur
-      // désynchronisés) : pas de compte à rebours affiché plutôt que d'en inventer un.
+      // delaiMs vient du serveur (#37, #169) : le temps qui reste avant le plafond, le même pour toute la
+      // sélection. Absent (vieux client/serveur désynchronisés) : pas de compte à rebours affiché plutôt
+      // que d'en inventer un.
       if (reponse.delaiMs) {
         setMaintenant(Date.now());
         setEcheance(Date.now() + reponse.delaiMs);
@@ -248,7 +241,7 @@ export default function EventSeatMapScreen() {
     }
   }
 
-  // Sélection vidée pendant le récapitulatif (délai d'une minute écoulé) : plus rien à confirmer.
+  // Sélection vidée pendant le récapitulatif (plafond de 2 minutes atteint) : plus rien à confirmer.
   if (enConfirmation && selection.size === 0 && !envoiEnCours) setEnConfirmation(false);
 
   // Le spinner ne remplace le plan qu'au premier chargement. Un rechargement (après « Confirmer »)
@@ -287,7 +280,7 @@ export default function EventSeatMapScreen() {
     .map(nomSiege);
   const total = siegesChoisis.reduce((somme, s) => somme + (s.prix ?? 0), 0);
 
-  // Temps restant avant expiration (#37) : une seule échéance pour toute la sélection.
+  // Temps restant avant le plafond (#37, #169) : une seule échéance pour toute la sélection.
   const secondesRestantes = echeance !== null ? Math.max(0, Math.ceil((echeance - maintenant) / 1000)) : null;
 
   function styleSiege(siege) {
@@ -413,7 +406,7 @@ export default function EventSeatMapScreen() {
 
       {reservationOuverte && secondesRestantes !== null && (
         <ThemedText type="small" themeColor="textSecondary">
-          Temps restant pour confirmer : {secondesRestantes}s
+          Temps restant pour confirmer : {formatTempsRestant(secondesRestantes)}
         </ThemedText>
       )}
 

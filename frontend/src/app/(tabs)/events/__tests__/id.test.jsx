@@ -5,7 +5,7 @@ jest.mock('socket.io-client', () => {
   const ecouteurs = {};
   const socket = {
     on: (evt, fn) => (ecouteurs[evt] = fn),
-    emit: jest.fn((evt, data, ack) => ack?.(globalThis.reponseSelection ?? { ok: true, delaiMs: 60_000 })),
+    emit: jest.fn((evt, data, ack) => ack?.(globalThis.reponseSelection ?? { ok: true, delaiMs: 120_000 })),
     disconnect: jest.fn(),
   };
   globalThis.socketTest = { socket, recevoir: (evt, data) => ecouteurs[evt]?.(data) };
@@ -273,12 +273,12 @@ describe('EventSeatMapScreen', () => {
     expect(screen.getByText('Réserver (1)')).toBeTruthy();
     expect(screen.getByTestId('siege-101')).toHaveStyle({ backgroundColor: '#2563eb' });
 
-    // Délai d'une minute écoulé côté serveur : notre propre sélection est annulée.
-    await act(async () => globalThis.socketTest.recevoir('sieges:liberes', { siegeIds: [101] }));
+    // Plafond de 2 minutes atteint côté serveur (#169) : notre propre sélection est annulée.
+    await act(async () => globalThis.socketTest.recevoir('selection:plafond', { evenementId: 1, siegeIds: [101] }));
     expect(screen.getByText('Réserver')).toBeTruthy();
   });
 
-  it('ferme le récapitulatif quand le délai de sélection expire', async () => {
+  it('ferme le récapitulatif quand le plafond de la sélection est atteint', async () => {
     useAuth.mockReturnValue({ token: 'jeton', user: { id: 5, role: 'spectateur' } });
     global.fetch = jest.fn().mockResolvedValue(reponse({ success: true, data: plan }));
 
@@ -288,7 +288,8 @@ describe('EventSeatMapScreen', () => {
     await fireEvent.press(screen.getByText('Réserver (1)'));
     expect(screen.getByText('Confirmer')).toBeTruthy();
 
-    await act(async () => globalThis.socketTest.recevoir('sieges:liberes', { siegeIds: [101] }));
+    await act(async () => globalThis.socketTest.recevoir('selection:plafond', { evenementId: 1, siegeIds: [101] }));
+    await act(async () => globalThis.socketTest.recevoir('siege:libere', { siegeId: 101 }));
     expect(screen.queryByText('Confirmer')).toBeNull();
     expect(screen.getByText('Réserver')).toBeTruthy();
     expect(screen.getByTestId('siege-101').props.accessibilityState?.disabled).toBe(false);
@@ -309,7 +310,7 @@ describe('EventSeatMapScreen', () => {
   });
 });
 
-describe('EventSeatMapScreen : compte à rebours et expiration pendant la confirmation (#37)', () => {
+describe('EventSeatMapScreen : compte à rebours du plafond de 2 minutes (#37, #169)', () => {
   const fetchOriginal = global.fetch;
 
   afterEach(() => {
@@ -328,7 +329,7 @@ describe('EventSeatMapScreen : compte à rebours et expiration pendant la confir
     expect(screen.queryByText(/Temps restant pour confirmer/)).toBeNull();
     await fireEvent.press(screen.getByTestId('siege-101'));
 
-    await attendreQue(() => screen.queryByText('Temps restant pour confirmer : 60s') !== null);
+    await attendreQue(() => screen.queryByText('Temps restant pour confirmer : 2:00') !== null);
   });
 
   it('fait diminuer le compte à rebours chaque seconde', async () => {
@@ -338,17 +339,17 @@ describe('EventSeatMapScreen : compte à rebours et expiration pendant la confir
     await render(<EventSeatMapScreen />);
     await attendreQue(() => screen.queryByText('Salle A') !== null);
     await fireEvent.press(screen.getByTestId('siege-101'));
-    await attendreQue(() => screen.queryByText('Temps restant pour confirmer : 60s') !== null);
+    await attendreQue(() => screen.queryByText('Temps restant pour confirmer : 2:00') !== null);
 
     await act(async () => {
       jest.useFakeTimers({ advanceTimers: true });
       jest.advanceTimersByTime(5000);
     });
 
-    await attendreQue(() => screen.queryByText('Temps restant pour confirmer : 55s') !== null);
+    await attendreQue(() => screen.queryByText('Temps restant pour confirmer : 1:55') !== null);
   });
 
-  it("libère toute la sélection d'un coup à l'expiration, avec un seul message, même pendant la confirmation", async () => {
+  it('un nouveau siège ne relance pas le compte à rebours : il affiche le temps restant donné par le serveur', async () => {
     useAuth.mockReturnValue({ token: 'jeton', user: { id: 5, role: 'spectateur' } });
     const planDeuxLibres = {
       ...plan,
@@ -359,84 +360,21 @@ describe('EventSeatMapScreen : compte à rebours et expiration pendant la confir
     await render(<EventSeatMapScreen />);
     await attendreQue(() => screen.queryByText('Salle A') !== null);
     await fireEvent.press(screen.getByTestId('siege-101'));
-    await fireEvent.press(screen.getByTestId('siege-104'));
-    await fireEvent.press(screen.getByText('Réserver (2)'));
-    expect(screen.getByText('Confirmer votre réservation')).toBeTruthy();
-
-    // Échéance commune : le serveur libère les deux sièges ensemble, jamais l'un sans l'autre.
-    await act(async () => globalThis.socketTest.recevoir('sieges:liberes', { siegeIds: [101, 104] }));
-
-    expect(
-      screen.getByText('Le délai de sélection a expiré : vos sièges ont été libérés, sélectionnez à nouveau.'),
-    ).toBeTruthy();
-    expect(screen.queryByText('Confirmer votre réservation')).toBeNull();
-    expect(screen.getByText('Réserver')).toBeTruthy();
-    expect(screen.queryByText(/Temps restant pour confirmer/)).toBeNull();
-  });
-
-  it('affiche le message au singulier pour un seul siège libéré à l’expiration', async () => {
-    useAuth.mockReturnValue({ token: 'jeton', user: { id: 5, role: 'spectateur' } });
-    global.fetch = jest.fn().mockResolvedValue(reponse({ success: true, data: plan }));
-
-    await render(<EventSeatMapScreen />);
-    await attendreQue(() => screen.queryByText('Salle A') !== null);
-    await fireEvent.press(screen.getByTestId('siege-101'));
-    await attendreQue(() => screen.queryByText('Temps restant pour confirmer : 60s') !== null);
-
-    await act(async () => globalThis.socketTest.recevoir('sieges:liberes', { siegeIds: [101] }));
-
-    expect(
-      screen.getByText('Le délai de sélection a expiré : votre siège a été libéré, sélectionnez à nouveau.'),
-    ).toBeTruthy();
-    expect(screen.queryByText(/vos sièges ont été libérés/)).toBeNull();
-  });
-
-  it("n'affiche aucun message quand sieges:liberes ne concerne pas ma sélection", async () => {
-    useAuth.mockReturnValue({ token: 'jeton', user: { id: 5, role: 'spectateur' } });
-    const planDeuxLibres = {
-      ...plan,
-      sieges: [plan.sieges[0], { id: 104, rangee: 1, colonne: 4, etat: 'libre' }, plan.sieges[1]],
-    };
-    global.fetch = jest.fn().mockResolvedValue(reponse({ success: true, data: planDeuxLibres }));
-
-    await render(<EventSeatMapScreen />);
-    await attendreQue(() => screen.queryByText('Salle A') !== null);
-    await fireEvent.press(screen.getByTestId('siege-101'));
-    await attendreQue(() => screen.queryByText('Temps restant pour confirmer : 60s') !== null);
-
-    // Le 104 est tenu par un autre spectateur, pas par moi.
-    await act(async () => globalThis.socketTest.recevoir('siege:selectionne', { siegeId: 104 }));
-    expect(screen.getByTestId('siege-104')).toHaveStyle({ backgroundColor: '#eab308' });
-
-    await act(async () => globalThis.socketTest.recevoir('sieges:liberes', { siegeIds: [104] }));
-
-    expect(screen.queryByText(/Le délai de sélection a expiré/)).toBeNull();
-    expect(screen.getByText('Temps restant pour confirmer : 60s')).toBeTruthy();
-    expect(screen.getByTestId('siege-104')).toHaveStyle({ backgroundColor: '#22c55e' });
-  });
-
-  it('une nouvelle sélection repousse le compte à rebours existant, pour toute la sélection', async () => {
-    useAuth.mockReturnValue({ token: 'jeton', user: { id: 5, role: 'spectateur' } });
-    const planDeuxLibres = {
-      ...plan,
-      sieges: [plan.sieges[0], { id: 104, rangee: 1, colonne: 4, etat: 'libre' }, plan.sieges[1]],
-    };
-    global.fetch = jest.fn().mockResolvedValue(reponse({ success: true, data: planDeuxLibres }));
-
-    await render(<EventSeatMapScreen />);
-    await attendreQue(() => screen.queryByText('Salle A') !== null);
-    await fireEvent.press(screen.getByTestId('siege-101'));
-    await attendreQue(() => screen.queryByText('Temps restant pour confirmer : 60s') !== null);
+    await attendreQue(() => screen.queryByText('Temps restant pour confirmer : 2:00') !== null);
 
     await act(async () => {
       jest.useFakeTimers({ advanceTimers: true });
       jest.advanceTimersByTime(5000);
     });
-    await attendreQue(() => screen.queryByText('Temps restant pour confirmer : 55s') !== null);
+    await attendreQue(() => screen.queryByText('Temps restant pour confirmer : 1:55') !== null);
 
-    // Le 104 vient d'être choisi : l'échéance commune repart à 60s pour les deux sièges.
+    // Le 104 est choisi 5 s plus tard : le serveur répond qu'il reste 1:55 pour toute la sélection.
+    globalThis.reponseSelection = { ok: true, delaiMs: 115_000 };
     await fireEvent.press(screen.getByTestId('siege-104'));
-    await attendreQue(() => screen.queryByText('Temps restant pour confirmer : 60s') !== null);
+    globalThis.reponseSelection = undefined;
+    await attendreQue(() => screen.queryByText('Réserver (2)') !== null);
+    expect(screen.getByText('Temps restant pour confirmer : 1:55')).toBeTruthy();
+    expect(screen.queryByText('Temps restant pour confirmer : 2:00')).toBeNull();
   });
 
   it('efface le compte à rebours en désélectionnant le dernier siège choisi', async () => {
@@ -446,17 +384,19 @@ describe('EventSeatMapScreen : compte à rebours et expiration pendant la confir
     await render(<EventSeatMapScreen />);
     await attendreQue(() => screen.queryByText('Salle A') !== null);
     await fireEvent.press(screen.getByTestId('siege-101'));
-    await attendreQue(() => screen.queryByText('Temps restant pour confirmer : 60s') !== null);
+    await attendreQue(() => screen.queryByText('Temps restant pour confirmer : 2:00') !== null);
 
     await fireEvent.press(screen.getByTestId('siege-101'));
     expect(screen.queryByText(/Temps restant pour confirmer/)).toBeNull();
   });
 });
 
-describe('EventSeatMapScreen : plafond de 3 minutes sur la sélection (#163)', () => {
+describe('EventSeatMapScreen : plafond de 2 minutes sur la sélection (#163, #169)', () => {
   const fetchOriginal = global.fetch;
   const MESSAGE_PLAFOND =
-    'Vous avez gardé vos sièges plus de 3 minutes : ils ont tous été libérés. Sélectionnez-les à nouveau pour réserver.';
+    'Les 2 minutes pour confirmer sont écoulées : vos sièges ont été libérés. Sélectionnez-les à nouveau pour réserver.';
+  const MESSAGE_PLAFOND_UN_SIEGE =
+    'Les 2 minutes pour confirmer sont écoulées : votre siège a été libéré. Sélectionnez-le à nouveau pour réserver.';
   const planDeuxLibres = {
     ...plan,
     sieges: [plan.sieges[0], { id: 102, rangee: 1, colonne: 2, etat: 'libre' }, plan.sieges[1]],
@@ -484,7 +424,7 @@ describe('EventSeatMapScreen : plafond de 3 minutes sur la sélection (#163)', (
     expect(screen.getByText(MESSAGE_PLAFOND)).toBeTruthy();
     expect(screen.queryByText('Confirmer')).toBeNull();
     expect(screen.getByText('Réserver')).toBeTruthy();
-    // Plus aucun siège : le compte à rebours des 60 s (#37) disparaît lui aussi.
+    // Plus aucun siège : le compte à rebours disparaît lui aussi.
     expect(screen.queryByText(/Temps restant pour confirmer/)).toBeNull();
     expect(screen.getByTestId('siege-101')).not.toHaveStyle({ backgroundColor: '#2563eb' });
     expect(screen.getByTestId('siege-102')).not.toHaveStyle({ backgroundColor: '#2563eb' });
@@ -504,11 +444,12 @@ describe('EventSeatMapScreen : plafond de 3 minutes sur la sélection (#163)', (
     await fireEvent.press(screen.getByTestId('siege-101'));
     await act(async () => globalThis.socketTest.recevoir('selection:plafond', { evenementId: 1, siegeIds: [101] }));
     await act(async () => globalThis.socketTest.recevoir('siege:libere', { siegeId: 101 }));
-    expect(screen.getByText(MESSAGE_PLAFOND)).toBeTruthy();
+    // Un seul siège libéré : le message est au singulier.
+    expect(screen.getByText(MESSAGE_PLAFOND_UN_SIEGE)).toBeTruthy();
 
     await fireEvent.press(screen.getByTestId('siege-102'));
 
-    expect(screen.queryByText(MESSAGE_PLAFOND)).toBeNull();
+    expect(screen.queryByText(MESSAGE_PLAFOND_UN_SIEGE)).toBeNull();
     expect(screen.getByText('Réserver (1)')).toBeTruthy();
   });
 });
