@@ -1,5 +1,10 @@
 const mockReplace = jest.fn();
-jest.mock('expo-router', () => ({ Link: ({ children }) => children, useRouter: () => ({ replace: mockReplace }) }));
+let mockParams = {};
+jest.mock('expo-router', () => ({
+  Link: ({ children }) => children,
+  useRouter: () => ({ replace: mockReplace }),
+  useLocalSearchParams: () => mockParams,
+}));
 jest.mock('expo-image-picker', () => ({ launchImageLibraryAsync: jest.fn() }));
 jest.mock('@/lib/auth-context', () => ({ useAuth: jest.fn() }));
 
@@ -96,5 +101,129 @@ describe('NouvelEvenementScreen', () => {
     const corps = JSON.parse(options.body);
     expect(corps).toMatchObject({ salleId: 3, titre: 'Mon spectacle', tarif: 25 });
     expect(corps).not.toHaveProperty('organisateurId');
+  });
+});
+
+describe('NouvelEvenementScreen : nouvelle séance d’un événement existant (#23)', () => {
+  const fetchOriginal = global.fetch;
+  // 20 h 30, heure locale de la machine qui lance les tests.
+  const dateSource = new Date(2026, 9, 15, 20, 30);
+  const ventesSource = {
+    evenement: {
+      id: 9,
+      titre: 'Festival de jazz',
+      description: 'Une soirée de jazz',
+      afficheUrl: 'https://exemple.com/jazz.jpg',
+      dateHeure: dateSource.toISOString(),
+      tarif: 18.5,
+    },
+    salle: { id: 3, nom: 'Grande salle' },
+  };
+
+  function api({ source = reponse({ success: true, data: ventesSource }) } = {}) {
+    return jest.fn(async (url, options) => {
+      if (options?.method === 'POST') return reponse({ success: true, data: { id: 10 } });
+      if (url.includes('/ventes')) return source;
+      return reponse({ success: true, data: salles });
+    });
+  }
+
+  beforeEach(() => {
+    useAuth.mockReturnValue({ token: 'jeton-orga', user: { id: 7, role: 'organisateur' } });
+    mockParams = { depuis: '9' };
+  });
+  afterEach(() => {
+    global.fetch = fetchOriginal;
+    mockParams = {};
+    jest.clearAllMocks();
+  });
+
+  it('reprend le titre, la description, l’affiche, la salle, le tarif et l’heure ; la date reste à choisir', async () => {
+    global.fetch = api();
+
+    await render(<NouvelEvenementScreen />);
+    await attendreQue(() => screen.queryByDisplayValue('Festival de jazz') !== null);
+
+    expect(global.fetch).toHaveBeenCalledWith(expect.stringContaining('/evenements/9/ventes'), {
+      headers: { Authorization: 'Bearer jeton-orga' },
+    });
+    expect(screen.getByText('Nouvelle séance')).toBeTruthy();
+    expect(screen.getByDisplayValue('Une soirée de jazz')).toBeTruthy();
+    expect(screen.getByDisplayValue('https://exemple.com/jazz.jpg')).toBeTruthy();
+    expect(screen.getByDisplayValue('18,50')).toBeTruthy();
+    expect(screen.getByDisplayValue('20:30')).toBeTruthy();
+    expect(screen.getByPlaceholderText('28/10/2026').props.value).toBe('');
+    await attendreQue(() => screen.queryByText('Grande salle (50 pl.)') !== null);
+  });
+
+  it('publie un nouvel événement avec la date choisie, sans toucher à l’original', async () => {
+    global.fetch = api();
+
+    await render(<NouvelEvenementScreen />);
+    await attendreQue(() => screen.queryByText('Grande salle (50 pl.)') !== null);
+
+    // Sans date, la publication est refusée.
+    await fireEvent.press(screen.getByText("Publier l'événement"));
+    expect(screen.getByText("La date et l'heure sont requises.")).toBeTruthy();
+
+    await fireEvent.changeText(screen.getByPlaceholderText('28/10/2026'), '22/10/2099');
+    await fireEvent.press(screen.getByText("Publier l'événement"));
+    await attendreQue(() => mockReplace.mock.calls.length > 0);
+
+    const appelsPost = global.fetch.mock.calls.filter(([, o]) => o?.method === 'POST');
+    expect(appelsPost).toHaveLength(1);
+    const [url, options] = appelsPost[0];
+    // Création d'un événement : l'original n'est pas modifié.
+    expect(url).toMatch(/\/evenements$/);
+    const corps = JSON.parse(options.body);
+    expect(corps).toEqual({
+      salleId: 3,
+      titre: 'Festival de jazz',
+      description: 'Une soirée de jazz',
+      dateHeure: new Date(2099, 9, 22, 20, 30).toISOString(),
+      tarif: 18.5,
+      afficheUrl: 'https://exemple.com/jazz.jpg',
+    });
+  });
+
+  it('un tarif gratuit est repris à 0, et un événement sans affiche garde le champ vide', async () => {
+    global.fetch = api({
+      source: reponse({
+        success: true,
+        data: { ...ventesSource, evenement: { ...ventesSource.evenement, tarif: 0, afficheUrl: null } },
+      }),
+    });
+
+    await render(<NouvelEvenementScreen />);
+    await attendreQue(() => screen.queryByDisplayValue('Festival de jazz') !== null);
+
+    expect(screen.getByDisplayValue('0,00')).toBeTruthy();
+    expect(screen.getByPlaceholderText('…ou collez un lien https://').props.value).toBe('');
+  });
+
+  it("affiche l'erreur si l'événement à dupliquer ne peut pas être repris, et le formulaire reste utilisable", async () => {
+    global.fetch = api({
+      source: reponse({ success: false, error: "Cet événement n'appartient pas à cet organisateur." }, false),
+    });
+
+    await render(<NouvelEvenementScreen />);
+    await attendreQue(
+      () =>
+        screen.queryByText(
+          "Impossible de reprendre l'événement à dupliquer : Cet événement n'appartient pas à cet organisateur.",
+        ) !== null,
+    );
+    expect(screen.getByText('Choisir une salle…')).toBeTruthy();
+  });
+
+  it('sans `depuis`, le formulaire reste vide et ne charge aucun événement', async () => {
+    mockParams = {};
+    global.fetch = api();
+
+    await render(<NouvelEvenementScreen />);
+    await attendreQue(() => screen.queryByText('Choisir une salle…') !== null);
+
+    expect(screen.getByText('Créer un événement')).toBeTruthy();
+    expect(global.fetch.mock.calls.some(([url]) => url.includes('/ventes'))).toBe(false);
   });
 });

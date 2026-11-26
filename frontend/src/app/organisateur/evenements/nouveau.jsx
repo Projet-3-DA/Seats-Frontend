@@ -1,6 +1,6 @@
 import { Feather } from '@expo/vector-icons';
 import * as ImagePicker from 'expo-image-picker';
-import { Link, useRouter } from 'expo-router';
+import { Link, useLocalSearchParams, useRouter } from 'expo-router';
 import { useEffect, useState } from 'react';
 import { ActivityIndicator, Pressable, ScrollView, StyleSheet, TextInput, View } from 'react-native';
 
@@ -29,6 +29,16 @@ function urlImageAleatoire(graine) {
   return `https://picsum.photos/seed/${graine}/600/900`;
 }
 
+// Préremplissage d'une nouvelle séance (#23) : tarif au format du champ (« 18,50 »), heure locale « HH:MM ».
+function tarifEnTexte(tarif) {
+  return tarif === null || tarif === undefined ? '' : Number(tarif).toFixed(2).replace('.', ',');
+}
+
+function heureEnTexte(dateHeure) {
+  const d = new Date(dateHeure);
+  return `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`;
+}
+
 function Champ({ label, erreur, children }) {
   return (
     <View style={styles.champ}>
@@ -47,6 +57,8 @@ export default function NouvelEvenementScreen() {
   const theme = useTheme();
   const { token } = useAuth();
   const router = useRouter();
+  // `depuis` : identifiant de l'événement à dupliquer (#23), passé par la page de ses ventes.
+  const { depuis } = useLocalSearchParams();
 
   const [titre, setTitre] = useState('');
   const [description, setDescription] = useState('');
@@ -61,6 +73,8 @@ export default function NouvelEvenementScreen() {
   const [tentative, setTentative] = useState(false);
   const [saving, setSaving] = useState(false);
   const [apiError, setApiError] = useState('');
+
+  const [sourceError, setSourceError] = useState('');
 
   const [salles, setSalles] = useState([]);
   const [sallesLoading, setSallesLoading] = useState(true);
@@ -97,6 +111,38 @@ export default function NouvelEvenementScreen() {
       cancelled = true;
     };
   }, [token]);
+
+  useEffect(() => {
+    if (!token || !depuis) return undefined;
+
+    let cancelled = false;
+    async function load() {
+      try {
+        // Même route que la page des ventes : elle vérifie que l'événement appartient à l'organisateur.
+        const res = await fetch(`${API_URL}/evenements/${depuis}/ventes`, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        const json = await res.json();
+        if (!res.ok || !json.success) throw new Error(json.error || "Échec du chargement de l'événement.");
+        if (cancelled) return;
+        const { evenement, salle: salleSource } = json.data;
+        setTitre(evenement.titre);
+        setDescription(evenement.description ?? '');
+        // L'affiche est reprise par son adresse : rien n'est téléversé de nouveau.
+        if (isLienHttp(evenement.afficheUrl ?? '')) setLien(evenement.afficheUrl);
+        setTarifTexte(tarifEnTexte(evenement.tarif));
+        setSalleId(salleSource.id);
+        // Même heure par défaut ; la date reste vide, puisque c'est une nouvelle séance.
+        setHeure(heureEnTexte(evenement.dateHeure));
+      } catch (err) {
+        if (!cancelled) setSourceError(`Impossible de reprendre l'événement à dupliquer : ${err.message}`);
+      }
+    }
+    load();
+    return () => {
+      cancelled = true;
+    };
+  }, [token, depuis]);
 
   const salle = salles.find((s) => s.id === salleId);
   const dateHeure = parseDateHeure(date, heure);
@@ -199,8 +245,17 @@ export default function NouvelEvenementScreen() {
     <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
       <ThemedView style={styles.page}>
         <View style={[styles.wrapper, { maxWidth: MaxContentWidth }]}>
-          <ThemedText style={styles.heading}>Créer un événement</ThemedText>
-          <ThemedText themeColor="textSecondary">Publiez une nouvelle date et mettez en vente.</ThemedText>
+          <ThemedText style={styles.heading}>{depuis ? 'Nouvelle séance' : 'Créer un événement'}</ThemedText>
+          <ThemedText themeColor="textSecondary">
+            {depuis
+              ? "Les informations de l'événement sont reprises : choisissez la date de la nouvelle séance."
+              : 'Publiez une nouvelle date et mettez en vente.'}
+          </ThemedText>
+          {sourceError.length > 0 && (
+            <ThemedText type="small" style={styles.error}>
+              {sourceError}
+            </ThemedText>
+          )}
 
           <View style={[styles.card, { backgroundColor: theme.backgroundElement, borderColor: theme.border }]}>
             <ThemedText type="smallBold" style={styles.cardTitle}>

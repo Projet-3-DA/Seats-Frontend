@@ -1,4 +1,5 @@
-import { Stack, useLocalSearchParams } from 'expo-router';
+import { Feather } from '@expo/vector-icons';
+import { Stack, useLocalSearchParams, useRouter } from 'expo-router';
 import { useEffect, useRef, useState } from 'react';
 import { ActivityIndicator, Pressable, ScrollView, StyleSheet, TextInput, View } from 'react-native';
 import { io } from 'socket.io-client';
@@ -45,6 +46,7 @@ export default function VentesEvenementScreen() {
   const { id } = useLocalSearchParams();
   const { token } = useAuth();
   const theme = useTheme();
+  const router = useRouter();
   const [ventes, setVentes] = useState(null);
   const [erreur, setErreur] = useState('');
   const [miseAJour, setMiseAJour] = useState(null);
@@ -195,6 +197,15 @@ export default function VentesEvenementScreen() {
                   : 'Connexion en direct en cours…'}
             </ThemedText>
           </View>
+          {/* Nouvelle séance (#23) : le formulaire de création s'ouvre prérempli, seule la date reste à choisir. */}
+          <Pressable
+            accessibilityRole="button"
+            onPress={() => router.push(`/organisateur/evenements/nouveau?depuis=${evenement.id}`)}
+            style={[styles.dupliquer, { borderColor: theme.border }]}
+          >
+            <Feather name="copy" size={16} color={theme.text} />
+            <ThemedText type="smallBold">Dupliquer pour une nouvelle séance</ThemedText>
+          </Pressable>
         </View>
 
         <View style={styles.chiffres}>
@@ -346,6 +357,17 @@ const styles = StyleSheet.create({
   scroll: { flexGrow: 1, alignItems: 'center' },
   page: { width: '100%', padding: 24, gap: 24 },
   entete: { gap: 4 },
+  dupliquer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    alignSelf: 'flex-start',
+    gap: 8,
+    borderWidth: 1,
+    borderRadius: 8,
+    paddingVertical: 8,
+    paddingHorizontal: 12,
+    marginTop: 8,
+  },
   titre: { fontSize: 22, lineHeight: 28, fontWeight: '700' },
   direct: { flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: 4 },
   pointDirect: { width: 8, height: 8, borderRadius: 4 },

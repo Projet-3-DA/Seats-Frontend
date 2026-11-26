@@ -1,4 +1,9 @@
-jest.mock('expo-router', () => ({ Stack: { Screen: () => null }, useLocalSearchParams: () => ({ id: '1' }) }));
+const mockPush = jest.fn();
+jest.mock('expo-router', () => ({
+  Stack: { Screen: () => null },
+  useLocalSearchParams: () => ({ id: '1' }),
+  useRouter: () => ({ push: mockPush }),
+}));
 jest.mock('@/lib/auth-context', () => ({ useAuth: jest.fn() }));
 jest.mock('socket.io-client', () => ({ io: jest.fn() }));
 
@@ -269,5 +274,29 @@ describe('VentesEvenementScreen : annuler une réservation (#14)', () => {
     await fireEvent.press(screen.getByText("Confirmer l'annulation"));
 
     await attendreQue(() => screen.queryByText('Cette réservation est déjà annulée.') !== null);
+  });
+});
+
+describe('VentesEvenementScreen : dupliquer l’événement (#23)', () => {
+  const fetchOriginal = global.fetch;
+
+  beforeEach(() => {
+    useAuth.mockReturnValue({ token: 'jeton-orga', user: { id: 7, role: 'organisateur' } });
+    io.mockReset().mockReturnValue(socketFactice());
+    mockPush.mockClear();
+  });
+  afterEach(() => {
+    global.fetch = fetchOriginal;
+    jest.restoreAllMocks();
+  });
+
+  it('ouvre le formulaire de création prérempli à partir de cet événement', async () => {
+    global.fetch = jest.fn().mockResolvedValue(reponse({ success: true, data: ventes() }));
+
+    await render(<VentesEvenementScreen />);
+    await attendreQue(() => screen.queryByText('Concert de jazz') !== null);
+    await fireEvent.press(screen.getByText('Dupliquer pour une nouvelle séance'));
+
+    expect(mockPush).toHaveBeenCalledWith('/organisateur/evenements/nouveau?depuis=1');
   });
 });
