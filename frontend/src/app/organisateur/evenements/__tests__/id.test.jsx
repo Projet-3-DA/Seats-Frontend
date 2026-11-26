@@ -152,6 +152,7 @@ describe('VentesEvenementScreen (#13)', () => {
 
     await render(<VentesEvenementScreen />);
     await attendreQue(() => screen.queryByText('Ventes par section') !== null);
+    await act(async () => fireEvent.press(screen.getByRole('button', { name: 'Ventes par section' })));
     expect(screen.getByText('1 / 4 sièges vendus (25 %)')).toBeTruthy();
 
     const socket = io.mock.results[0].value;

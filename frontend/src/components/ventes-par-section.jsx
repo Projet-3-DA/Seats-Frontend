@@ -1,4 +1,6 @@
-import { StyleSheet, View } from 'react-native';
+import { Feather } from '@expo/vector-icons';
+import { useState } from 'react';
+import { Pressable, StyleSheet, View } from 'react-native';
 
 import { ThemedText } from '@/components/themed-text';
 import { useTheme } from '@/hooks/use-theme';
@@ -14,15 +16,26 @@ function nomLigne(ligne, lignes) {
 }
 
 // Statistiques de vente par section tarifaire (#22), calculées par le backend sur les seules réservations
-// confirmées. Une section sans vente reste affichée, à zéro.
+// confirmées. Une section sans vente reste affichée, à zéro. Le bloc est replié par défaut : la flèche à
+// côté du titre l'ouvre et le referme.
 export function VentesParSection({ parSection }) {
   const theme = useTheme();
+  const [ouvert, setOuvert] = useState(false);
   if (!Array.isArray(parSection) || parSection.length === 0) return null;
 
   return (
     <View style={styles.bloc}>
-      <ThemedText type="smallBold">Ventes par section</ThemedText>
-      {parSection.map((ligne) => {
+      <Pressable
+        onPress={() => setOuvert((o) => !o)}
+        accessibilityRole="button"
+        accessibilityLabel="Ventes par section"
+        accessibilityState={{ expanded: ouvert }}
+        style={styles.titre}
+      >
+        <ThemedText type="smallBold">Ventes par section</ThemedText>
+        <Feather name={ouvert ? 'chevron-up' : 'chevron-down'} size={18} color={theme.text} />
+      </Pressable>
+      {ouvert && parSection.map((ligne) => {
         const nom = nomLigne(ligne, parSection);
         const taux = ligne.total > 0 ? Math.round((ligne.vendus / ligne.total) * 100) : 0;
         const revenu = ligne.revenu === null ? '—' : formatMontant(ligne.revenu);
@@ -63,6 +76,7 @@ export function VentesParSection({ parSection }) {
 
 const styles = StyleSheet.create({
   bloc: { gap: 8 },
+  titre: { flexDirection: 'row', alignItems: 'center', gap: 6, alignSelf: 'flex-start' },
   ligne: { borderWidth: 1, borderRadius: 12, padding: 12, gap: 8 },
   entete: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', gap: 8, flexWrap: 'wrap' },
   nom: { flexDirection: 'row', alignItems: 'center', gap: 8, flexWrap: 'wrap', flexShrink: 1 },
