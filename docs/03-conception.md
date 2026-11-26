@@ -131,7 +131,7 @@ Contrainte : Si statut = 'confirmee', date_confirmation est non nul
 | GET | `/api/evenements` | — | Liste les événements à venir, sauf ceux d'un organisateur suspendu (#41). |
 | POST | `/api/evenements` | Bearer, rôle `organisateur` | Corps : `{ salleId, titre, description?, dateHeure, afficheUrl?, tarif? }`, `organisateurId` vient du token. 400 si `salleId` invalide. |
 | GET | `/api/evenements/:id/plan` | — | Plan de salle de l'événement : sièges avec leur état (`reserve` / `libre`), leur section et leur prix (section, sinon tarif de l'événement), et les sections de la salle. 404 si événement introuvable, ou si son organisateur est suspendu (#41). |
-| GET | `/api/evenements/:id/ventes` | Bearer, rôle `organisateur` | Tableau de bord des ventes (#13) : chaque siège `vendu` / `en_selection` / `libre` avec le spectateur, les totaux et la recette. 403 si l'événement appartient à un autre organisateur. |
+| GET | `/api/evenements/:id/ventes` | Bearer, rôle `organisateur` | Tableau de bord des ventes (#13) : chaque siège `vendu` / `en_selection` / `libre` avec le spectateur, les totaux et la recette, avec le titre, la description, l'affiche et le tarif de l'événement, qui préremplissent sa duplication en nouvelle séance (#23). 403 si l'événement appartient à un autre organisateur. |
 | POST | `/api/evenements/affiche` | Bearer, rôle `organisateur` | Corps : image brute (`Content-Type: image/png`, etc., 5 Mo max). Upload l'affiche, retourne son URL. |
 
 #### Réservations — `backend/src/modules/reservations`
