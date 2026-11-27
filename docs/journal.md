@@ -206,3 +206,20 @@
   - Backend PR #47 (23 novembre) : réserver un siège arrête encore le minuteur partagé, si bien qu'un autre siège du même spectateur, ouvert dans un second onglet, n'expire plus.
   - Frontend PR #161 : les actions sont débloquées avant la fin de la resynchronisation, la sélection libérée par le serveur reste affichée, l'indicateur « connexion rétablie » manque, et la PR entre en conflit avec la frontend PR #148.
 - **Décisions** : aucune nouvelle décision.
+
+## Jeudi 26 novembre
+- **Présences** : Glodie, Delavie, Yanis, Junior.
+- **Avancé** :
+  - Terminé (fusionné dans `main`) :
+    - Journal du lundi 23 novembre, par Junior (frontend PR #167), approuvé et fusionné par Delavie le 24 novembre.
+    - #37 et #162 — Compte à rebours et délai commun à toute la sélection, par Glodie (backend PR #47, frontend PR #148), approuvées et fusionnées par Junior le 25 novembre. Le 24 novembre, Glodie a corrigé la réservation confirmée qui coupait encore le minuteur partagé.
+    - #163 — Plafonner la sélection d'un spectateur à 3 minutes, par Junior. La frontend PR #165 a été approuvée et fusionnée par Glodie le 24 novembre. La backend PR #49 est entrée en conflit avec la backend PR #47, comme Glodie l'avait signalé. Junior a fusionné `main` dans la branche pour le résoudre, puis Yanis l'a approuvée et fusionnée le 26 novembre.
+    - #22 — Voir des statistiques simples de vente par section, par Yanis (backend PR #50, frontend PR #170), approuvées et fusionnées par Junior le 26 novembre.
+    - #169 — Baser la sélection uniquement sur un plafond de 2 minutes, par Yanis (backend PR #51, frontend PR #171), approuvées et fusionnées par Junior le 26 novembre. L'issue a été créée le même jour à la suite de la décision ci-dessous.
+    - #23 — Dupliquer un événement existant pour créer rapidement une nouvelle séance, par Delavie : la frontend PR #168 a été approuvée et fusionnée par Glodie le 26 novembre. La partie backend (branche `feature/23-dupliquer-evenement`) n'a pas encore de PR, et #23 reste ouverte.
+  - En révision :
+    - #40 — Indicateur de connexion perdue/rétablie et blocage des actions, par Glodie (frontend PR #161). Le 26 novembre, Glodie a fusionné `main` dans la branche et corrigé les points de la revue précédente. Junior a de nouveau demandé des changements le même jour.
+- **Blocage** :
+  - Frontend PR #161 (26 novembre) : en rechargeant la page du plan, ou en l'ouvrant directement en étant connecté, « Connexion perdue » reste affiché et tous les sièges sont bloqués.
+- **Décisions** :
+  - #169 : sur la page de réservation, la sélection se base seulement sur un plafond de 2 minutes (au lieu de 3) à partir du premier siège. Le délai de 60 s, relancé à chaque nouveau siège, est retiré. Raison : peu importe ce que le spectateur faisait pendant la réservation, c'était de toute façon le plafond de 3 minutes qui décidait de la fin de sa sélection, et il ne l'apprenait qu'une fois ce délai passé. Un seul délai, affiché dès le départ, est plus clair.
